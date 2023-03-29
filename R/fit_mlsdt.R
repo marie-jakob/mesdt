@@ -11,6 +11,8 @@
 #' @return lme4 formula
 #' @export
 #'
+#' @importFrom stats formula
+#'
 #' @examples
 #' make_lme_formula(
 #'   form_mu = mu ~ x_test,
@@ -18,10 +20,15 @@
 #'   dv = "Y",
 #'   trial_type_var = "trial_type",
 #'   random = "ID",
-#'   between,
 #'   within = c("x_test")
 #'  )
-make_lme_formula <- function(form_mu, form_lambda, dv, trial_type_var, random, between, within) {
+make_lme_formula <- function(form_mu, form_lambda, dv,
+                             trial_type_var = "trial_type",
+                             random,
+                             between = NULL,
+                             within = NULL) {
+
+  # TODO: add catches for submitted variables
 
   # extract predictors for sensitivity and response bias from formulas
   pred_mu <- all.vars(form_mu)[[2:length(all.vars(form_lambda))]]
@@ -50,7 +57,8 @@ make_lme_formula <- function(form_mu, form_lambda, dv, trial_type_var, random, b
   }
   random_terms <- paste(random_terms, " | ", random, ")", sep = "")
 
-  form_sdt <- formula(paste(fixed_terms, random_terms, sep = " + "))
+  form_sdt <- as.formula(paste(fixed_terms, random_terms, sep = " + "),
+                         env = globalenv())
 
   return(form_sdt)
 }
