@@ -1,4 +1,4 @@
-test_that("make_lme_formula() makes a valid lme4 formula", {
+test_that("make_glmer_formula() makes a valid lme4 formula", {
           expect_equal(make_lme_formula(
             form_mu = mu ~ x_test,
             form_lambda = lambda ~ x_test,
@@ -12,7 +12,7 @@ test_that("make_lme_formula() makes a valid lme4 formula", {
   }
 )
 
-test_that("make_lme_formula() makes a valid formula without within predictors", {
+test_that("make_glmer_formula() makes a valid formula without within predictors", {
     expect_equal(make_lme_formula(
       form_mu = mu ~ x_test,
       form_lambda = lambda ~ x_test,

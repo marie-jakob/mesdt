@@ -22,7 +22,7 @@
 #'   random = "ID",
 #'   within = c("x_test")
 #'  )
-make_lme_formula <- function(form_mu, form_lambda, dv,
+make_glmer_formula <- function(form_mu, form_lambda, dv,
                              trial_type_var = "trial_type",
                              random,
                              between = NULL,
