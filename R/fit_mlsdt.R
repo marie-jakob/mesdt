@@ -14,7 +14,7 @@
 #' @importFrom stats formula
 #'
 #' @examples
-#' make_lme_formula(
+#' make_glmer_formula(
 #'   form_mu = mu ~ x_test,
 #'   form_lambda = lambda ~ x_test,
 #'   dv = "Y",
