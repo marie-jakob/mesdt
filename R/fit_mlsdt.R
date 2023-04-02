@@ -30,25 +30,31 @@ make_glmer_formula <- function(form_mu, form_lambda, dv,
 
   # TODO: add catches for submitted variables
 
-  # extract predictors for sensitivity and response bias from formulas
-  pred_mu <- all.vars(form_mu)[[2:length(all.vars(form_lambda))]]
-  pred_lambda <- all.vars(form_lambda)[2:length(all.vars(form_lambda))]
-
   # build a new formula according to lme4 syntax
   # fixed effects
   fixed_terms <- paste(dv, "~", trial_type_var, sep = " ")
 
-  for (pred in pred_lambda) fixed_terms <- paste(fixed_terms, pred, sep = " + ")
+  # extract predictors for sensitivity and response bias from formulas
+  # sensitivity
+  if (! is.null(form_mu)) {
+    pred_mu <- all.vars(form_mu)[2:length(all.vars(form_mu))]
+    for (pred in pred_mu) {
+      new_term <- paste(pred, ":", trial_type_var, sep = "")
+      fixed_terms <- paste(fixed_terms, new_term, sep = " + ")
+    }
+  }
 
-  for (pred in pred_mu) {
-    new_term <- paste(pred, ":", trial_type_var, sep = "")
-    fixed_terms <- paste(fixed_terms, new_term, sep = " + ")
+  # response bias
+  if (! is.null(form_lambda)) {
+    pred_lambda <- all.vars(form_lambda)[2:length(all.vars(form_lambda))]
+    for (pred in pred_lambda) fixed_terms <- paste(fixed_terms, pred, sep = " + ")
   }
 
   # random effects
   random_terms <- paste("(", trial_type_var, sep = "")
 
   for (i in within) {
+    print("hi")
     if (i %in% pred_lambda) random_terms <- paste(random_terms, i, sep = " + ")
     if (i %in% pred_mu) {
       new_term <- paste(pred, ":", trial_type_var, sep = "")
