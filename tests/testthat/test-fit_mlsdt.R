@@ -105,6 +105,10 @@ test_that("make_glmer_formula() makes a valid formula with empty lambda formula"
 )
 
 
-# differentiate between "+" and "*"
+# TODO: differentiate between "+" and "*"
+
+# TODO: make ":" notation for interaction terms work
+
+# TODO: check behavior of glmer() for interactions where the main effect is not present
 
 
