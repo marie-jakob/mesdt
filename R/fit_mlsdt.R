@@ -71,3 +71,69 @@ make_glmer_formula <- function(form_mu, form_lambda, dv,
 
   return(form_sdt)
 }
+
+
+#' Fit the GLMM
+#'
+#' @param formula The glmer model formula
+#' @param data data the model should be fitted to
+#' @param program whether to use R (lme4) or Julia (MixedModels)
+#'
+#' @return lme4 fit
+#' @export
+#'
+#' @import lme4
+#'
+#' @examples
+fit_glmm <- function(formula, data, program = "R") {
+
+  if (program == "R") {
+    fit <- lme4::glmer(formula, data,
+                       family = binomial(link = "probit"))
+
+  }
+
+}
+
+
+
+#' Title
+#'
+#' @param fit_obj
+#' @param dat
+#'
+#' @return
+#' @export
+#'
+#' @import broom.mixed
+#'
+#' @examples
+transform_to_sdt <- function(fit_obj, dat, trial_type_var, pred_mu, pred_lambda) {
+  # Start with:
+  # categorical, effect-coded predictors x1 * x2 (two levels)
+
+  # extract population-level estimates
+  Beta <- broom.mixed::tidy(fit_obj, effects = "fixed")
+  Beta_lambda <- Beta[! grepl("trial_type", Beta$term), ]
+  Beta_mu <- Beta[grepl("trial_type", Beta$term), ]
+
+  # make predictor design matrix
+  # pred_combinations_lambda <- expand.grid()
+  pred_combinations_lambda <- t(unique(dat[, pred_lambda]))
+  design_matrix_lambda <- matrix(c(rep(1, ncol(pred_combinations_lambda)), pred_combinations_lambda),
+                          ncol = ncol(pred_combinations_lambda), nrow = nrow(pred_combinations_lambda) + 1,
+                          byrow = T)
+  Lambda <- design_matrix_lambda %*% Beta_lambda$estimate * (-1)
+
+  pred_combinations_mu <- t(unique(dat[, pred_mu]))
+  design_matrix_mu <- matrix(c(rep(1, ncol(pred_combinations_mu)), pred_combinations_mu),
+                                 ncol = ncol(pred_combinations_mu), nrow = nrow(pred_combinations_mu) + 1,
+                                 byrow = T)
+  Mu <- design_matrix_mu %*% Beta_mu$estimate * 2
+
+
+  return(list(
+    "Lambda" = Lambda,
+    "Mu" = Mu
+  ))
+}

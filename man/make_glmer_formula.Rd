@@ -36,7 +36,7 @@ lme4 formula
 Convert two given formulas for the two SDT parameters to an lme4 formula
 }
 \examples{
-make_lme_formula(
+make_glmer_formula(
   form_mu = mu ~ x_test,
   form_lambda = lambda ~ x_test,
   dv = "Y",
