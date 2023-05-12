@@ -61,6 +61,23 @@ lme4: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
 
 ##### Fixed Effects
 
++ different variants for CIs: Wald CIs, Profile CIs, Parametric Bootstrapped CIs -> all possible in lme4
+
++ Wald CIs: based on the inverse Hessian
+
+	+ very easy to compute from lme4 output (see paper)
+
+	+ relatively strong assumption of a quadratic likelihood surface
+
++ Likelihood Profile CIs: ???
+
+	+ more time-consuming but less severe assumptions (something with the asymptotic distribution of the deviance)
+
++ Parametric Bootstrap CIs: take a lot of time but avoid all asymptotic assumptions 
+
+	+ not really feasible in practice 
+
+
 + -> Compute standard errors based on the Hessian -> returned by lme4 through vcov(model_fit)
 
 	+ might not be accurate because assumptionsa are not met --> good enough?
