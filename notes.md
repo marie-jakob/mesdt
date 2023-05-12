@@ -49,3 +49,22 @@ lme4: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
 + for categorical predictors: transform GLM parameters (population-level and individual) to SDT
 
 + for continuous predictors: return SDT estimates for mean values of predictors?
+
+### Confidence Intervals
+
+##### Fixed Effects
+
++ -> Compute standard errors based on the Hessian -> returned by lme4 through vcov(model_fit)
+
++ transformation to SEs for SDT parameters through addition of Varianzadditionssatz -> account for all entries of the Fisher information matrix (covariances!)
+
++ TODO: only for the fixed parameters or also for the individual parameters? 
+
+
+##### Random Effects (Individual Parameters)
+
++ no CIs for individual parameters? probably
+
+
+
+
