@@ -14,11 +14,12 @@
 
 
 
-### GLMM Estimation in R (lme4) and Julia (MixedModels)
+### GLMM Estimation with different backends
 
-Julia: https://juliastats.org/MixedModels.jl/v4.13/optimization/#Generalized-Linear-Mixed-Effects-Models
 
-lme4: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
+__Julia__: https://juliastats.org/MixedModels.jl/v4.13/optimization/#Generalized-Linear-Mixed-Effects-Models
+
+__lme4__: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
 
 + fast = true option in Julia corresponds to nAQG = 0 in lme4!
 
@@ -31,6 +32,21 @@ lme4: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
 + could be used for selecting the random-effects structure, power analyses or in general simulations
 
 + final fit with fast = false or nAQG = 1
+
+
+__glmmTMB__ package: 
+
++ New R package using automatic differentiation to estimate GLMMs
+
++ may be faster than lme4 (but has less functionality at the moment)
+
++ https://glmmtmb.github.io/glmmTMB__glmmTMB__ package: 
+
++ New R package using automatic differentiation to estimate GLMMs
+
++ may be faster than lme4 (but has less functionality at the moment)
+
++ https://glmmtmb.github.io/glmmTMB/
 
 ### Determining the Random-Effects Structure
 
