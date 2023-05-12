@@ -4,7 +4,14 @@
 
 ### Input Syntax
 
-+ Use R formula stuff?
++ Use R formula stuff? -> afex: uses 3 different syntax variants for the ANOVA (might also be an option)
+
++ basic variant: specify formula for mu, lambda and a random term
+
++ input is used to construct two model matrices (for lambda and mu) and a random term which are then given to lme4::glmer()
+
+	+ allows to estimate interactions without the presence of main effects in the model (which is necessary for predictors affecting sensitivity and not response bias and the LRTs)
+
 
 
 ### GLMM Estimation in R (lme4) and Julia (MixedModels)
@@ -55,6 +62,9 @@ lme4: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
 ##### Fixed Effects
 
 + -> Compute standard errors based on the Hessian -> returned by lme4 through vcov(model_fit)
+
+	+ might not be accurate because assumptionsa are not met --> good enough?
+	+ lme4 also offers profile CIs but those take forever to compute and it might be difficult to transform these to the SDT parameter space
 
 + transformation to SEs for SDT parameters through addition of Varianzadditionssatz -> account for all entries of the Fisher information matrix (covariances!)
 
