@@ -1,7 +1,6 @@
 # Notes 
 
 
-
 ### Input Syntax
 
 + Use R formula stuff? -> afex: uses 3 different syntax variants for the ANOVA (might also be an option)
@@ -79,27 +78,25 @@ __glmmTMB__ package:
 
 + different variants for CIs: Wald CIs, Profile CIs, Parametric Bootstrapped CIs -> all possible in lme4
 
-+ Wald CIs: based on the inverse Hessian
++ Wald CIs: based on the inverse Hessian (observed Fisher information)
 
-	+ very easy to compute from lme4 output (see paper)
+	+ very easy to compute from lme4 output (see paper) -> variance addition of the regression parameters, including the nondiagonal elements for the covariance terms
 
-	+ relatively strong assumption of a quadratic likelihood surface
+	+ relatively strong assumption of a quadratic likelihood surface -> adequacy can be diagnosed via likelihood profiles (see below)
 
-+ Likelihood Profile CIs: ???
++ Likelihood Profile CIs: 
 
-	+ more time-consuming but less severe assumptions (something with the asymptotic distribution of the deviance)
+	+ gauge shape of the likelihood for a specific parameter of interest to compute CIs on that basis -> possible based on one fit of the model
+
+	+ more time-consuming but less severe assumptions (something with the asymptotic distribution of the deviance) -> quadratic shape of log likelihood surface is not required
+
+	+ not trivial for SDT since the SDT parameters are not part of the likelihood function -> shape of the likelihood function "in multiple directions" needed (analogous to nondiagonal elements of the Hessian)
+
+	+ profile zeta plots (see lme4 paper) can be used to diagnose to what extent the assumption of a quadratic likelihood surface holds -> if this holds, Wald CIs are fine
 
 + Parametric Bootstrap CIs: take a lot of time but avoid all asymptotic assumptions 
 
 	+ not really feasible in practice 
-
-
-+ -> Compute standard errors based on the Hessian -> returned by lme4 through vcov(model_fit)
-
-	+ might not be accurate because assumptionsa are not met --> good enough?
-	+ lme4 also offers profile CIs but those take forever to compute and it might be difficult to transform these to the SDT parameter space
-
-+ transformation to SEs for SDT parameters through addition of Varianzadditionssatz -> account for all entries of the Fisher information matrix (covariances!)
 
 + TODO: only for the fixed parameters or also for the individual parameters? 
 
