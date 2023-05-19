@@ -6,7 +6,6 @@
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
 #'
 #' @return lme4 formula
-#' @export
 #'
 #' @importFrom stats formula
 #' @importFrom lme4 findbars
@@ -30,13 +29,15 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv) {
   } else random_fac <- random_fac_mu
 
   # 0 to suppress automatic intercept (is contained in the modeldata)
-  random_formula <- paste("(0 + modeldata_random_lambda + modeldata_random_mu | ", random_fac, ")", sep = "")
+  random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ", random_fac, ")", sep = "")
 
-  glmer_formula <- formula(paste(dv, "~ 0 + modeldata_lambda + modeldata_mu + ", random_formula, sep = ""))
+  glmer_formula <- as.formula(paste(dv, "~ 0 + modeldata[['lambda']] + modeldata[['mu']] + ", random_formula, sep = ""),
+                              # parent.frame() sets scope of the parent environment (i.e., where the function
+                              # is called from) for the formula -> necessary such that modeldata can be found
+                              env = parent.frame())
 
   return(glmer_formula)
 }
-
 
 
 #' Construct Model Matrices From the Given Data to give to glmer()
@@ -48,7 +49,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv) {
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
 #'
 #' @return list of 4 model matrices (fixed and random for mu and lambda)
-#' @export
 #'
 #' @importFrom lme4 nobars
 #' @importFrom lme4 findbars
@@ -112,37 +112,57 @@ construct_modeldata <- function(formula_mu,
   # factor x1) can be removed from the modeldata matrices for LRTs of nested models
 
   return(list(
-    "modeldata_mu" = modeldata_mu,
-    "modeldata_lambda" = modeldata_lambda,
-    "modeldata_random_mu" = modeldata_random_mu,
-    "modeldata_random_lambda" = modeldata_random_lambda
+    "mu" = modeldata_mu,
+    "lambda" = modeldata_lambda,
+    "random_mu" = modeldata_random_mu,
+    "random_lambda" = modeldata_random_lambda
   ))
 }
 
 
-
-#' Fit the GLMM
+#' Fit a multilevel signal detection theory model
 #'
-#' @param formula The glmer model formula
-#' @param data data the model should be fitted to
-#' @param backend whether to use R (lme4) or Julia (MixedModels)
+#' @param formula_mu Formula specifying fixed and random effects on sensitivity
+#' @param formula_lambda Formula specifying fixed and random effects on response bias
+#' @param dv name of the (binary) dependent variable
+#' @param trial_type_var name of the variable coding signal vs. noise trials
+#' @param data dataset
+#' @backend package / library used to fit the model
+#'    -> only supports R lme4 (backend = "lme4" at the moment but support for Julia
+#'    MixedModels and glmmTMB is planned)
 #'
-#' @return lme4 fit
+#' @return TODO
+#' @import lme4
 #' @export
 #'
-#' @import lme4
-#'
 #' @examples
-fit_glmm <- function(formula, data, backend = "lme4") {
+fit_mlsdt <- function(formula_mu,
+                      formula_lambda,
+                      dv,
+                      trial_type_var = "trial_type",
+                      data,
+                      backend = "lme4") {
 
-  if (program == "R") {
-    fit <- lme4::glmer(formula, data,
-                       family = binomial(link = "probit"))
+  if (backend == "lme4") {
+    glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv)
+    modeldata <- construct_modeldata(formula_mu, formula_lambda, dv, data, trial_type_var)
 
+    # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
+    # (y, ID)
+    fit_obj <- lme4::glmer(glmer_formula,
+                           data = data,
+                           family = binomial(link = "probit"),
+                           # this is only for testing speed -> changed for actual use
+                           nAGQ = 0)
+  } else {
+    message("Only lme4 backend supported at the moment.")
+    return()
   }
-  return()
+
+  return(fit_obj)
 
 }
+
 
 
 
