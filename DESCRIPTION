@@ -11,6 +11,7 @@ RoxygenNote: 7.2.3
 URL: https://github.com/marie-jakob/mlsdt
 BugReports: https://github.com/marie-jakob/mlsdt/issues
 Imports: 
+    lme4,
     stats
 Suggests: 
     testthat (>= 3.0.0)

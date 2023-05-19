@@ -29,3 +29,10 @@ list of 4 model matrices (fixed and random for mu and lambda)
 \description{
 Construct Model Matrices From the Given Data to give to glmer()
 }
+\examples{
+construct_modeldata(
+  formula_mu = ~ x1 + (1 | ID)
+  formula_lambda = ~ x1 + (1 | ID)
+  data = data
+)
+}
