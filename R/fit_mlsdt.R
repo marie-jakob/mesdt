@@ -25,7 +25,7 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv) {
   random_fac_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][2]
 
   if (random_fac_mu != random_fac_lambda) {
-    message("Random grouping Factors must be the same for sensitivity and response bias.")
+    message("Random grouping factors must be the same for sensitivity and response bias.")
     return()
   } else random_fac <- random_fac_mu
 
@@ -81,7 +81,7 @@ construct_modeldata <- function(formula_mu,
   # set sum contrasts for transformation of parameters later
   # -> corresponds to SDT parametrization with 0 between the two distributions
   data[["trial_type"]] <- data[[trial_type_var]]
-  contrasts(test_data[["trial_type"]]) <- contr.sum(2)
+  contrasts(data[["trial_type"]]) <- contr.sum(2)
 
   # -> Intercept of modeldata matrix becomes the mean sensitivity
   trial_type_ef <- stats::model.matrix(~ trial_type, data = data)[, 2]
@@ -95,7 +95,7 @@ construct_modeldata <- function(formula_mu,
                                           data = data)
 
   # modeldata_random_mu
-  random_pred_mu <- strsplit(as.character(lme4::findbars(form_mu)), "\\|")[[1]][1]
+  random_pred_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][1]
 
   modeldata_random_mu <- stats::model.matrix(formula(paste("~ ", random_pred_mu, sep = "")),
                                       data = data)
@@ -106,7 +106,7 @@ construct_modeldata <- function(formula_mu,
   # the modeldata matrices consist only of the predictor variables for mu and lambda
   # for the fixed and random effects, respectively
   # via:
-  # ef <- attr(terms(form_lambda), "term.labels")
+  # ef <- attr(terms(formula_lambda), "term.labels")
   # mapping <- attr(modeldata_lambda, "assign")
   # all parameters of a model term (i.e., all effect-coded predictors for a 3-level
   # factor x1) can be removed from the modeldata matrices for LRTs of nested models
