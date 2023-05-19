@@ -18,9 +18,9 @@ mu_diff <- 0.2
 lambda_pop <- 0.2
 lambda_diff <- 0.3
 
-n_subj <- 50
+n_subj <- 100
 # number of trials per condition
-n_trials <- 300
+n_trials <- 500
 sigma_mu <- 0.1
 sigma_lambda <- 0.1
 sigma_mu_diff <- 0.1
@@ -92,6 +92,15 @@ sim3 <- matrix(c(Y, X1, X2, IDs), nrow = n_trials * n_subj * 2 * 2, ncol = 4)
 sim_data <- data.frame(sim3)
 
 names(sim_data) <- c("y", "trial_type", "x1", "ID")
+
+sim_data$y <- factor(sim_data$y)
+sim_data$trial_type <- factor(sim_data$trial_type)
+sim_data$x1 <- factor(sim_data$x1)
+sim_data$ID <- factor(sim_data$ID)
+
+contrasts(sim_data$y) <- contr.sum(2)
+contrasts(sim_data$x1) <- contr.sum(2)
+contrasts(sim_data$trial_type) <- contr.sum(2)
 
 internal_sdt_data <- sim_data
 
