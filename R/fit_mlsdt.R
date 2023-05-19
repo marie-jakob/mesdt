@@ -172,17 +172,15 @@ fit_mlsdt <- function(formula_mu,
 #' @param dat
 #'
 #' @return
-#' @export
-#'
-#' @import broom.mixed
 #'
 #' @examples
 transform_to_sdt <- function(fit_obj, dat, trial_type_var, pred_mu, pred_lambda) {
-  # Start with:
-  # categorical, effect-coded predictors x1 * x2 (two levels)
+
 
   fixef_lambda <- fixef(fit_obj)[grepl("lambda", names(fixef(fit_obj)))]
   fixef_mu <- fixef(fit_obj)[grepl("lambda", names(fixef(fit_obj)))]
+
+
 
 
 
