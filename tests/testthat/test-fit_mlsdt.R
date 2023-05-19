@@ -8,7 +8,8 @@ test_that("construct_glmer_formula() makes the correct formula", {
     formula_lambda = ~ x2 + (1 | ID),
     dv = "y"
     )),
-    as.character(as.formula("y ~ 0 + modeldata_lambda + modeldata_mu + (0 + modeldata_random_lambda + modeldata_random_mu | ID)"))
+    as.character(as.formula("y ~ 0 + modeldata[['lambda']] + modeldata[['mu']]+
+                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ID)"))
   )
 
   expect_equal(
@@ -17,7 +18,8 @@ test_that("construct_glmer_formula() makes the correct formula", {
       formula_lambda = ~ 1 + x2 + (x2 | VP),
       dv = "dv"
     )),
-    as.character(as.formula("dv ~ 0 + modeldata_lambda + modeldata_mu + (0 + modeldata_random_lambda + modeldata_random_mu | VP)"))
+    as.character(as.formula("dv ~ 0 + modeldata[['lambda']] + modeldata[['mu']]+
+                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
   )
 }
 )
@@ -47,12 +49,12 @@ test_that("construct_modeldata() constructs valid modeldata for a single predict
                         formula_lambda = ~ x1 + (1 | ID),
                         dv = "y",
                         data = internal_fake_data),
-    list("modeldata_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
+    list("mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
-         "modeldata_lambda" = stats::model.matrix(~ x1, data = internal_fake_data),
-         "modeldata_random_mu" = stats::model.matrix(~ 1, data = internal_fake_data) *
+         "lambda" = stats::model.matrix(~ x1, data = internal_fake_data),
+         "random_mu" = stats::model.matrix(~ 1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
-         "modeldata_random_lambda" = stats::model.matrix(~ 1, data = internal_fake_data)
+         "random_lambda" = stats::model.matrix(~ 1, data = internal_fake_data)
   ))
 })
 
@@ -62,12 +64,12 @@ test_that("construct_modeldata() constructs valid modeldata for multiple predict
                         formula_lambda = ~ x1 + x2 + (x2 | ID),
                         dv = "y",
                         data = internal_fake_data),
-    list("modeldata_mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
+    list("mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
-         "modeldata_lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
-         "modeldata_random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
+         "lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
+         "random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
-         "modeldata_random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
+         "random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
   ))
 }
 )
