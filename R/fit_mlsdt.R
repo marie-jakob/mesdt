@@ -1,83 +1,131 @@
-#' Convert two given formulas for the two SDT parameters to an lme4 formula
+#' Convert two given formulas for the two SDT parameters to a glmer() formula
 #'
-#' @param form_mu formula for sensitivity
-#' @param form_lambda formula for response bias
+#' @param formula_mu formula for sensitivity
+#' @param formula_lambda formula for response bias
 #' @param dv name of dependent variable
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
-#' @param random name of the variable of the random factor
-#' @param between predictors varying between levels of the random factor
-#' @param within predictors varying within levels of the random factor
 #'
 #' @return lme4 formula
 #' @export
 #'
 #' @importFrom stats formula
+#' @importFrom lme4 findbars
 #'
 #' @examples
-#' make_glmer_formula(
-#'   form_mu = mu ~ x_test,
-#'   form_lambda = lambda ~ x_test,
-#'   dv = "Y",
-#'   trial_type_var = "trial_type",
-#'   random = "ID",
-#'   within = c("x_test")
-#'  )
-make_glmer_formula <- function(form_mu, form_lambda, dv,
-                             trial_type_var = "trial_type",
-                             random,
-                             between = NULL,
-                             within = NULL) {
+#' construct_glmer_formula(
+#'   formula_mu = ~ x1 + (1 | ID)
+#'   formula_lambda = ~ x2 + (1 | ID)
+#'   dv = "y",
+#'   trial_type_var = "trial_type"
+#' )
+construct_glmer_formula <- function(formula_mu, formula_lambda, dv) {
 
-  # TODO: add catches for submitted variables
+  # check if the random grouping factor is the same for mu and lambda
+  random_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
+  random_fac_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][2]
 
-  # build a new formula according to lme4 syntax
-  # fixed effects
-  fixed_terms <- paste(dv, "~", trial_type_var, sep = " ")
+  if (random_fac_mu != random_fac_lambda) {
+    message("Random grouping Factors must be the same for sensitivity and response bias.")
+    return()
+  } else random_fac <- random_fac_mu
 
-  # response bias
-  if (! is.null(form_lambda)) {
-    pred_lambda <- all.vars(form_lambda)[2:length(all.vars(form_lambda))]
-    for (pred in pred_lambda) fixed_terms <- paste(fixed_terms, pred, sep = " + ")
-  }
+  # 0 to suppress automatic intercept (is contained in the modeldata)
+  random_formula <- paste("(0 + modeldata_random_lambda + modeldata_random_mu | ", random_fac, ")", sep = "")
 
-  # extract predictors for sensitivity and response bias from formulas
-  # sensitivity
-  if (! is.null(form_mu)) {
-    pred_mu <- all.vars(form_mu)[2:length(all.vars(form_mu))]
-    for (pred in pred_mu) {
-      new_term <- paste(pred, ":", trial_type_var, sep = "")
-      fixed_terms <- paste(fixed_terms, new_term, sep = " + ")
-    }
-  }
+  glmer_formula <- formula(paste(dv, "~ 0 + modeldata_lambda + modeldata_mu + ", random_formula, sep = ""))
 
-  # random effects
-  random_terms <- paste("(", trial_type_var, sep = "")
-
-  for (i in within) {
-    if (! is.null(form_lambda)) {
-      if (i %in% pred_lambda) random_terms <- paste(random_terms, i, sep = " + ")
-    }
-    if (! is.null(form_mu)) {
-      if (i %in% pred_mu) {
-        new_term <- paste(pred, ":", trial_type_var, sep = "")
-        random_terms <- paste(random_terms, new_term, sep = " + ")
-      }
-    }
-  }
-  random_terms <- paste(random_terms, " | ", random, ")", sep = "")
-
-  form_sdt <- as.formula(paste(fixed_terms, random_terms, sep = " + "),
-                         env = globalenv())
-
-  return(form_sdt)
+  return(glmer_formula)
 }
+
+
+
+#' Construct Model Matrices From the Given Data to give to glmer()
+#'
+#' @param formula_mu formula for sensitivity (mu)
+#' @param formula_lambda formula for response bias (lambda)
+#' @param dv name of dependent variable
+#' @param data dataset used to construct the model data
+#' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
+#'
+#' @return list of 4 model matrices (fixed and random for mu and lambda)
+#' @export
+#'
+#' @importFrom lme4 nobars
+#' @importFrom lme4 findbars
+#' @importFrom stats formula
+#' @importFrom stats model.matrix
+#'
+#' @examples
+#' construct_modeldata(
+#'   formula_mu = ~ x1 + (1 | ID)
+#'   formula_lambda = ~ x1 + (1 | ID)
+#'   data = data
+#' )
+construct_modeldata <- function(formula_mu,
+                            formula_lambda,
+                            dv,
+                            data,
+                            trial_type_var = "trial_type") {
+  # So far: only tested for categorical predictors
+
+
+  # modeldata for response bias
+  # -> effects on lambda are simply main effects in the model -> predictors
+  # can be included in the model without any transformation
+  modeldata_lambda <- stats::model.matrix(lme4::nobars(formula_lambda),
+                                          data = data)
+  # column names of modeldata matrix are in attr(modeldata_lambda, "dimnames")[[2]]
+
+  # modeldata for sensitivity
+  # -> effects on mu are interactions with trial_type variable
+  # set sum contrasts for transformation of parameters later
+  # -> corresponds to SDT parametrization with 0 between the two distributions
+  data[["trial_type"]] <- data[[trial_type_var]]
+  contrasts(test_data[["trial_type"]]) <- contr.sum(2)
+
+  # -> Intercept of modeldata matrix becomes the mean sensitivity
+  trial_type_ef <- stats::model.matrix(~ trial_type, data = data)[, 2]
+  modeldata_mu <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
+  modeldata_mu <- modeldata_mu * trial_type_ef
+
+  # modeldata_random_lambda
+  random_pred_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][1]
+
+  modeldata_random_lambda <- stats::model.matrix(formula(paste("~", random_pred_lambda, sep = "")),
+                                          data = data)
+
+  # modeldata_random_mu
+  random_pred_mu <- strsplit(as.character(lme4::findbars(form_mu)), "\\|")[[1]][1]
+
+  modeldata_random_mu <- stats::model.matrix(formula(paste("~ ", random_pred_mu, sep = "")),
+                                      data = data)
+  # As above: multiply this with trial_type variable to code interaction with that factor
+  modeldata_random_mu <- modeldata_random_mu * trial_type_ef
+
+
+  # the modeldata matrices consist only of the predictor variables for mu and lambda
+  # for the fixed and random effects, respectively
+  # via:
+  # ef <- attr(terms(form_lambda), "term.labels")
+  # mapping <- attr(modeldata_lambda, "assign")
+  # all parameters of a model term (i.e., all effect-coded predictors for a 3-level
+  # factor x1) can be removed from the modeldata matrices for LRTs of nested models
+
+  return(list(
+    "modeldata_mu" = modeldata_mu,
+    "modeldata_lambda" = modeldata_lambda,
+    "modeldata_random_mu" = modeldata_random_mu,
+    "modeldata_random_lambda" = modeldata_random_lambda
+  ))
+}
+
 
 
 #' Fit the GLMM
 #'
 #' @param formula The glmer model formula
 #' @param data data the model should be fitted to
-#' @param program whether to use R (lme4) or Julia (MixedModels)
+#' @param backend whether to use R (lme4) or Julia (MixedModels)
 #'
 #' @return lme4 fit
 #' @export
@@ -85,13 +133,14 @@ make_glmer_formula <- function(form_mu, form_lambda, dv,
 #' @import lme4
 #'
 #' @examples
-fit_glmm <- function(formula, data, program = "R") {
+fit_glmm <- function(formula, data, backend = "lme4") {
 
   if (program == "R") {
     fit <- lme4::glmer(formula, data,
                        family = binomial(link = "probit"))
 
   }
+  return()
 
 }
 

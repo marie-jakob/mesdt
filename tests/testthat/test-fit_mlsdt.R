@@ -1,114 +1,54 @@
-test_that("make_glmer_formula() makes a valid formula without any predictors", {
-    expect_equal(make_glmer_formula(
-      form_mu = NULL,
-      form_lambda = NULL,
-      dv = "Y",
-      trial_type_var = "trial_type",
-      random = "ID",
+#------------------------------------------------------------------------------#
+#### construct_glmer_formula() ####
+
+
+test_that("construct_glmer_formula() makes the correct formula", {
+  expect_equal(
+    as.character(construct_glmer_formula(
+    formula_mu = ~ x1 + (1 | ID),
+    formula_lambda = ~ x2 + (1 | ID),
+    dv = "y"
+    )),
+    as.character(as.formula("y ~ 0 + modeldata_lambda + modeldata_mu + (0 + modeldata_random_lambda + modeldata_random_mu | ID)"))
+  )
+
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | VP),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv"
+    )),
+    as.character(as.formula("dv ~ 0 + modeldata_lambda + modeldata_mu + (0 + modeldata_random_lambda + modeldata_random_mu | VP)"))
+  )
+
+  expect_equal(
+    construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | ID),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv"
     ),
-    as.formula("Y ~ trial_type +(trial_type | ID)",
-               env = globalenv()))
-  }
+    NULL
+  )
+}
 )
 
-test_that("make_glmer_formula() makes a valid formula without between predictors", {
-          expect_equal(make_glmer_formula(
-            form_mu = mu ~ x_test,
-            form_lambda = lambda ~ x_test,
-            dv = "Y",
-            trial_type_var = "trial_type",
-            random = "ID",
-            within = c("x_test")
-            ),
-            as.formula("Y ~ trial_type + x_test + x_test:trial_type + (trial_type + x_test + x_test:trial_type | ID)",
-                       env = globalenv()))
-  }
-)
-
-test_that("make_glmer_formula() makes a valid formula without within predictors", {
-    expect_equal(make_glmer_formula(
-      form_mu = mu ~ x_test,
-      form_lambda = lambda ~ x_test,
-      dv = "Y",
-      trial_type_var = "trial_type",
-      random = "ID",
-      between = c("x_test")
-    ),
-    as.formula("Y ~ trial_type + x_test + x_test:trial_type + (trial_type | ID)",
-              env = globalenv()))
-  }
-)
+#------------------------------------------------------------------------------#
+#### construct_modeldata() ####
 
 
-test_that("make_glmer_formula() makes a valid formula with between and within predictors", {
-    expect_equal(make_glmer_formula(
-      form_mu = mu ~ x_between + x_within,
-      form_lambda = lambda ~ x_between + x_within,
-      dv = "Y",
-      trial_type_var = "trial_type",
-      random = "ID",
-      within = c("x_within"),
-      between = c("x_between")
-    ),
-    as.formula("Y ~ trial_type + x_between + x_within + x_between:trial_type + x_within:trial_type +
-               (trial_type + x_within + x_within:trial_type | ID)",
-               env = globalenv()))
-  }
-)
+
+test_that("construct_modeldata() constructs valid modeldata", {
+  expect_equal(
+    construct_modeldata(),
+    as.character(as.formula("y ~ 0 + modeldata_lambda + modeldata_mu + (0 + modeldata_random_lambda + modeldata_random_mu | ID)"))
+  )
+}
 
 
-# TODO:
-
-# empty mu and empty lambda
-
-test_that("make_glmer_formula() makes a valid formula with empty mu formula", {
-    expect_equal(make_glmer_formula(
-      form_mu = NULL,
-      form_lambda = lambda ~ x,
-      dv = "Y",
-      trial_type_var = "trial_type",
-      random = "ID",
-    ),
-    as.formula("Y ~ trial_type + x + (trial_type | ID)",
-               env = globalenv()))
-  }
-)
-
-test_that("make_glmer_formula() makes a valid formula with empty lambda formula", {
-    expect_equal(make_glmer_formula(
-      form_mu = mu ~ x,
-      form_lambda = NULL,
-      dv = "Y",
-      trial_type_var = "trial_type",
-      random = "ID",
-      within = c("x")
-    ),
-    as.formula("Y ~ trial_type + x:trial_type + (trial_type + x:trial_type | ID)",
-               env = globalenv()))
-  }
-)
-
-
-# different predictors mu and lambda
-
-test_that("make_glmer_formula() makes a valid formula with empty lambda formula", {
-    expect_equal(make_glmer_formula(
-      form_mu = mu ~ x_mu,
-      form_lambda = lambda ~ x_lambda,
-      dv = "Y",
-      trial_type_var = "trial_type",
-      random = "ID",
-    ),
-    as.formula("Y ~ trial_type + x_lambda + x_mu:trial_type + (trial_type | ID)",
-               env = globalenv()))
-  }
-)
-
-
-# TODO: differentiate between "+" and "*"
-
-# TODO: make ":" notation for interaction terms work
-
-# TODO: check behavior of glmer() for interactions where the main effect is not present
-
+test_that("construct_modeldata() works for mu", {
+  expect_equal(
+    construct_modeldata()),
+    as.character(as.formula("y ~ 0 + modeldata_lambda + modeldata_mu + (0 + modeldata_random_lambda + modeldata_random_mu | ID)"))
+  )
+}
 
