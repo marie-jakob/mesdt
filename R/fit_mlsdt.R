@@ -169,20 +169,94 @@ fit_mlsdt <- function(formula_mu,
 #' Title
 #'
 #' @param fit_obj
-#' @param dat
+#' @param data
 #'
 #' @return
 #'
+#' TODO: test this...
 #' @examples
-transform_to_sdt <- function(fit_obj, dat, trial_type_var, pred_mu, pred_lambda) {
+transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 0.95) {
 
-
+  # Get Betas
   fixef_lambda <- fixef(fit_obj)[grepl("lambda", names(fixef(fit_obj)))]
-  fixef_mu <- fixef(fit_obj)[grepl("lambda", names(fixef(fit_obj)))]
+  fixef_mu <- fixef(fit_obj)[grepl("mu", names(fixef(fit_obj)))]
 
+  # Transform response bias parameters
+  coding_lambda <- unique(stats::model.matrix(lme4::nobars(formula_lambda),
+                                              data = data))
 
+  order_lambda <- attr(terms(lme4::nobars(formula_lambda)), "order")
+  mapping_lambda <- attr(stats::model.matrix(lme4::nobars(formula_lambda),
+                                             data = data), "assign")
 
+  # + 1 because of the intercept
+  factors_lambda <- coding_lambda[, which(order_lambda[mapping_lambda] == 1) + 1]
+  est_lambda <- coding_lambda %*% fixef_lambda * (-1)
 
+  est_lambda <- data.frame(cbind(factors_lambda, est_lambda))
+  names(est_lambda) <- c(names(est_lambda)[1:ncol(est_lambda) - 1], "estimate")
 
+  # Transform sensitivity parameters
+  # ! modeldata_mu is different from the one in the formula function -> no
+  # interaction with "trial_type" variable
+  coding_mu <- unique(stats::model.matrix(lme4::nobars(formula_mu),
+                                   data = data), data = test_data)
+
+  order_mu <- attr(terms(lme4::nobars(formula_mu)), "order")
+  mapping_mu <- attr(stats::model.matrix(lme4::nobars(formula_mu),
+                                  data = data), "assign")
+
+  # + 1 because of the intercept
+  factors_mu <- coding_mu[, which(order_mu[mapping_mu] == 1) + 1]
+  est_mu <- coding_mu %*% fixef_mu * 2
+
+  est_mu <- data.frame(cbind(factors_mu, est_mu))
+  names(est_mu) <- c(names(est_mu)[1:ncol(est_mu) - 1], "estimate")
+
+  #----------------------------------------------------------------------------#
+  #### Compute Wald SEs and CIs ####
+
+  which_lambda <- which(grepl("lambda", names(fixef(fit_obj))))
+
+  inv_hess_lambda <- as.matrix(vcov(fit_obj))[which_lambda, which_lambda]
+
+  # SEs for parameter combinations (i.e., SDT parameters)
+  # -> sqrt() of sum of elements of the inv-Hessian corresponding to added Beta weights
+  # (i.e., non-zero cells of the parameter vector)
+
+  SEs_lambda <- apply(coding_lambda, 1, function(x) {
+    sqrt(sum(inv_hess_lambda[which(x != 0), which(x != 0)]))
+  })
+
+  est_lambda$SE <- SEs_lambda
+
+  which_mu <- which(grepl("mu", names(fixef(fit_obj))))
+  inv_hess_mu <- as.matrix(vcov(fit_obj))[which_mu, which_mu]
+
+  SEs_mu <- apply(coding_mu, 1, function(x) {
+    sqrt(sum(inv_hess_mu[which(x != 0), which(x != 0)]))
+  })
+
+  est_mu$SE <- SEs_mu
+
+  # CIs
+  print(est_lambda$estimate + qnorm((1 - level) / 2))
+  est_lambda$CI_lower <- est_lambda$estimate + qnorm((1 - level) / 2) * est_lambda$SE
+  est_lambda$CI_upper <- est_lambda$estimate + qnorm(level + ((1 - level) / 2)) * est_lambda$SE
+
+  est_mu$CI_lower <- est_mu$estimate + qnorm((1 - level) / 2) * est_mu$SE
+  est_mu$CI_upper <- est_mu$estimate + qnorm(level + ((1 - level) / 2)) * est_mu$SE
+
+  return(list(
+    "lambda_estimates" = est_lambda,
+    "mu_estimates" = est_mu
+  ))
 
 }
+
+
+
+# next: compute_LRTs()
+
+
+
