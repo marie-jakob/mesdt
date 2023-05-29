@@ -18,6 +18,8 @@
 
 __Julia__: https://juliastats.org/MixedModels.jl/v4.13/optimization/#Generalized-Linear-Mixed-Effects-Models
 
+	+ integration of Julia MixedModels into R: https://github.com/mikabr/jglmm
+
 __lme4__: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
 
 + fast = true option in Julia corresponds to nAQG = 0 in lme4!
@@ -64,7 +66,7 @@ __glmmTMB__ package:
 
 + automatically center continous predictors? 
 
-+ -> TODO: check how afex does it
++ afex: automatically sets effect coding and gives a warning if continuous predictors are not centered
 
 ### SDT Parameter Estimates
 
@@ -105,6 +107,21 @@ __glmmTMB__ package:
 
 + no CIs for individual parameters? probably
 
+
+## Resources
+
+
++ lme4 estimation:
+
+	+ http://lme4.r-forge.r-project.org/slides/2011-03-16-Amsterdam/
+
+	+ https://www.alexejgossmann.com/Dissect_lmer_part1/
+
++ profile likelihood stuff
+
+	+ https://stats.stackexchange.com/questions/27976/how-can-i-find-the-standard-deviation-of-the-sample-standard-deviation-from-a-no/27981#27981
+
+	+ https://stats.stackexchange.com/questions/28671/what-is-the-exact-definition-of-profile-likelihood
 
 
 
