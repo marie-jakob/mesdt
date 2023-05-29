@@ -18,7 +18,7 @@ mu_diff <- 0.2
 lambda_pop <- 0.2
 lambda_diff <- 0.3
 
-n_subj <- 100
+n_subj <- 30
 # number of trials per condition
 n_trials <- 500
 sigma_mu <- 0.1
