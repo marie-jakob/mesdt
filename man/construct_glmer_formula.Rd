@@ -4,7 +4,13 @@
 \alias{construct_glmer_formula}
 \title{Convert two given formulas for the two SDT parameters to a glmer() formula}
 \usage{
-construct_glmer_formula(formula_mu, formula_lambda, dv)
+construct_glmer_formula(
+  formula_mu,
+  formula_lambda,
+  dv,
+  param_idx = NULL,
+  remove_from_mu = NULL
+)
 }
 \arguments{
 \item{formula_mu}{formula for sensitivity}
@@ -12,6 +18,11 @@ construct_glmer_formula(formula_mu, formula_lambda, dv)
 \item{formula_lambda}{formula for response bias}
 
 \item{dv}{name of dependent variable}
+
+\item{param_idx}{optional index of parameter to be removed to construct a reduced formula}
+
+\item{remove_from_mu}{optional argument to indicate whether the to-be-removed parameter
+should be removed from mu or lambda modeldata}
 
 \item{trial_type_var}{name of variable coding the type of trial (signal vs. noise)}
 }

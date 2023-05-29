@@ -4,10 +4,13 @@
 \alias{transform_to_sdt}
 \title{Title}
 \usage{
-transform_to_sdt(fit_obj, dat, trial_type_var, pred_mu, pred_lambda)
+transform_to_sdt(fit_obj, formula_lambda, formula_mu, data, level = 0.95)
 }
 \arguments{
-\item{dat}{}
+\item{data}{}
+}
+\value{
+TODO: test this...
 }
 \description{
 Title
