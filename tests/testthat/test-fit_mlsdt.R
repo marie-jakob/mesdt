@@ -46,7 +46,7 @@ test_that("construct_glmer_formula() makes a valid reduced formula", {
       formula_mu = ~ 1 + x1 + (x1 | VP),
       formula_lambda = ~ 1 + x2 + (x2 | VP),
       dv = "dv",
-      param_idx = 2,
+      param_idc = 2,
       remove_from_mu = T
     )),
     as.character(as.formula("dv ~ 0 + modeldata[['lambda']] + modeldata[['mu']][, -2] +
@@ -57,10 +57,24 @@ test_that("construct_glmer_formula() makes a valid reduced formula", {
       formula_mu = ~ 1 + x1 + (x1 | VP),
       formula_lambda = ~ 1 + x2 + (x2 | VP),
       dv = "dv",
-      param_idx = 3,
+      param_idc = 3,
       remove_from_mu = F
     )),
     as.character(as.formula("dv ~ 0 + modeldata[['lambda']][, -3] + modeldata[['mu']] +
+                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
+  )
+})
+
+test_that("construct_glmer_formula() makes a valid reduced formula for a vector of indices", {
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | VP),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv",
+      param_idc = which(c(1, 3, 1) == 1),
+      remove_from_mu = T
+    )),
+    as.character(as.formula("dv ~ 0 + modeldata[['lambda']] + modeldata[['mu']][, -c(1, 3)] +
                             (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
   )
 })

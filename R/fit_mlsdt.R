@@ -4,7 +4,7 @@
 #' @param formula_lambda formula for response bias
 #' @param dv name of dependent variable
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
-#' @param param_idx optional index of parameter to be removed to construct a reduced formula
+#' @param param_idc optional vector of parameters indices to be removed to construct a reduced formula
 #' @param remove_from_mu optional argument to indicate whether the to-be-removed parameter
 #'    should be removed from mu or lambda modeldata
 #'
@@ -20,7 +20,7 @@
 #'   dv = "y",
 #'   trial_type_var = "trial_type"
 #' )
-construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idx = NULL, remove_from_mu = NULL) {
+construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = NULL, remove_from_mu = NULL) {
 
   # check if the random grouping factor is the same for mu and lambda
   random_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
@@ -35,14 +35,15 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idx = 
   random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ", random_fac, ")", sep = "")
 
   # make the full model formula if no parameter index to be removed is given
-  if (is.null(param_idx))  fixed_formula <- "0 + modeldata[['lambda']] + modeldata[['mu']]"
+  if (is.null(param_idc))  fixed_formula <- "0 + modeldata[['lambda']] + modeldata[['mu']]"
   else {
     # make a reduced model formula
     if (remove_from_mu) {
-      term_reduced <- paste("modeldata[['mu']][, -", param_idx, ']', sep = "")
+      # deparse() vector for nonstandard evaluation
+      term_reduced <- paste("modeldata[['mu']][, -", deparse(param_idc), ']', sep = "")
       fixed_formula <- paste("0 + modeldata[['lambda']] + ", term_reduced, sep = "")
     } else {
-      term_reduced <- paste("modeldata[['lambda']][, -", param_idx, ']', sep = "")
+      term_reduced <- paste("modeldata[['lambda']][, -", deparse(param_idc), ']', sep = "")
       fixed_formula <- paste("0 + ", term_reduced, " + modeldata[['mu']]", sep = "")
     }
   }
@@ -272,5 +273,44 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
 
 
 
+compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, modeldata, type = 3) {
+  # only removes fixed effect, corresponding random slopes stay in the reduced model
+  # So far, only type = 3 is implemented
+  # TODO: how does type 2 make sense here (sensitivity params as interactions)
+
+  # generate formulas
+  # full_model_formula <-
+
+  # Default behavior: generate reduced models for all variables in the formula
+  # -> correspond to multiple model parameters for factors with more than two levels
+  reduced_formulas_lambda <- lapply(1:(ncol(modeldata[["lambda"]]) - 1), function(x) {
+    to_remove <- which(attr(modeldata[["lambda"]], "assign") == x)
+    construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
+                            param_idc = to_remove, remove_from_mu = F)
+    }
+  )
+
+  # set names of list to param names
+  names(reduced_formulas_lambda) <- attr(terms(nobars(formula_lambda)), "term.labels")
+
+  reduced_formulas_mu <- lapply(1:(ncol(modeldata[["mu"]]) - 1), function(x) {
+    to_remove <- which(attr(modeldata[["mu"]], "assign") == x)
+    construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
+                            param_idc = to_remove, remove_from_mu = T)
+  }
+  )
+  names(reduced_formulas_mu) <- attr(terms(nobars(formula_mu)), "term.labels")
+
+  return(list(
+    "lambda" = reduced_formulas_lambda,
+    "mu" = reduced_formulas_mu
+  ))
+
+  # fit reduced models + save log likelihood / deviance
+  # in the future --> parallelize this
+
+  # compute LRTs
+
+}
 
 
