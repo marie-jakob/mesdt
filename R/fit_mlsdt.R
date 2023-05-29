@@ -4,6 +4,9 @@
 #' @param formula_lambda formula for response bias
 #' @param dv name of dependent variable
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
+#' @param param_idx optional index of parameter to be removed to construct a reduced formula
+#' @param remove_from_mu optional argument to indicate whether the to-be-removed parameter
+#'    should be removed from mu or lambda modeldata
 #'
 #' @return lme4 formula
 #'
@@ -17,7 +20,7 @@
 #'   dv = "y",
 #'   trial_type_var = "trial_type"
 #' )
-construct_glmer_formula <- function(formula_mu, formula_lambda, dv) {
+construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idx = NULL, remove_from_mu = NULL) {
 
   # check if the random grouping factor is the same for mu and lambda
   random_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
@@ -31,11 +34,23 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv) {
   # 0 to suppress automatic intercept (is contained in the modeldata)
   random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ", random_fac, ")", sep = "")
 
-  glmer_formula <- as.formula(paste(dv, "~ 0 + modeldata[['lambda']] + modeldata[['mu']] + ", random_formula, sep = ""),
+  # make the full model formula if no parameter index to be removed is given
+  if (is.null(param_idx))  fixed_formula <- "0 + modeldata[['lambda']] + modeldata[['mu']]"
+  else {
+    # make a reduced model formula
+    if (remove_from_mu) {
+      term_reduced <- paste("modeldata[['mu']][, -", param_idx, ']', sep = "")
+      fixed_formula <- paste("0 + modeldata[['lambda']] + ", term_reduced, sep = "")
+    } else {
+      term_reduced <- paste("modeldata[['lambda']][, -", param_idx, ']', sep = "")
+      fixed_formula <- paste("0 + ", term_reduced, " + modeldata[['mu']]", sep = "")
+    }
+  }
+
+  glmer_formula <- as.formula(paste(dv, " ~ ", fixed_formula, " + ", random_formula, sep = ""),
                               # parent.frame() sets scope of the parent environment (i.e., where the function
                               # is called from) for the formula -> necessary such that modeldata can be found
                               env = parent.frame())
-
   return(glmer_formula)
 }
 
@@ -256,7 +271,6 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
 
 
 
-# next: compute_LRTs()
 
 
 

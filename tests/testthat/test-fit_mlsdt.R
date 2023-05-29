@@ -40,6 +40,31 @@ test_that("construct_glmer_formula() handles wrong input properly", {
   )
 })
 
+test_that("construct_glmer_formula() makes a valid reduced formula", {
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | VP),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv",
+      param_idx = 2,
+      remove_from_mu = T
+    )),
+    as.character(as.formula("dv ~ 0 + modeldata[['lambda']] + modeldata[['mu']][, -2] +
+                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
+  )
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | VP),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv",
+      param_idx = 3,
+      remove_from_mu = F
+    )),
+    as.character(as.formula("dv ~ 0 + modeldata[['lambda']][, -3] + modeldata[['mu']] +
+                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
+  )
+})
+
 #------------------------------------------------------------------------------#
 #### construct_modeldata() ####
 
