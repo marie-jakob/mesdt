@@ -273,13 +273,15 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
 
 
 
-compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, modeldata, type = 3) {
+compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, modeldata, type = 3) {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
   # So far, only type = 3 is implemented
   # TODO: how does type 2 make sense here (sensitivity params as interactions)
 
   # generate formulas
   # full_model_formula <-
+
+  # TODO: also test intercept of both model matrices --> mean sensitivity and response bias
 
   # Default behavior: generate reduced models for all variables in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
@@ -297,19 +299,43 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, modelda
     to_remove <- which(attr(modeldata[["mu"]], "assign") == x)
     construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
                             param_idc = to_remove, remove_from_mu = T)
-  }
+    }
   )
   names(reduced_formulas_mu) <- attr(terms(nobars(formula_mu)), "term.labels")
 
-  return(list(
-    "lambda" = reduced_formulas_lambda,
-    "mu" = reduced_formulas_mu
-  ))
-
   # fit reduced models + save log likelihood / deviance
+
+  reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), function(formula_tmp) {
+    fit_reduced <- lme4::glmer(formula_tmp,
+                               data = data,
+                               family = binomial(link = "probit"),
+                               # this is only for testing speed -> changed for actual use
+                               nAGQ = 0)
+    }
+  )
+
+  deviance_full <- stats::deviance(fit_obj)
+  deviance_reduced <- tapply(reduced_fits, stats::deviance)
+  LRT_results <- tapply(deviance_reduced, function(deviance_tmp) {
+    chisq <- deviance_tmp - deviance_full
+    p_value <- pchisq(q = chisq, df = 1, lower.tail = F)
+    return(list(
+      # columns names inspired by afex
+      "deviance_full" = deviance_full,
+      "deviance_reduced" = deviance_reduced,
+      # df changes for type II-like LRTs
+      "df.LRT" = 1,
+      "Chisq" = chisq,
+      "p.value" = p_value
+    ))
+  })
+
+
+
   # in the future --> parallelize this
 
   # compute LRTs
+  return(LRT_results)
 
 }
 
