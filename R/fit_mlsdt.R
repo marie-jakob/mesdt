@@ -315,8 +315,8 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, m
   )
 
   deviance_full <- stats::deviance(fit_obj)
-  deviance_reduced <- tapply(reduced_fits, stats::deviance)
-  LRT_results <- tapply(deviance_reduced, function(deviance_tmp) {
+  deviance_reduced <- sapply(reduced_fits, stats::deviance)
+  LRT_results <- sapply(deviance_reduced, function(deviance_tmp) {
     chisq <- deviance_tmp - deviance_full
     p_value <- pchisq(q = chisq, df = 1, lower.tail = F)
     return(list(
