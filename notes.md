@@ -18,7 +18,7 @@
 
 __Julia__: https://juliastats.org/MixedModels.jl/v4.13/optimization/#Generalized-Linear-Mixed-Effects-Models
 
-	+ integration of Julia MixedModels into R: https://github.com/mikabr/jglmm
++ integration of Julia MixedModels into R: https://github.com/mikabr/jglmm
 
 __lme4__: https://www.rdocumentation.org/packages/lme4/versions/1.1-32/topics/glmer
 
@@ -69,6 +69,10 @@ __glmmTMB__ package:
 + afex: automatically sets effect coding and gives a warning if continuous predictors are not centered
 
 ### SDT Parameter Estimates
+
++ standard regression output but separated for sensitivity and response bias
+
++ SDT estimates per category: similar to emmeans package (or in combination with the package)
 
 + for categorical predictors: transform GLM parameters (population-level and individual) to SDT
 
