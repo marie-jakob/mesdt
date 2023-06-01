@@ -1,7 +1,7 @@
 ## code to prepare `DATASET` dataset goes here
 
 
-
+set.seed(1340569)
 #------------------------------------------------------------------------------#
 #### Simulate Test Data ####
 
@@ -18,9 +18,9 @@ mu_diff <- 0.2
 lambda_pop <- 0.2
 lambda_diff <- 0.3
 
-n_subj <- 30
+n_subj <- 20
 # number of trials per condition
-n_trials <- 500
+n_trials <- 200
 sigma_mu <- 0.1
 sigma_lambda <- 0.1
 sigma_mu_diff <- 0.1
@@ -111,6 +111,10 @@ internal_sdt_data <- sim_data
 model_test <- glmer(y ~ trial_type * x1 + (trial_type * x1 | ID),
                     family = binomial(link = "probit"), data = sim_data)
 
+model_test_afex <- afex::mixed(y ~ trial_type * x1 + (trial_type * x1 | ID),
+                                family = binomial(link = "probit"), data = sim_data,
+                                method = "LRT")
+
 
 
 
@@ -134,5 +138,5 @@ contrasts(d$ID) <- contr.sum(10)
 
 internal_fake_data <- d
 
-#usethis::use_data(internal_sdt_data, internal_fake_data, internal = TRUE, overwrite = T)
-usethis::use_data(DATASET, overwrite = TRUE)
+usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_afex, internal = TRUE, overwrite = T)
+#usethis::use_data(DATASET, overwrite = TRUE)
