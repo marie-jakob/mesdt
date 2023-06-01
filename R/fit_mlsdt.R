@@ -100,7 +100,9 @@ construct_modeldata <- function(formula_mu,
   contrasts(data[["trial_type"]]) <- contr.sum(2)
 
   # -> Intercept of modeldata matrix becomes the mean sensitivity
-  trial_type_ef <- stats::model.matrix(~ trial_type, data = data)[, 2]
+  # coded with 0.5 and -0.5 such that intercept and effects can be interpreted
+  # directly as increases in sensitivity
+  trial_type_ef <- stats::model.matrix(~ trial_type, data = data)[, 2] * 0.5
   modeldata_mu <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
   modeldata_mu <- modeldata_mu * trial_type_ef
 
@@ -175,8 +177,15 @@ fit_mlsdt <- function(formula_mu,
     return()
   }
 
-  return(fit_obj)
+  coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
+  rownames(coefs_lambda) <- gsub('modeldata', "", rownames(coefs_lambda))
+  coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
+  rownames(coefs_mu) <- gsub('modeldata', "", rownames(coefs_mu))
 
+  return(list(
+    "Lambda" = coefs_lambda,
+    "Mu" = coefs_mu
+  ))
 }
 
 
@@ -271,19 +280,8 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
 }
 
 
-
-
-compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, modeldata, type = 3) {
-  # only removes fixed effect, corresponding random slopes stay in the reduced model
-  # So far, only type = 3 is implemented
-  # TODO: how does type 2 make sense here (sensitivity params as interactions)
-
-  # generate formulas
-  # full_model_formula <-
-
-  # TODO: also test intercept of both model matrices --> mean sensitivity and response bias
-
-  # Default behavior: generate reduced models for all variables in the formula
+fit_submodels <- function(formula_mu, formula_lambda, dv, data, modeldata, type = 3, test_intercepts = F) {
+  # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
   reduced_formulas_lambda <- lapply(1:(ncol(modeldata[["lambda"]]) - 1), function(x) {
     to_remove <- which(attr(modeldata[["lambda"]], "assign") == x)
@@ -291,9 +289,10 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, m
                             param_idc = to_remove, remove_from_mu = F)
     }
   )
+  #if (! test_intercepts) reduced_formulas_lambda <- reduced_formulas_lambda
 
   # set names of list to param names
-  names(reduced_formulas_lambda) <- attr(terms(nobars(formula_lambda)), "term.labels")
+  names(reduced_formulas_lambda) <- paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_")
 
   reduced_formulas_mu <- lapply(1:(ncol(modeldata[["mu"]]) - 1), function(x) {
     to_remove <- which(attr(modeldata[["mu"]], "assign") == x)
@@ -301,11 +300,11 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, m
                             param_idc = to_remove, remove_from_mu = T)
     }
   )
-  names(reduced_formulas_mu) <- attr(terms(nobars(formula_mu)), "term.labels")
+  names(reduced_formulas_mu) <- paste(attr(terms(nobars(formula_mu)), "term.labels"), "mu", sep = "_")
 
-  # fit reduced models + save log likelihood / deviance
-
+  # fit reduced models
   reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), function(formula_tmp) {
+    print(paste("Fitting ", formula_tmp, sep = ""))
     fit_reduced <- lme4::glmer(formula_tmp,
                                data = data,
                                family = binomial(link = "probit"),
@@ -313,30 +312,47 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, m
                                nAGQ = 0)
     }
   )
+  return(reduced_fits)
+}
 
-  deviance_full <- stats::deviance(fit_obj)
-  deviance_reduced <- sapply(reduced_fits, stats::deviance)
-  LRT_results <- sapply(deviance_reduced, function(deviance_tmp) {
-    chisq <- deviance_tmp - deviance_full
+
+compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
+                         modeldata, type = 3, test_intercepts = F) {
+  # only removes fixed effect, corresponding random slopes stay in the reduced model
+  # So far, only type = 3 is implemented
+  # TODO: how does type 2 make sense here (sensitivity params as interactions)
+  # TODO: also test intercept of both model matrices --> mean sensitivity and response bias
+
+  reduced_fits <- fit_submodels(formula_mu, formula_lambda, dv, data, modeldata, type, test_intercepts)
+
+  LL_full <- stats::logLik(fit_obj)
+  LL_reduced <- sapply(reduced_fits, stats::logLik)
+
+  LRT_results <- sapply(reduced_fits, function(fit_tmp) {
+    LL_reduced <- stats::logLik(fit_tmp)
+    chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
     p_value <- pchisq(q = chisq, df = 1, lower.tail = F)
-    return(list(
+    df <- stats::df.residual(fit_tmp) - stats::df.residual(fit_obj)
+
+    return(data.frame(
       # columns names inspired by afex
-      "deviance_full" = deviance_full,
-      "deviance_reduced" = deviance_reduced,
+      "deviance_full" = -2 * LL_full,
+      "deviance_reduced" = -2 * LL_reduced,
       # df changes for type II-like LRTs
-      "df.LRT" = 1,
+      "df.LRT" = df,
       "Chisq" = chisq,
       "p.value" = p_value
     ))
   })
 
 
-
   # in the future --> parallelize this
 
   # compute LRTs
-  return(LRT_results)
-
+  return(list(
+    "reduced_fits" = reduced_fits,
+    "LRTs" = t(LRT_results)
+    ))
 }
 
 
