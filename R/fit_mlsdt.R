@@ -31,8 +31,42 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = 
     return()
   } else random_fac <- random_fac_mu
 
-  # 0 to suppress automatic intercept (is contained in the modeldata)
-  random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ", random_fac, ")", sep = "")
+
+  # Handle
+  if (is.null(lme4::findbars(formula_lambda)) | is.null(lme4::findbars(formula_mu))) {
+    message("At least one formula does not contain any random-effects terms. Returning NULL")
+    return()
+  }
+
+  # Handle given random effects-structure and convert to the corresponding internal formula
+  # Logic: Variables are in the same parentheses iff they are correlated (no "||" stuff)
+
+  # Case 1: No Correlations
+  # -> as many random-effects terms as predictors in the model
+  rd_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
+    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+    })
+  rd_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
+    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+    })
+
+  if (length(rd_pred_lambda) == length(lme4::findbars(formula_lambda)) &
+      length(rd_pred_mu) == length(lme4::findbars(formula_mu))) {
+    random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] || ", random_fac, ")", sep = "")
+  }
+
+
+  # Case 2: Everything Correlated
+  # -> one random-effects term
+  # -> ~ ... + (modeldata[["random_mu"]] + modeldata[["random_lambda]] | ID)
+  if (length(lme4::findbars(formula_lambda)) == 1 & length(lme4::findbars(formula_mu)) == 1) {
+    # 0 to suppress automatic intercept (is contained in the modeldata)
+    random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ", random_fac, ")", sep = "")
+  }
+
+
+  # Case 3: Mix
+
 
   # make the full model formula if no parameter index to be removed is given
   if (is.null(param_idc))  fixed_formula <- "0 + modeldata[['lambda']] + modeldata[['mu']]"
@@ -107,13 +141,18 @@ construct_modeldata <- function(formula_mu,
   modeldata_mu <- modeldata_mu * trial_type_ef
 
   # modeldata_random_lambda
-  random_pred_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][1]
+  random_pred_lambda <- paste(sapply(lme4::findbars(formula_lambda), function(x) {
+    gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
+    }), collapse = "+")
 
   modeldata_random_lambda <- stats::model.matrix(formula(paste("~", random_pred_lambda, sep = "")),
                                           data = data)
 
   # modeldata_random_mu
-  random_pred_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][1]
+  # random_pred_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][1]
+  random_pred_mu <- paste(sapply(lme4::findbars(formula_mu), function(x) {
+    gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
+    }), collapse = "+")
 
   modeldata_random_mu <- stats::model.matrix(formula(paste("~ ", random_pred_mu, sep = "")),
                                       data = data)
@@ -183,6 +222,7 @@ fit_mlsdt <- function(formula_mu,
   rownames(coefs_mu) <- gsub('modeldata', "", rownames(coefs_mu))
 
   return(list(
+    "fit_obj" = fit_obj,
     "Lambda" = coefs_lambda,
     "Mu" = coefs_mu
   ))

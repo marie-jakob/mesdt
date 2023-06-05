@@ -89,10 +89,10 @@ test_that("construct_modeldata() constructs valid modeldata for a single predict
                         dv = "y",
                         data = internal_fake_data),
     list("mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
-           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ x1, data = internal_fake_data),
          "random_mu" = stats::model.matrix(~ 1, data = internal_fake_data) *
-           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "random_lambda" = stats::model.matrix(~ 1, data = internal_fake_data)
   ))
 })
@@ -104,11 +104,43 @@ test_that("construct_modeldata() constructs valid modeldata for multiple predict
                         dv = "y",
                         data = internal_fake_data),
     list("mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
-           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
          "random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
-           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2],
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
   ))
 }
 )
+
+test_that("construct_modeldata() works for suppressed correlations", {
+  # -> modeldata should not be affected, only formula
+
+  # "||" syntax
+  expect_equal(
+    construct_modeldata(formula_mu = ~ x1 * x2 + (x1 || ID),
+                        formula_lambda = ~ x1 + x2 + (x2 || ID),
+                        dv = "y",
+                        data = internal_fake_data),
+    list("mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
+         "lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
+         "random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
+         "random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
+    ))
+
+  # separated random effects syntax
+  expect_equal(
+    construct_modeldata(formula_mu = ~ x1 * x2 + (1 | ID) + (0 + x1 | ID),
+                        formula_lambda = ~ x1 + x2 + (1 | ID) + (0 + x2 | ID),
+                        dv = "y",
+                        data = internal_fake_data),
+    list("mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
+         "lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
+         "random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
+           stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
+         "random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
+    ))
+})
