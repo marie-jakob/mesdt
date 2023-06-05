@@ -115,6 +115,12 @@ __glmmTMB__ package:
 + no CIs for individual parameters? probably
 
 
+### Prediction & Simulation
+
++ predict() function would be nice -> could run into problems with the way the model matrices are generated. Adding the variables from the model matrices to the data might help
+
++ simulating from known parameter values -> basis for future simulation-based power analysis functionality
+
 ## Resources
 
 
