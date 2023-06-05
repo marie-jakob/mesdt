@@ -8,8 +8,8 @@ test_that("construct_glmer_formula() makes the correct formula", {
     formula_lambda = ~ x2 + (1 | ID),
     dv = "y"
     )),
-    as.character(as.formula("y ~ 0 + modeldata[['lambda']] + modeldata[['mu']]+
-                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ID)"))
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']]+
+                            (0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | ID)"))
   )
 
   expect_equal(
@@ -18,8 +18,8 @@ test_that("construct_glmer_formula() makes the correct formula", {
       formula_lambda = ~ 1 + x2 + (x2 | VP),
       dv = "dv"
     )),
-    as.character(as.formula("dv ~ 0 + modeldata[['lambda']] + modeldata[['mu']]+
-                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']]+
+                            (0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | VP)"))
   )
 }
 )
@@ -49,8 +49,8 @@ test_that("construct_glmer_formula() makes a valid reduced formula", {
       param_idc = 2,
       remove_from_mu = T
     )),
-    as.character(as.formula("dv ~ 0 + modeldata[['lambda']] + modeldata[['mu']][, -2] +
-                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']][, -2] +
+                            (0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | VP)"))
   )
   expect_equal(
     as.character(construct_glmer_formula(
@@ -60,8 +60,8 @@ test_that("construct_glmer_formula() makes a valid reduced formula", {
       param_idc = 3,
       remove_from_mu = F
     )),
-    as.character(as.formula("dv ~ 0 + modeldata[['lambda']][, -3] + modeldata[['mu']] +
-                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
+    as.character(as.formula("dv ~ 0 + mm[['lambda']][, -3] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | VP)"))
   )
 })
 
@@ -74,73 +74,73 @@ test_that("construct_glmer_formula() makes a valid reduced formula for a vector 
       param_idc = which(c(1, 3, 1) == 1),
       remove_from_mu = T
     )),
-    as.character(as.formula("dv ~ 0 + modeldata[['lambda']] + modeldata[['mu']][, -c(1, 3)] +
-                            (0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | VP)"))
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']][, -c(1, 3)] +
+                            (0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | VP)"))
   )
 })
 
 #------------------------------------------------------------------------------#
-#### construct_modeldata() ####
+#### construct_modelmatrices() ####
 
-test_that("construct_modeldata() constructs valid modeldata for a single predictor and a random intercept", {
+test_that("construct_modelmatrices() constructs valid mm for a single predictor and a random intercept", {
   expect_equal(
-    construct_modeldata(formula_mu = ~ x1 + (1 | ID),
+    construct_modelmatrices(formula_mu = ~ x1 + (1 | ID),
                         formula_lambda = ~ x1 + (1 | ID),
                         dv = "y",
                         data = internal_fake_data),
     list("mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ x1, data = internal_fake_data),
-         "random_mu" = stats::model.matrix(~ 1, data = internal_fake_data) *
+         "rdm_mu" = stats::model.matrix(~ 1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
-         "random_lambda" = stats::model.matrix(~ 1, data = internal_fake_data)
+         "rdm_lambda" = stats::model.matrix(~ 1, data = internal_fake_data)
   ))
 })
 
-test_that("construct_modeldata() constructs valid modeldata for multiple predictors and random slopes", {
+test_that("construct_modelmatrices() constructs valid mm for multiple predictors and random slopes", {
   expect_equal(
-    construct_modeldata(formula_mu = ~ x1 * x2 + (x1 | ID),
+    construct_modelmatrices(formula_mu = ~ x1 * x2 + (x1 | ID),
                         formula_lambda = ~ x1 + x2 + (x2 | ID),
                         dv = "y",
                         data = internal_fake_data),
     list("mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
-         "random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
+         "rdm_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
-         "random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
+         "rdm_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
   ))
 }
 )
 
-test_that("construct_modeldata() works for suppressed correlations", {
-  # -> modeldata should not be affected, only formula
+test_that("construct_modelmatrices() works for suppressed correlations", {
+  # -> mm should not be affected, only formula
 
   # "||" syntax
   expect_equal(
-    construct_modeldata(formula_mu = ~ x1 * x2 + (x1 || ID),
+    construct_modelmatrices(formula_mu = ~ x1 * x2 + (x1 || ID),
                         formula_lambda = ~ x1 + x2 + (x2 || ID),
                         dv = "y",
                         data = internal_fake_data),
     list("mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
-         "random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
+         "rdm_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
-         "random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
+         "rdm_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
     ))
 
   # separated random effects syntax
   expect_equal(
-    construct_modeldata(formula_mu = ~ x1 * x2 + (1 | ID) + (0 + x1 | ID),
+    construct_modelmatrices(formula_mu = ~ x1 * x2 + (1 | ID) + (0 + x1 | ID),
                         formula_lambda = ~ x1 + x2 + (1 | ID) + (0 + x2 | ID),
                         dv = "y",
                         data = internal_fake_data),
     list("mu" = stats::model.matrix(~ x1 * x2, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ x1 + x2, data = internal_fake_data),
-         "random_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
+         "rdm_mu" = stats::model.matrix(~ x1, data = internal_fake_data) *
            stats::model.matrix(~ trial_type, data = internal_fake_data)[, 2] * 0.5,
-         "random_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
+         "rdm_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
     ))
 })

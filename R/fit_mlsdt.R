@@ -6,7 +6,7 @@
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
 #' @param param_idc optional vector of parameters indices to be removed to construct a reduced formula
 #' @param remove_from_mu optional argument to indicate whether the to-be-removed parameter
-#'    should be removed from mu or lambda modeldata
+#'    should be removed from mu or lambda model matrix
 #'
 #' @return lme4 formula
 #'
@@ -23,13 +23,13 @@
 construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = NULL, remove_from_mu = NULL) {
 
   # check if the random grouping factor is the same for mu and lambda
-  random_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
-  random_fac_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][2]
+  rdm_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
+  rdm_fac_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][2]
 
-  if (random_fac_mu != random_fac_lambda) {
+  if (rdm_fac_mu != rdm_fac_lambda) {
     message("Random grouping factors must be the same for sensitivity and response bias.")
     return()
-  } else random_fac <- random_fac_mu
+  } else rdm_fac <- rdm_fac_mu
 
 
   # Handle
@@ -52,16 +52,16 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = 
 
   if (length(rd_pred_lambda) == length(lme4::findbars(formula_lambda)) &
       length(rd_pred_mu) == length(lme4::findbars(formula_mu))) {
-    random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] || ", random_fac, ")", sep = "")
+    rdm_formula <- paste("(0 + mm[['rdm_lambda']] + mm[['rdm_mu']] || ", rdm_fac, ")", sep = "")
   }
 
 
   # Case 2: Everything Correlated
   # -> one random-effects term
-  # -> ~ ... + (modeldata[["random_mu"]] + modeldata[["random_lambda]] | ID)
+  # -> ~ ... + (mm[["rdm_mu"]] + mm[["rdm_lambda]] | ID)
   if (length(lme4::findbars(formula_lambda)) == 1 & length(lme4::findbars(formula_mu)) == 1) {
-    # 0 to suppress automatic intercept (is contained in the modeldata)
-    random_formula <- paste("(0 + modeldata[['random_lambda']] + modeldata[['random_mu']] | ", random_fac, ")", sep = "")
+    # 0 to suppress automatic intercept (is contained in the mm)
+    rdm_formula <- paste("(0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | ", rdm_fac, ")", sep = "")
   }
 
 
@@ -69,22 +69,22 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = 
 
 
   # make the full model formula if no parameter index to be removed is given
-  if (is.null(param_idc))  fixed_formula <- "0 + modeldata[['lambda']] + modeldata[['mu']]"
+  if (is.null(param_idc))  fixed_formula <- "0 + mm[['lambda']] + mm[['mu']]"
   else {
     # make a reduced model formula
     if (remove_from_mu) {
       # deparse() vector for nonstandard evaluation
-      term_reduced <- paste("modeldata[['mu']][, -", deparse(param_idc), ']', sep = "")
-      fixed_formula <- paste("0 + modeldata[['lambda']] + ", term_reduced, sep = "")
+      term_reduced <- paste("mm[['mu']][, -", deparse(param_idc), ']', sep = "")
+      fixed_formula <- paste("0 + mm[['lambda']] + ", term_reduced, sep = "")
     } else {
-      term_reduced <- paste("modeldata[['lambda']][, -", deparse(param_idc), ']', sep = "")
-      fixed_formula <- paste("0 + ", term_reduced, " + modeldata[['mu']]", sep = "")
+      term_reduced <- paste("mm[['lambda']][, -", deparse(param_idc), ']', sep = "")
+      fixed_formula <- paste("0 + ", term_reduced, " + mm[['mu']]", sep = "")
     }
   }
 
-  glmer_formula <- as.formula(paste(dv, " ~ ", fixed_formula, " + ", random_formula, sep = ""),
+  glmer_formula <- as.formula(paste(dv, " ~ ", fixed_formula, " + ", rdm_formula, sep = ""),
                               # parent.frame() sets scope of the parent environment (i.e., where the function
-                              # is called from) for the formula -> necessary such that modeldata can be found
+                              # is called from) for the formula -> necessary such that model matrices can be found
                               env = parent.frame())
   return(glmer_formula)
 }
@@ -106,12 +106,12 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = 
 #' @importFrom stats model.matrix
 #'
 #' @examples
-#' construct_modeldata(
+#' construct_modelmatrices(
 #'   formula_mu = ~ x1 + (1 | ID)
 #'   formula_lambda = ~ x1 + (1 | ID)
 #'   data = data
 #' )
-construct_modeldata <- function(formula_mu,
+construct_modelmatrices <- function(formula_mu,
                             formula_lambda,
                             dv,
                             data,
@@ -119,60 +119,60 @@ construct_modeldata <- function(formula_mu,
   # So far: only tested for categorical predictors
 
 
-  # modeldata for response bias
+  # model matrix for response bias
   # -> effects on lambda are simply main effects in the model -> predictors
   # can be included in the model without any transformation
-  modeldata_lambda <- stats::model.matrix(lme4::nobars(formula_lambda),
+  mm_lambda <- stats::model.matrix(lme4::nobars(formula_lambda),
                                           data = data)
-  # column names of modeldata matrix are in attr(modeldata_lambda, "dimnames")[[2]]
+  # column names of model matrix are in attr(mm_lambda, "dimnames")[[2]]
 
-  # modeldata for sensitivity
+  # model matrix for sensitivity
   # -> effects on mu are interactions with trial_type variable
   # set sum contrasts for transformation of parameters later
   # -> corresponds to SDT parametrization with 0 between the two distributions
   data[["trial_type"]] <- data[[trial_type_var]]
   contrasts(data[["trial_type"]]) <- contr.sum(2)
 
-  # -> Intercept of modeldata matrix becomes the mean sensitivity
+  # -> Intercept of model matrix becomes the mean sensitivity
   # coded with 0.5 and -0.5 such that intercept and effects can be interpreted
   # directly as increases in sensitivity
   trial_type_ef <- stats::model.matrix(~ trial_type, data = data)[, 2] * 0.5
-  modeldata_mu <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
-  modeldata_mu <- modeldata_mu * trial_type_ef
+  mm_mu <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
+  mm_mu <- mm_mu * trial_type_ef
 
-  # modeldata_random_lambda
-  random_pred_lambda <- paste(sapply(lme4::findbars(formula_lambda), function(x) {
+  # mm_rdm_lambda
+  rdm_pred_lambda <- paste(sapply(lme4::findbars(formula_lambda), function(x) {
     gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
     }), collapse = "+")
 
-  modeldata_random_lambda <- stats::model.matrix(formula(paste("~", random_pred_lambda, sep = "")),
+  mm_rdm_lambda <- stats::model.matrix(formula(paste("~", rdm_pred_lambda, sep = "")),
                                           data = data)
 
-  # modeldata_random_mu
-  # random_pred_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][1]
-  random_pred_mu <- paste(sapply(lme4::findbars(formula_mu), function(x) {
+  # mm_rdm_mu
+  # rdm_pred_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][1]
+  rdm_pred_mu <- paste(sapply(lme4::findbars(formula_mu), function(x) {
     gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
     }), collapse = "+")
 
-  modeldata_random_mu <- stats::model.matrix(formula(paste("~ ", random_pred_mu, sep = "")),
+  mm_rdm_mu <- stats::model.matrix(formula(paste("~ ", rdm_pred_mu, sep = "")),
                                       data = data)
   # As above: multiply this with trial_type variable to code interaction with that factor
-  modeldata_random_mu <- modeldata_random_mu * trial_type_ef
+  mm_rdm_mu <- mm_rdm_mu * trial_type_ef
 
 
-  # the modeldata matrices consist only of the predictor variables for mu and lambda
+  # the model matrices consist only of the predictor variables for mu and lambda
   # for the fixed and random effects, respectively
   # via:
   # ef <- attr(terms(formula_lambda), "term.labels")
-  # mapping <- attr(modeldata_lambda, "assign")
+  # mapping <- attr(mm_lambda, "assign")
   # all parameters of a model term (i.e., all effect-coded predictors for a 3-level
-  # factor x1) can be removed from the modeldata matrices for LRTs of nested models
+  # factor x1) can be removed from the model matrices for LRTs of nested models
 
   return(list(
-    "mu" = modeldata_mu,
-    "lambda" = modeldata_lambda,
-    "random_mu" = modeldata_random_mu,
-    "random_lambda" = modeldata_random_lambda
+    "mu" = mm_mu,
+    "lambda" = mm_lambda,
+    "rdm_mu" = mm_rdm_mu,
+    "rdm_lambda" = mm_rdm_lambda
   ))
 }
 
@@ -202,7 +202,7 @@ fit_mlsdt <- function(formula_mu,
 
   if (backend == "lme4") {
     glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv)
-    modeldata <- construct_modeldata(formula_mu, formula_lambda, dv, data, trial_type_var)
+    mm <- construct_mm(formula_mu, formula_lambda, dv, data, trial_type_var)
 
     # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
     # (y, ID)
@@ -217,9 +217,9 @@ fit_mlsdt <- function(formula_mu,
   }
 
   coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
-  rownames(coefs_lambda) <- gsub('modeldata', "", rownames(coefs_lambda))
+  rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
   coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
-  rownames(coefs_mu) <- gsub('modeldata', "", rownames(coefs_mu))
+  rownames(coefs_mu) <- gsub('mm', "", rownames(coefs_mu))
 
   return(list(
     "fit_obj" = fit_obj,
@@ -262,7 +262,7 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
   names(est_lambda) <- c(names(est_lambda)[1:ncol(est_lambda) - 1], "estimate")
 
   # Transform sensitivity parameters
-  # ! modeldata_mu is different from the one in the formula function -> no
+  # ! mm_mu is different from the one in the formula function -> no
   # interaction with "trial_type" variable
   coding_mu <- unique(stats::model.matrix(lme4::nobars(formula_mu),
                                    data = data), data = test_data)
@@ -320,11 +320,11 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
 }
 
 
-fit_submodels <- function(formula_mu, formula_lambda, dv, data, modeldata, type = 3, test_intercepts = F) {
+fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F) {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
-  reduced_formulas_lambda <- lapply(1:(ncol(modeldata[["lambda"]]) - 1), function(x) {
-    to_remove <- which(attr(modeldata[["lambda"]], "assign") == x)
+  reduced_formulas_lambda <- lapply(1:(ncol(mm[["lambda"]]) - 1), function(x) {
+    to_remove <- which(attr(mm[["lambda"]], "assign") == x)
     construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
                             param_idc = to_remove, remove_from_mu = F)
     }
@@ -334,8 +334,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, modeldata, type 
   # set names of list to param names
   names(reduced_formulas_lambda) <- paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_")
 
-  reduced_formulas_mu <- lapply(1:(ncol(modeldata[["mu"]]) - 1), function(x) {
-    to_remove <- which(attr(modeldata[["mu"]], "assign") == x)
+  reduced_formulas_mu <- lapply(1:(ncol(mm[["mu"]]) - 1), function(x) {
+    to_remove <- which(attr(mm[["mu"]], "assign") == x)
     construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
                             param_idc = to_remove, remove_from_mu = T)
     }
@@ -357,13 +357,13 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, modeldata, type 
 
 
 compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
-                         modeldata, type = 3, test_intercepts = F) {
+                         mm, type = 3, test_intercepts = F) {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
   # So far, only type = 3 is implemented
   # TODO: how does type 2 make sense here (sensitivity params as interactions)
   # TODO: also test intercept of both model matrices --> mean sensitivity and response bias
 
-  reduced_fits <- fit_submodels(formula_mu, formula_lambda, dv, data, modeldata, type, test_intercepts)
+  reduced_fits <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts)
 
   LL_full <- stats::logLik(fit_obj)
   LL_reduced <- sapply(reduced_fits, stats::logLik)
