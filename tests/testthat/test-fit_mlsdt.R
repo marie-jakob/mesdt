@@ -165,6 +165,11 @@ test_that("fit_mlsdt() fits the right model^^", {
   # mu fixef effects
   expect_equal(unname(fixef(fit))[3:4], unname(fixef(model_test))[3:4] * 2, tolerance = 1e-4)
 
+  # observed Fisher information
+  expect_equal(unname(vcov(fit))[1:2, 1:2], unname(vcov(model_test))[1:2, 1:2], tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[3:4, 3:4], unname(vcov(model_test))[3:4, 3:4] * 4, tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[1:2, 3:4], unname(vcov(model_test))[1:2, 3:4] * 2, tolerance = 1e-3)
+
   # lambda random effect variances
   expect_equal(as.data.frame(VarCorr(fit))$vcov[1:2], as.data.frame(VarCorr(model_test))$vcov[1:2], tolerance = 1e-3)
   expect_equal(as.data.frame(VarCorr(fit))$vcov[3:4], as.data.frame(VarCorr(model_test))$vcov[3:4] * 4, tolerance = 1e-3)
