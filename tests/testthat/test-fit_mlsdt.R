@@ -144,3 +144,20 @@ test_that("construct_modelmatrices() works for suppressed correlations", {
          "rdm_lambda" = stats::model.matrix(~ x2, data = internal_fake_data)
     ))
 })
+
+
+#------------------------------------------------------------------------------#
+#### fit_mlsdt() ####
+
+# use a saved model for this
+
+test_that("fit_mlsdt() fits the right model^^", {
+  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
+  expect_equal(fixef(fit), fixef(model_test))
+}
+)
+
+# equal number of parameters
+# same parameter estimates (up to a small tolerance)
+# same standard errors (up to a small tolerance)
+expect_equal()

@@ -131,7 +131,7 @@ construct_modelmatrices <- function(formula_mu,
   # set sum contrasts for transformation of parameters later
   # -> corresponds to SDT parametrization with 0 between the two distributions
   data[["trial_type"]] <- data[[trial_type_var]]
-  contrasts(data[["trial_type"]]) <- contr.sum(2)
+  # contrasts(data[["trial_type"]]) <- contr.sum(2)
 
   # -> Intercept of model matrix becomes the mean sensitivity
   # coded with 0.5 and -0.5 such that intercept and effects can be interpreted
@@ -202,7 +202,7 @@ fit_mlsdt <- function(formula_mu,
 
   if (backend == "lme4") {
     glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv)
-    mm <- construct_mm(formula_mu, formula_lambda, dv, data, trial_type_var)
+    mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
 
     # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
     # (y, ID)

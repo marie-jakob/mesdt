@@ -20,11 +20,11 @@ lambda_diff <- 0.3
 
 n_subj <- 20
 # number of trials per condition
-n_trials <- 200
-sigma_mu <- 0.1
-sigma_lambda <- 0.1
-sigma_mu_diff <- 0.1
-sigma_lambda_diff <- 0.1
+n_trials <- 50
+sigma_mu <- 0.4
+sigma_lambda <- 0.4
+sigma_mu_diff <- 0.4
+sigma_lambda_diff <- 0.4
 
 mu_ind <- rnorm(n_subj, mean = mu_pop, sd = sigma_mu)
 mu_diff_ind <- rnorm(n_subj, mean = mu_diff, sd = sigma_mu_diff)
@@ -72,13 +72,13 @@ for (i in 1:n_subj) {
 # 1st half: signals (X1 = 1), 2nd half lures (X1 = -1)
 
 Y <- c(signals_high, signals_low, lures_high, lures_low)
-X1 <- c(rep(1, n_subj * n_trials * 2),
-        rep(-1, n_subj * n_trials * 2))
+X1 <- c(rep(0.5, n_subj * n_trials * 2),
+        rep(-0,5, n_subj * n_trials * 2))
 
-X2 <- c(rep(1, n_subj * n_trials),
-        rep(-1, n_subj * n_trials),
-        rep(1, n_subj * n_trials),
-        rep(-1, n_subj * n_trials))
+X2 <- c(rep(0.5, n_subj * n_trials),
+        rep(-0.5, n_subj * n_trials),
+        rep(0.5, n_subj * n_trials),
+        rep(-0.5, n_subj * n_trials))
 
 # IDs for targets
 IDs <- c(sort(rep(1:n_subj, n_trials)),
@@ -94,13 +94,10 @@ sim_data <- data.frame(sim3)
 names(sim_data) <- c("y", "trial_type", "x1", "ID")
 
 sim_data$y <- factor(sim_data$y)
-sim_data$trial_type <- factor(sim_data$trial_type)
+#sim_data$trial_type <- factor(sim_data$trial_type)
 sim_data$x1 <- factor(sim_data$x1)
 sim_data$ID <- factor(sim_data$ID)
 
-contrasts(sim_data$y) <- contr.sum(2)
-contrasts(sim_data$x1) <- contr.sum(2)
-contrasts(sim_data$trial_type) <- contr.sum(2)
 
 internal_sdt_data <- sim_data
 
@@ -109,7 +106,7 @@ internal_sdt_data <- sim_data
 #### GLMM for sim data ####
 
 model_test <- glmer(y ~ trial_type * x1 + (trial_type * x1 | ID),
-                    family = binomial(link = "probit"), data = sim_data)
+                    family = binomial(link = "probit"), data = sim_data, nAGQ = 0)
 
 model_test_afex <- afex::mixed(y ~ trial_type * x1 + (trial_type * x1 | ID),
                                 family = binomial(link = "probit"), data = sim_data,
