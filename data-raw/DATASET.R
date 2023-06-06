@@ -72,13 +72,13 @@ for (i in 1:n_subj) {
 # 1st half: signals (X1 = 1), 2nd half lures (X1 = -1)
 
 Y <- c(signals_high, signals_low, lures_high, lures_low)
-X1 <- c(rep(0.5, n_subj * n_trials * 2),
-        rep(-0,5, n_subj * n_trials * 2))
+X1 <- c(rep(1, n_subj * n_trials * 2),
+        rep(-1, n_subj * n_trials * 2))
 
-X2 <- c(rep(0.5, n_subj * n_trials),
-        rep(-0.5, n_subj * n_trials),
-        rep(0.5, n_subj * n_trials),
-        rep(-0.5, n_subj * n_trials))
+X2 <- c(rep(1, n_subj * n_trials),
+        rep(-1, n_subj * n_trials),
+        rep(1, n_subj * n_trials),
+        rep(-1, n_subj * n_trials))
 
 # IDs for targets
 IDs <- c(sort(rep(1:n_subj, n_trials)),
@@ -95,7 +95,7 @@ names(sim_data) <- c("y", "trial_type", "x1", "ID")
 
 sim_data$y <- factor(sim_data$y)
 #sim_data$trial_type <- factor(sim_data$trial_type)
-sim_data$x1 <- factor(sim_data$x1)
+#sim_data$x1 <- factor(sim_data$x1)
 sim_data$ID <- factor(sim_data$ID)
 
 
@@ -105,14 +105,22 @@ internal_sdt_data <- sim_data
 #------------------------------------------------------------------------------#
 #### GLMM for sim data ####
 
-model_test <- glmer(y ~ trial_type * x1 + (trial_type * x1 | ID),
-                    family = binomial(link = "probit"), data = sim_data, nAGQ = 0)
-
-model_test_afex <- afex::mixed(y ~ trial_type * x1 + (trial_type * x1 | ID),
-                                family = binomial(link = "probit"), data = sim_data,
-                                method = "LRT")
 
 
+
+model_test <- glmer(y ~ x1 * trial_type + (x1 * trial_type | ID),
+                    family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 0)
+
+model_test_afex <- afex::mixed(y ~ x1 * trial_type + (x1 * trial_type | ID),
+                                family = binomial(link = "probit"), data = internal_sdt_data,
+                                method = "LRT", test_intercept = T)
+
+model_test_uncor <- glmer(y ~ x1 * trial_type + (x1 * trial_type || ID),
+                          family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 0)
+
+model_test_uncor_afex <- afex::mixed(y ~ x1 * trial_type + (x1 * trial_type || ID),
+                               family = binomial(link = "probit"), data = internal_sdt_data,
+                               method = "LRT", test_intercept = T)
 
 
 #------------------------------------------------------------------------------#

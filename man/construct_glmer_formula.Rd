@@ -8,7 +8,8 @@ construct_glmer_formula(
   formula_mu,
   formula_lambda,
   dv,
-  param_idx = NULL,
+  mm = NULL,
+  param_idc = NULL,
   remove_from_mu = NULL
 )
 }
@@ -19,12 +20,12 @@ construct_glmer_formula(
 
 \item{dv}{name of dependent variable}
 
-\item{param_idx}{optional index of parameter to be removed to construct a reduced formula}
+\item{mm}{model matrices (corresponding to the formulas) -> only necessary for formulas with uncorrelated random effects}
+
+\item{param_idc}{optional vector of parameters indices to be removed to construct a reduced formula}
 
 \item{remove_from_mu}{optional argument to indicate whether the to-be-removed parameter
-should be removed from mu or lambda modeldata}
-
-\item{trial_type_var}{name of variable coding the type of trial (signal vs. noise)}
+should be removed from mu or lambda model matrix}
 }
 \value{
 lme4 formula
