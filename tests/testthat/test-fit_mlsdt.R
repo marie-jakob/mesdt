@@ -190,4 +190,17 @@ test_that("fit_mlsdt() fits the right model^^", {
 #------------------------------------------------------------------------------#
 #### compute_LRTs() ####
 
+test_that("compute_LRTs() computes the correct Chisq value", {
+  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
+  mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_sdt_data)
+  lrts_test <- compute_LRTs(fit, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                            mm  = mm, test_intercepts = T)
+
+  # Chisq values
+  # low tolerance because the package function fits with nAGQ = 0 (afex with nAGQ = 1)
+  expect_equal(unname(unlist(lrts_test$LRTs[, 4])), model_test_afex$anova_table$Chisq, tolerance = 1e-2)
+
+  expect_equal(unname(unlist(lrts_test$LRTs[, 5])), model_test_afex$anova_table$`Pr(>Chisq)`, tolerance = 1e-2)
+
+})
 
