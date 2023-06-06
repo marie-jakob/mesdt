@@ -2,6 +2,7 @@
 #### construct_glmer_formula() ####
 
 test_that("construct_glmer_formula() makes the correct formula", {
+  # -> We don't need mm here
   expect_equal(
     as.character(construct_glmer_formula(
     formula_mu = ~ x1 + (1 | ID),
@@ -76,6 +77,99 @@ test_that("construct_glmer_formula() makes a valid reduced formula for a vector 
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']][, -c(1, 3)] +
                             (0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | VP)"))
+  )
+})
+
+test_that("construct_glmer_formula() makes a valid formula for uncorrelated random effects", {
+  # Double bar notation
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 || ID),
+      formula_lambda = ~ 1 + x1 + (x1 || ID),
+      dv = "dv",
+      mm = construct_modelmatrices(~ 1 + x1 + (x1 | ID), ~1 + x1 + (x1 | ID), data = internal_fake_data),
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda']][, 1] | ID) +
+                            (0 + mm[['rdm_lambda']][, 2] | ID) + (0 + mm[['rdm_mu']][, 1] | ID) +
+                            (0 + mm[['rdm_mu']][, 2] | ID)"))
+  )
+  # No explicitly specified intercept
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ x1 + (x1 || ID),
+      formula_lambda = ~ x1 + (x1 || ID),
+      dv = "dv",
+      mm = construct_modelmatrices(~ x1 + (x1 | ID), ~x1 + (x1 | ID), data = internal_fake_data),
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda']][, 1] | ID) +
+                            (0 + mm[['rdm_lambda']][, 2] | ID) + (0 + mm[['rdm_mu']][, 1] | ID) +
+                            (0 + mm[['rdm_mu']][, 2] | ID)"))
+  )
+  # Double bar notation + factor with multiple levels
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ x2 + (x2 || ID),
+      formula_lambda = ~ x2 + (x2 || ID),
+      dv = "dv",
+      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (x2 | ID), data = internal_fake_data),
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda']][, 1] | ID) +
+                            (0 + mm[['rdm_lambda']][, 2] | ID) + (0 + mm[['rdm_lambda']][, 3] | ID) +
+                            (0 + mm[['rdm_mu']][, 1] | ID) + (0 + mm[['rdm_mu']][, 2] | ID) +
+                            (0 + mm[['rdm_mu']][, 3] | ID)"))
+  )
+
+  # Separate parentheses notation
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ x1 + (1 | ID) + (x1 | ID),
+      formula_lambda = ~ x1 + (1 | ID) + (x1 | ID),
+      dv = "dv",
+      mm = construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_fake_data),
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda']][, 1] | ID) +
+                            (0 + mm[['rdm_lambda']][, 2] | ID) + (0 + mm[['rdm_mu']][, 1] | ID) +
+                            (0 + mm[['rdm_mu']][, 2] | ID)"))
+  )
+
+  # Separate parentheses notation + multiple levels
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ x2 + (1 | ID) + (x2 | ID),
+      formula_lambda = ~ x2 + (1 | ID) + (x2 | ID),
+      dv = "dv",
+      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (x2 | ID), data = internal_fake_data),
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda']][, 1] | ID) +
+                            (0 + mm[['rdm_lambda']][, 2] | ID) + (0 + mm[['rdm_lambda']][, 3] | ID) +
+                            (0 + mm[['rdm_mu']][, 1] | ID) + (0 + mm[['rdm_mu']][, 2] | ID) +
+                            (0 + mm[['rdm_mu']][, 3] | ID)"))
+  )
+
+  # Different random-effects structures for lambda and mu
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ x2 + (1 | ID) + (x2 | ID),
+      formula_lambda = ~ x2 + (1 | ID),
+      dv = "dv",
+      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (1 | ID), data = internal_fake_data),
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda']][, 1] | ID) +
+                            (0 + mm[['rdm_mu']][, 1] | ID) + (0 + mm[['rdm_mu']][, 2] | ID) +
+                            (0 + mm[['rdm_mu']][, 3] | ID)"))
+  )
+
+  # Different random factor
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ x2 + (1 | rdm) + (x2 | rdm),
+      formula_lambda = ~ x2 + (1 | rdm),
+      dv = "dv",
+      mm = construct_modelmatrices(~ x2 + (x2 | rdm), ~ x2 + (1 | rdm), data = internal_fake_data),
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda']][, 1] | rdm) +
+                            (0 + mm[['rdm_mu']][, 1] | rdm) + (0 + mm[['rdm_mu']][, 2] | rdm) +
+                            (0 + mm[['rdm_mu']][, 3] | rdm)"))
   )
 })
 

@@ -3,7 +3,7 @@
 #' @param formula_mu formula for sensitivity
 #' @param formula_lambda formula for response bias
 #' @param dv name of dependent variable
-#' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
+#' @param mm model matrices (corresponding to the formulas) -> only necessary for formulas with uncorrelated random effects
 #' @param param_idc optional vector of parameters indices to be removed to construct a reduced formula
 #' @param remove_from_mu optional argument to indicate whether the to-be-removed parameter
 #'    should be removed from mu or lambda model matrix
@@ -20,7 +20,7 @@
 #'   dv = "y",
 #'   trial_type_var = "trial_type"
 #' )
-construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = NULL, remove_from_mu = NULL) {
+construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL,param_idc = NULL, remove_from_mu = NULL) {
 
   # check if the random grouping factor is the same for mu and lambda
   rdm_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
@@ -34,39 +34,52 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, param_idc = 
 
   # Handle
   if (is.null(lme4::findbars(formula_lambda)) | is.null(lme4::findbars(formula_mu))) {
-    message("At least one formula does not contain any random-effects terms. Returning NULL")
+    message("At least one formula does not contain any random-effects terms. Returning NULL.")
     return()
   }
 
   # Handle given random effects-structure and convert to the corresponding internal formula
   # Logic: Variables are in the same parentheses iff they are correlated (no "||" stuff)
 
-  # Case 1: No Correlations
-  # -> as many random-effects terms as predictors in the model
   rd_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
     gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
-    })
+  })
   rd_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
     gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
-    })
+  })
 
-  if (length(rd_pred_lambda) == length(lme4::findbars(formula_lambda)) &
-      length(rd_pred_mu) == length(lme4::findbars(formula_mu))) {
-    rdm_formula <- paste("(0 + mm[['rdm_lambda']] + mm[['rdm_mu']] || ", rdm_fac, ")", sep = "")
-  }
-
-
-  # Case 2: Everything Correlated
+  # Case 1: Everything Correlated
   # -> one random-effects term
   # -> ~ ... + (mm[["rdm_mu"]] + mm[["rdm_lambda]] | ID)
+  # 0 to suppress automatic intercept (is contained in the mm)
   if (length(lme4::findbars(formula_lambda)) == 1 & length(lme4::findbars(formula_mu)) == 1) {
-    # 0 to suppress automatic intercept (is contained in the mm)
     rdm_formula <- paste("(0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | ", rdm_fac, ")", sep = "")
+  } else if (length(rd_pred_lambda) == length(lme4::findbars(formula_lambda)) &
+             length(rd_pred_mu) == length(lme4::findbars(formula_mu))) {
+    # Case 2: No Correlations
+    # -> as many random-effects terms as predictors in the model
+    rdm_formula_lambda <- paste(sapply(1:ncol(mm[["rdm_lambda"]]), function(x) {
+      return(paste("(0 + mm[['rdm_lambda']][, ", x, "] | ", rdm_fac, ")", sep =""))
+    }), collapse = "+")
+
+    rdm_formula_mu <- paste(sapply(1:ncol(mm[["rdm_mu"]]), function(x) {
+      return(paste("(0 + mm[['rdm_mu']][, ", x, "] | ", rdm_fac, ")", sep =""))
+    }), collapse = "+")
+
+    rdm_formula <- paste(rdm_formula_lambda, rdm_formula_mu, sep = " + ")
+
+  } else {
+    #message("Formulas contain a mix of correlated and uncorrelated terms. In this case, sensitivity and
+    #        response bias parameters are automatically modeled as uncorrelated. To get correlated sensitivity
+    #        and response bias estimates, all random parameters have to specified as correlated.")
+    message("A mix of correlated and uncorrelated random effects is not supported at the moment. Please
+            specify the random-effects structure such that either all or no random effects are correlated.")
+
+    # Case 3: Mix
+    # -> some terms correlated, some not
+    # -> ~ ... + (mm[["rdm_mu"]] + mm[["rdm_lambda]] | ID)
+
   }
-
-
-  # Case 3: Mix
-
 
   # make the full model formula if no parameter index to be removed is given
   if (is.null(param_idc))  fixed_formula <- "0 + mm[['lambda']] + mm[['mu']]"
@@ -201,8 +214,9 @@ fit_mlsdt <- function(formula_mu,
                       backend = "lme4") {
 
   if (backend == "lme4") {
-    glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv)
     mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
+    glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm)
+
 
     # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
     # (y, ID)
