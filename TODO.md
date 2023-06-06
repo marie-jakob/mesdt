@@ -1,7 +1,8 @@
 # TODOs
 
 
-+ support for "||" notation
++ support for "||" notation -> check
++ support for mix of correlated and uncorrelated random effects
 + type 2 LRTs
 + parallelization
 + reduced random-effects structure
