@@ -173,6 +173,47 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
   )
 })
 
+
+test_that("construct_glmer_formula() does not accept different random effect identifiers.", {
+  expect_message(construct_glmer_formula(
+    formula_mu = ~ x2 + (1 | rdm),
+    formula_lambda = ~ x2 + (1 | rdm2),
+    dv = "dv",
+  ))
+
+  expect_equal(construct_glmer_formula(
+    formula_mu = ~ x2 + (1 | rdm),
+    formula_lambda = ~ x2 + (1 | rdm2),
+    dv = "dv",
+  ),
+  NULL)
+})
+
+test_that("construct_glmer_formula() does not accept formulas without random effects.", {
+  expect_message(construct_glmer_formula(
+    formula_mu = ~ x2 + (1 | rdm),
+    formula_lambda = ~ x2,
+    dv = "dv",
+  ))
+
+  expect_equal(construct_glmer_formula(
+    formula_mu = ~ x2 + (1 | rdm),
+    formula_lambda = ~ x2,
+    dv = "dv",
+  ), NULL)
+
+  expect_message(construct_glmer_formula(
+    formula_mu = ~ x2 + (1 | rdm),
+    formula_lambda = ~ x2,
+    dv = "dv",
+  ))
+  expect_equal(construct_glmer_formula(
+    formula_mu = ~ x2 + (1 | rdm),
+    formula_lambda = ~ x2,
+    dv = "dv",
+  ), NULL)
+})
+
 #------------------------------------------------------------------------------#
 #### construct_modelmatrices() ####
 
@@ -239,20 +280,19 @@ test_that("construct_modelmatrices() works for suppressed correlations", {
     ))
 })
 
-
 #------------------------------------------------------------------------------#
 #### fit_mlsdt() ####
 
 # use a saved model for this
 
-test_that("fit_mlsdt() fits the right model^^", {
+test_that("fit_mlsdt() estimates the correct model", {
   fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_test)))
   # Number of estimated random effects parameters
   expect_equal(length(ranef(fit)), length(ranef(model_test)))
-  expect_equal(length(unlist(VarCorr(model_test))), length(unlist(VarCorr(fit))))
+  expect_equal(length(unlist(VarCorr(fit))), length(unlist(VarCorr(model_test))))
 
   # fixed effects estimates
   expect_equal(unname(fixef(fit))[1:2], unname(fixef(model_test))[1:2], tolerance = 1e-4)
@@ -275,16 +315,52 @@ test_that("fit_mlsdt() fits the right model^^", {
 }
 )
 
-# equal number of parameters
-# same parameter estimates (up to a small tolerance)
-# same standard errors (up to a small tolerance)
 
+test_that("fit_mlsdt() works for uncorrelated random effects (|| notation)", {
+  fit <- fit_mlsdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
+
+  # Number of estimated fixed effects parameters
+  expect_equal(length(fixef(fit)), length(fixef(model_test_uncor)))
+  # Number of estimated random effects parameters
+  expect_equal(length(ranef(fit)), length(ranef(model_test_uncor)))
+  expect_equal(length(unlist(VarCorr(fit))), length(unlist(VarCorr(model_test_uncor))))
+
+  # fixed effects estimates
+  expect_equal(unname(fixef(fit))[1:2], unname(fixef(model_test_uncor))[1:2], tolerance = 1e-4)
+  # mu fixef effects
+  expect_equal(unname(fixef(fit))[3:4], unname(fixef(model_test_uncor))[3:4] * 2, tolerance = 1e-4)
+
+  # observed Fisher information
+  expect_equal(unname(vcov(fit))[1:2, 1:2], unname(vcov(model_test_uncor))[1:2, 1:2], tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[3:4, 3:4], unname(vcov(model_test_uncor))[3:4, 3:4] * 4, tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[1:2, 3:4], unname(vcov(model_test_uncor))[1:2, 3:4] * 2, tolerance = 1e-3)
+
+  # lambda random effect variances
+  expect_equal(as.data.frame(VarCorr(fit))$vcov[1:2], as.data.frame(VarCorr(model_test_uncor))$vcov[1:2], tolerance = 1e-3)
+  expect_equal(as.data.frame(VarCorr(fit))$vcov[3:4], as.data.frame(VarCorr(model_test_uncor))$vcov[3:4] * 4, tolerance = 1e-3)
+
+  # random effects correlations
+  expect_equal(as.data.frame(VarCorr(fit))$sdcor[5:10],
+               as.data.frame(VarCorr(model_test_uncor))$sdcor[5:10],
+               tolerance = 1e-3)
+}
+)
+
+test_that("fit_mlsdt() notifies the user that only uncorrelated or correlated
+          random effects are possible at the moment, iff specified.", {
+  expect_message(fit_mlsdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 | ID), dv = "y", data = internal_sdt_data))
+  expect_message(fit_mlsdt(~ 1 + x1 + (1 | ID) + (x1 | ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y", data = internal_sdt_data))
+
+  expect_no_message(fit_mlsdt(~ 1 + x1 + (x1 | ID), ~ 1 + x1 + (x1 | ID), dv = "y", data = internal_sdt_data))
+  expect_no_message(fit_mlsdt(~ 1 + x1 + (1 | ID), ~ 1 + x1 + (1 | ID), dv = "y", data = internal_sdt_data))
+
+})
 
 
 #------------------------------------------------------------------------------#
 #### compute_LRTs() ####
 
-test_that("compute_LRTs() computes the correct Chisq value", {
+test_that("compute_LRTs() computes the correct Chisq value for correlated random effects", {
   fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
   mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_sdt_data)
   lrts_test <- compute_LRTs(fit, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
@@ -295,6 +371,19 @@ test_that("compute_LRTs() computes the correct Chisq value", {
   expect_equal(unname(unlist(lrts_test$LRTs[, 4])), model_test_afex$anova_table$Chisq, tolerance = 1e-2)
 
   expect_equal(unname(unlist(lrts_test$LRTs[, 5])), model_test_afex$anova_table$`Pr(>Chisq)`, tolerance = 1e-2)
+})
 
+test_that("compute_LRTs() computes the correct Chisq value for uncorrelated random effects", {
+  # Same for the uncorrelated model
+  fit <- fit_mlsdt(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
+  mm <- construct_modelmatrices(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), data = internal_sdt_data)
+  lrts_test <- compute_LRTs(fit, ~ x1 + (x1 || ID), ~ x1 + (x1 || ID), dv = "y", data = internal_sdt_data,
+                            mm  = mm, test_intercepts = T)
+
+  # Chisq values
+  # low tolerance because the package function fits with nAGQ = 0 (afex with nAGQ = 1)
+  expect_equal(unname(unlist(lrts_test$LRTs[, 4])), model_test_uncor_afex$anova_table$Chisq, tolerance = 1e-2)
+
+  expect_equal(unname(unlist(lrts_test$LRTs[, 5])), model_test_uncor_afex$anova_table$`Pr(>Chisq)`, tolerance = 1e-2)
 })
 

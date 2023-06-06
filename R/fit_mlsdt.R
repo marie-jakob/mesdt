@@ -22,6 +22,12 @@
 #' )
 construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL,param_idc = NULL, remove_from_mu = NULL) {
 
+  # Handle missing random effects terms
+  if (is.null(lme4::findbars(formula_lambda)) | is.null(lme4::findbars(formula_mu))) {
+    message("At least one formula does not contain any random-effects terms. Returning NULL.")
+    return()
+  }
+
   # check if the random grouping factor is the same for mu and lambda
   rdm_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
   rdm_fac_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][2]
@@ -31,12 +37,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL,pa
     return()
   } else rdm_fac <- rdm_fac_mu
 
-
-  # Handle
-  if (is.null(lme4::findbars(formula_lambda)) | is.null(lme4::findbars(formula_mu))) {
-    message("At least one formula does not contain any random-effects terms. Returning NULL.")
-    return()
-  }
 
   # Handle given random effects-structure and convert to the corresponding internal formula
   # Logic: Variables are in the same parentheses iff they are correlated (no "||" stuff)
@@ -54,8 +54,10 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL,pa
   # 0 to suppress automatic intercept (is contained in the mm)
   if (length(lme4::findbars(formula_lambda)) == 1 & length(lme4::findbars(formula_mu)) == 1) {
     rdm_formula <- paste("(0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | ", rdm_fac, ")", sep = "")
-  } else if (length(rd_pred_lambda) == length(lme4::findbars(formula_lambda)) &
-             length(rd_pred_mu) == length(lme4::findbars(formula_mu))) {
+  } else {
+    message("Given random-effects structure contains uncorrelated terms. Modeling all random effects
+            parametes as uncorrelated since a mix of correlated and uncorrelated terms is not
+            supported at the moment.")
     # Case 2: No Correlations
     # -> as many random-effects terms as predictors in the model
     rdm_formula_lambda <- paste(sapply(1:ncol(mm[["rdm_lambda"]]), function(x) {
@@ -68,18 +70,10 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL,pa
 
     rdm_formula <- paste(rdm_formula_lambda, rdm_formula_mu, sep = " + ")
 
-  } else {
-    #message("Formulas contain a mix of correlated and uncorrelated terms. In this case, sensitivity and
-    #        response bias parameters are automatically modeled as uncorrelated. To get correlated sensitivity
-    #        and response bias estimates, all random parameters have to specified as correlated.")
-    message("A mix of correlated and uncorrelated random effects is not supported at the moment. Please
-            specify the random-effects structure such that either all or no random effects are correlated.")
-
-    # Case 3: Mix
+  }
+    # Case 3: Mix -> TODO for later
     # -> some terms correlated, some not
     # -> ~ ... + (mm[["rdm_mu"]] + mm[["rdm_lambda]] | ID)
-
-  }
 
   # make the full model formula if no parameter index to be removed is given
   if (is.null(param_idc))  fixed_formula <- "0 + mm[['lambda']] + mm[['mu']]"
@@ -339,6 +333,10 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   # -> correspond to multiple model parameters for factors with more than two levels
 
   if (test_intercepts) {
+    if (ncol(mm["mu"]) <= 1 & ncol(mm["lambda"]) <= 1) {
+      message("Can only test intercepts if there are predictors in the model. Returning NULL.")
+      return()
+    }
     range_lambda <- 0:((ncol(mm[["lambda"]])) - 1)
     range_mu <- 0:((ncol(mm[["mu"]])) - 1)
   } else {
@@ -348,14 +346,14 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
   reduced_formulas_lambda <- lapply(range_lambda, function(x) {
     to_remove <- which(attr(mm[["lambda"]], "assign") == x)
-    construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
+    construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                             param_idc = to_remove, remove_from_mu = F)
     }
   )
 
   reduced_formulas_mu <- lapply(range_mu, function(x) {
     to_remove <- which(attr(mm[["mu"]], "assign") == x)
-    construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
+    construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                             param_idc = to_remove, remove_from_mu = T)
     }
   )
