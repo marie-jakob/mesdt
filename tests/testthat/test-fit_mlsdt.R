@@ -153,11 +153,36 @@ test_that("construct_modelmatrices() works for suppressed correlations", {
 
 test_that("fit_mlsdt() fits the right model^^", {
   fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
-  expect_equal(fixef(fit), fixef(model_test))
+
+  # Number of estimated fixed effects parameters
+  expect_equal(length(fixef(fit)), length(fixef(model_test)))
+  # Number of estimated random effects parameters
+  expect_equal(length(ranef(fit)), length(ranef(model_test)))
+  expect_equal(length(unlist(VarCorr(model_test))), length(unlist(VarCorr(fit))))
+
+  # fixed effects estimates
+  expect_equal(unname(fixef(fit))[1:2], unname(fixef(model_test))[1:2], tolerance = 1e-4)
+  # mu fixef effects
+  expect_equal(unname(fixef(fit))[3:4], unname(fixef(model_test))[3:4] * 2, tolerance = 1e-4)
+
+  # lambda random effect variances
+  expect_equal(as.data.frame(VarCorr(fit))$vcov[1:2], as.data.frame(VarCorr(model_test))$vcov[1:2], tolerance = 1e-3)
+  expect_equal(as.data.frame(VarCorr(fit))$vcov[3:4], as.data.frame(VarCorr(model_test))$vcov[3:4] * 4, tolerance = 1e-3)
+
+  # random effects correlations
+  expect_equal(as.data.frame(VarCorr(fit))$sdcor[5:10],
+               as.data.frame(VarCorr(model_test))$sdcor[5:10],
+               tolerance = 1e-3)
 }
 )
 
 # equal number of parameters
 # same parameter estimates (up to a small tolerance)
 # same standard errors (up to a small tolerance)
-expect_equal()
+
+
+
+#------------------------------------------------------------------------------#
+#### compute_LRTs() ####
+
+
