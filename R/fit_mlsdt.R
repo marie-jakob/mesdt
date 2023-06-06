@@ -323,24 +323,38 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
 fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F) {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
-  reduced_formulas_lambda <- lapply(1:(ncol(mm[["lambda"]]) - 1), function(x) {
+
+  if (test_intercepts) {
+    range_lambda <- 0:((ncol(mm[["lambda"]])) - 1)
+    range_mu <- 0:((ncol(mm[["mu"]])) - 1)
+  } else {
+    range_lambda <- 1:((ncol(mm[["lambda"]])) - 1)
+    range_mu <- 1:((ncol(mm[["mu"]])) - 1)
+  }
+
+  reduced_formulas_lambda <- lapply(range_lambda, function(x) {
     to_remove <- which(attr(mm[["lambda"]], "assign") == x)
     construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
                             param_idc = to_remove, remove_from_mu = F)
     }
   )
-  #if (! test_intercepts) reduced_formulas_lambda <- reduced_formulas_lambda
 
-  # set names of list to param names
-  names(reduced_formulas_lambda) <- paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_")
-
-  reduced_formulas_mu <- lapply(1:(ncol(mm[["mu"]]) - 1), function(x) {
+  reduced_formulas_mu <- lapply(range_mu, function(x) {
     to_remove <- which(attr(mm[["mu"]], "assign") == x)
     construct_glmer_formula(formula_mu, formula_lambda, dv = dv,
                             param_idc = to_remove, remove_from_mu = T)
     }
   )
-  names(reduced_formulas_mu) <- paste(attr(terms(nobars(formula_mu)), "term.labels"), "mu", sep = "_")
+
+  # set names of list to param names
+  if (test_intercepts) {
+    names(reduced_formulas_lambda) <- c("Intercept", paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
+    names(reduced_formulas_mu) <- c("Intercept", paste(attr(terms(nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
+  } else {
+    names(reduced_formulas_lambda) <- paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_")
+    names(reduced_formulas_mu) <- paste(attr(terms(nobars(formula_mu)), "term.labels"), "mu", sep = "_")
+  }
+
 
   # fit reduced models
   reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), function(formula_tmp) {
