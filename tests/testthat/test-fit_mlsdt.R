@@ -387,3 +387,13 @@ test_that("compute_LRTs() computes the correct Chisq value for uncorrelated rand
   expect_equal(unname(unlist(lrts_test$LRTs[, 5])), model_test_uncor_afex$anova_table$`Pr(>Chisq)`, tolerance = 1e-2)
 })
 
+test_that("compute_LRTs() throws a message when trying to test an intercept without predictors", {
+  fit <- fit_mlsdt(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
+  mm <- construct_modelmatrices(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), data = internal_sdt_data)
+  expect_message(compute_LRTs(fit, ~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data,
+                              mm  = mm, test_intercepts = T))
+  #expect_equal(compute_LRTs(fit, ~ 1 + (x1 || ID), ~ 0 + (x1 || ID), dv = "y", data = internal_sdt_data,
+  #                          mm  = mm, test_intercepts = T),
+  #             NULL)
+
+})

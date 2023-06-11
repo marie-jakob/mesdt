@@ -143,5 +143,7 @@ contrasts(d$ID) <- contr.sum(10)
 
 internal_fake_data <- d
 
-usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_afex, internal = TRUE, overwrite = T)
+usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_afex,
+                  model_test_uncor, model_test_uncor_afex,
+                  internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)

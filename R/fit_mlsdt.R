@@ -211,7 +211,6 @@ fit_mlsdt <- function(formula_mu,
     mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
     glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm)
 
-
     # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
     # (y, ID)
     fit_obj <- lme4::glmer(glmer_formula,
@@ -225,9 +224,22 @@ fit_mlsdt <- function(formula_mu,
   }
 
   coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
-  rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
+  #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
+  #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
+  if (is.null(nrow(coefs_lambda))) {
+    coefs_lambda <- t(data.frame(coefs_lambda))
+  } else {
+    coefs_lambda <- data.frame(coefs_lambda)
+  }
+  rownames(coefs_lambda) <- colnames(mm[["lambda"]])
+
   coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
-  rownames(coefs_mu) <- gsub('mm', "", rownames(coefs_mu))
+  if (is.null(nrow(coefs_mu))) {
+    coefs_mu <- t(data.frame(coefs_mu))
+  } else {
+    coefs_mu <- data.frame(coefs_mu)
+  }
+  rownames(coefs_mu) <- colnames(mm[["mu"]])
 
   return(list(
     "fit_obj" = fit_obj,
@@ -331,9 +343,10 @@ transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 
 fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F) {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
-
   if (test_intercepts) {
-    if (ncol(mm["mu"]) <= 1 & ncol(mm["lambda"]) <= 1) {
+    print(ncol(mm[["mu"]]))
+    print(ncol(mm[["lambda"]]))
+    if (ncol(mm[["mu"]]) <= 1 & ncol(mm[["lambda"]]) <= 1) {
       message("Can only test intercepts if there are predictors in the model. Returning NULL.")
       return()
     }
