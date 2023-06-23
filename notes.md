@@ -19,6 +19,17 @@
 
 ### GLMM Estimation with different backends
 
+#### Estimation
++ (from Julia MixedModels documentation):
++ not the exact deviance, but the Laplace approximation to the deviance is optimized
++ Laplace approximation:
+  + "the Laplace approximation entails finding a Gaussian approximation to a continuous probability density."
+  + used in GLMM to approximate the integral given through random effects
++ optimization w.r.t. the fixed effects coefficients $\beta$ and the covariance parameters $\theta$
++ 
+
+
+#### Backends
 
 __Julia__: https://juliastats.org/MixedModels.jl/v4.13/optimization/#Generalized-Linear-Mixed-Effects-Models
 
