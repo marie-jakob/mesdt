@@ -26,7 +26,7 @@
   + "the Laplace approximation entails finding a Gaussian approximation to a continuous probability density."
   + used in GLMM to approximate the integral given through random effects
 + optimization w.r.t. the fixed effects coefficients $\beta$ and the covariance parameters $\theta$
-+ 
+
 
 
 #### Backends
@@ -68,11 +68,37 @@ __glmmTMB__ package:
 
 + Implement two strategies: 
 	
-	+ Barr et al. (2013): Maximal Model -> Start with maximal model, reduce sequentially and use the first model that fits the data
+	+ Barr et al. (2013): Maximal Model -> Start with maximal model, reduce sequentially and use the first model that fits the data -> adapted to SDT models (do this "separately" for Mu and Lambda -> see below)
 
 	+ Matuschek et al. (2017): Balancing power and Type I error rate -> determine maximal fitting model and reduce random-effects structure sequentially until there is a significantly worse model fit (determined by LRTs)
 
-+ ::buildmer package could work for this -> Julia?
++ ::buildmer package is probably not that easy to include -> do this manually
+
+##### "Keep it maximal"
+
++ User gives the maximum random-effects structure justified by the design
+
++ estimate the full model with nAGQ = 0 and terms are removed until the model converges to a non-singular fit
+	+ for removal, adhere to principle of marginality _within_ sensitivity and response bias
+	+ first, remove correlations
+	+ then: check variance of slopes for the highest-order predictors on sensitivity and response bias and remove the slope with the lowest estimated variance from the model
+	+ if the model still does not converge when only random intercepts for sensitivity and response bias are in the model, warn the user accordingly and suggest a different modeling approach (e.g., fitting on aggregated data) -> Still fit the model
++ Store the formula and fit the converging model again with nAGQ = 1
++ if the model does not converge, increase the iterations iteratively until `max_iter` is exceeded
++ if the model does not converge by then -> reduce random-effects structure further
+	+ again: if the random intercept for either sensitivity or response bias would be removed in the next step, the user is warned about this
++ Return: 
+	+ the final estimated model
+	+ Table with sensitivity and response bias estimates
+	+ the final model formula
+	+ some string in nice formatting explaining the model?
+
+
+##### lme4
++ 
++ check if model is singular: `isSingular()`
++ check if model converged: https://search.r-project.org/CRAN/refmans/performance/html/check_convergence.html ?
++ or simply check the messages: https://stackoverflow.com/questions/64114841/capturing-convergence-message-from-lme4-package-in-r
 
 
 ### Dealing with Predictors
@@ -126,6 +152,29 @@ __glmmTMB__ package:
 
 + no CIs for individual parameters? probably
 
+
+### Significance Testing
+
+##### Fixed-Effects Hypothesis Tests
+
++ the standard test --> "Does my predictor influence the criterion"? 
+
++ likelihood ratio tests or parametric bootstrapping -> parametric bootstrapping can take ages
+
++ entails fitting a submodel for every to-be-tested predictor
+
++ Type III SS: fuck marginality, only remove the to-be-tested fixed effect from the model
+
++ Type II-like SS for this case: adhere to marginality _within_ sensitivity and response bias, respectively
+	+ i.e., a submodel testing predictors for response bias still includes everything related to sensitivity, but includes only same- or lower-order effects of the predictor in question on the response bias
+
++ TODO: balanced vs. strict null stuff -> I don't think this "strict null" stuff makes a lot of sense -> Instead there will be the possibility to test for variability in the fixed effect separately
+
+##### Random-Effects Tests
+
++ test variability in fixed effects -> LRTs or parametric bootstrapping for random slopes
++ LRTs: dfs are difficult since we are at the edge of the parameter space (i.e., var = 0) -> sampling distribution is a mixture of chi^2 distributions
+	+ formula for df = 1
 
 ### Prediction & Simulation
 

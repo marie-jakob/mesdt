@@ -360,7 +360,7 @@ test_that("fit_mlsdt() notifies the user that only uncorrelated or correlated
 #------------------------------------------------------------------------------#
 #### compute_LRTs() ####
 
-test_that("compute_LRTs() computes the correct Chisq value for correlated random effects", {
+test_that("compute_LRTs() computes the correct Chisq value for correlated random effects.", {
   fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
   mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_sdt_data)
   lrts_test <- compute_LRTs(fit, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
@@ -373,7 +373,7 @@ test_that("compute_LRTs() computes the correct Chisq value for correlated random
   expect_equal(unname(unlist(lrts_test$LRTs[, 5])), model_test_afex$anova_table$`Pr(>Chisq)`, tolerance = 1e-2)
 })
 
-test_that("compute_LRTs() computes the correct Chisq value for uncorrelated random effects", {
+test_that("compute_LRTs() computes the correct Chisq value for uncorrelated random effects.", {
   # Same for the uncorrelated model
   fit <- fit_mlsdt(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
   mm <- construct_modelmatrices(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), data = internal_sdt_data)
