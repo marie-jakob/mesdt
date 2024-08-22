@@ -60,43 +60,147 @@ summary(fit_test$fit_obj)
 #### Test type 2 LRTs ####
 
 
-
-dat_exp_2 <- readRDS("tests/test-dat/dat_exp_2.rds") %>%
-  dplyr::filter(id %in% c("regular-1", "regular-2",
-                   "reversed-1", "reversed-2",
-                   "balanced-1", "balanced-2"))
-
 # Use a reduced model that only includes two terms
 
-fit_exp_2 <- fit_mlsdt(~ committee_ef * emp_gender_ef + (1 | id),
-                       ~ committee_ef * emp_gender_ef + (1 | id),
+form_lambda <- ~ committee + (1 | id)
+form_mu <- ~ committee * emp_gender + (1 | id)
+
+fit_exp_2 <- fit_mlsdt(form_mu,
+                       form_lambda,
                        dv = "assessment",
-                       trial_type_var = "status_ef",
+                       trial_type_var = "status",
                        data = dat_exp_2)
 
-mm_exp_2 <- construct_modelmatrices(~ committee_ef * emp_gender_ef + (1 | id),
-                                    ~ committee_ef * emp_gender_ef + (1 | id),
+mm_exp_2 <- construct_modelmatrices(form_mu,
+                                    form_lambda,
                                     dv = "assessment",
-                                    trial_type_var = "status_ef",
+                                    trial_type_var = "status",
                                     data = dat_exp_2)
 
 LRTs_exp_2_2 <- compute_LRTs(fit_exp_2$fit_obj,
-                           ~ committee_ef * emp_gender_ef + (1 | id),
-                           ~ committee_ef * emp_gender_ef + (1 | id),
-                           dv = "assessment",
+                             form_mu,
+                             form_lambda,
+                             dv = "assessment",
+                             data = dat_exp_2,
+                             type = 2,
+                             mm_exp_2)
+
+
+# Compute LRTs manually for testing
+# full model - main effects lambda
+full_model_main_effects <- glmer(assessment ~ emp_gender_ef + status_ef + status_ef:committee_ef +
+                                   status_ef:emp_gender_ef + status_ef:emp_gender_ef:committee_ef + (status_ef | id),
+                                 data = dat_exp_2,
+                                 family = binomial("probit"),
+                                 nAGQ = 0)
+# lambda - committee_ef
+lambda_committee_red <- glmer(assessment ~ status_ef + status_ef:committee_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                              data = dat_exp_2,
+                              family = binomial("probit"),
+                              nAGQ = 0)
+# lambda - emp_gender_ef
+lambda_emp_gender_red <- glmer(assessment ~ committee_ef * status_ef + status_ef:emp_gender_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                               data = dat_exp_2,
+                               family = binomial("probit"),
+                               nAGQ = 0)
+
+# lambda - emp_gender_ef:committee_ef
+# full model
+model_full <- glmer(assessment ~ committee_ef * emp_gender_ef * status_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+lambda_interaction <- glmer(assessment ~ committee_ef * status_ef + emp_gender_ef * status_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+
+#### Mu
+# full model - main effects lambda
+full_model_main_effects_mu <- glmer(assessment ~ emp_gender_ef * committee_ef + status_ef + status_ef:committee_ef +
+                                      status_ef:emp_gender_ef + (status_ef | id),
+                                    data = dat_exp_2,
+                                    family = binomial("probit"),
+                                    nAGQ = 0)
+# lambda - committee_ef
+mu_committee_red <- glmer(assessment ~ emp_gender_ef * committee_ef + status_ef * emp_gender_ef + (status_ef | id),
+                          data = dat_exp_2,
+                          family = binomial("probit"),
+                          nAGQ = 0)
+
+# lambda - emp_gender_ef
+mu_emp_gender_red <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * committee_ef + (status_ef | id),
                            data = dat_exp_2,
-                           type = 2,
-                           mm_exp_2)
+                           family = binomial("probit"),
+                           nAGQ = 0)
+
+# lambda - emp_gender_ef:committee_ef
+# full model
+mu_interaction <- glmer(assessment ~ committee_ef * emp_gender_ef + emp_gender_ef * status_ef + committee_ef * status_ef + (status_ef | id),
+                        data = dat_exp_2,
+                        family = binomial("probit"),
+                        nAGQ = 0)
+
+
+anova(lambda_committee_red, full_model_main_effects)
+anova(lambda_emp_gender_red, full_model_main_effects)
+anova(model_full, lambda_interaction)
+anova(mu_committee_red, full_model_main_effects_mu)
+anova(mu_emp_gender_red, full_model_main_effects_mu)
+anova(model_full, mu_interaction)
+
+chisquares_two_factors <- c(
+  -2 * (logLik(lambda_committee_red) - logLik(full_model_main_effects)),
+  -2 * (logLik(lambda_emp_gender_red) - logLik(full_model_main_effects)),
+  -2 * (logLik(model_full) - logLik(lambda_interaction)),
+  -2 * (logLik(mu_committee_red) - logLik(full_model_main_effects_mu)),
+  -2 * (logLik(mu_emp_gender_red) - logLik(full_model_main_effects_mu)),
+  -2 * (logLik(model_full) - logLik(mu_interaction))
+)
+
+
+#------------------------------------------------------------------------------#
+#### Type II LRTs only main effects ####
+
+# -> should be identical for Type II and Type III SS
+# and identical to afex Type III
+form_lambda <- ~ 1 + (1 | id)
+form_mu <- ~ 1 + (1 | id)
+
+fit_exp_2 <- fit_mlsdt(form_mu,
+                       form_lambda,
+                       dv = "assessment",
+                       trial_type_var = "status",
+                       data = dat_exp_2)
+
+mm_exp_2 <- construct_modelmatrices(form_mu,
+                                    form_lambda,
+                                    dv = "assessment",
+                                    trial_type_var = "status",
+                                    data = dat_exp_2)
+
+
+
+LRTs_exp_2_2 <- compute_LRTs(fit_exp_2$fit_obj,
+                             form_mu,
+                             form_lambda,
+                             dv = "assessment",
+                             data = dat_exp_2,
+                             type = 2,
+                             mm_exp_2,
+                             test_intercepts = F)
+
 
 LRTs_exp_2_3 <- compute_LRTs(fit_exp_2$fit_obj,
-                           ~ committee_ef * emp_gender_ef + (1 | id),
-                           ~ committee_ef * emp_gender_ef + (1 | id),
-                           dv = "assessment",
-                           data = dat_exp_2,
-                           type = 3,
-                           mm_exp_2)
+                             form_mu,
+                             form_lambda,
+                             dv = "assessment",
+                             data = dat_exp_2,
+                             type = 3,
+                             mm_exp_2,
+                             test_intercepts = T)
 
-summary(fit_exp_2$fit_obj)
+LRTs_exp_2_3
+fit_exp_2_afex
+LRTs_exp_2_2
 
-LRTs_exp_2_2$LRTs
-LRTs_exp_2_3$LRTs

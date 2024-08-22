@@ -143,7 +143,137 @@ contrasts(d$ID) <- contr.sum(10)
 
 internal_fake_data <- d
 
+
+#------------------------------------------------------------------------------#
+#### Subset of Data from Exp 2 (Detecting Bias) - LRTs Type II ####
+
+
+dat_exp_2 <- readRDS("tests/test-dat/dat_exp_2.rds") %>%
+  dplyr::filter(id %in% c("regular-4", "regular-5",
+                          "reversed-1", "reversed-2",
+                          "balanced-1", "balanced-2")) %>%
+  dplyr::mutate(committee = factor(committee_ef),
+                emp_gender = factor(emp_gender_ef),
+                status = factor(status_ef),
+                contingencies = factor(contingencies))
+
+contrasts(dat_exp_2$status) <- contr.sum(2)
+contrasts(dat_exp_2$committee) <- contr.sum(2)
+contrasts(dat_exp_2$emp_gender) <- contr.sum(2)
+contrasts(dat_exp_2$contingencies) <- contr.sum(3)
+
+fit <- fit_mlsdt(~ committee * emp_gender + (1 | id),
+                 ~ committee * emp_gender + (1 | id),
+                 data = dat_exp_2,
+                 dv = "assessment",
+                 trial_type_var = "status")
+
+
+
+# Compute LRTs manually for testing
+# full model - main effects lambda
+full_model_main_effects <- glmer(assessment ~ emp_gender_ef + committee_ef + status_ef + status_ef:committee_ef +
+                                   status_ef:emp_gender_ef + status_ef:emp_gender_ef:committee_ef + (status_ef | id),
+                                 data = dat_exp_2,
+                                 family = binomial("probit"),
+                                 nAGQ = 0)
+# lambda - committee_ef
+lambda_committee_red <- glmer(assessment ~ status_ef * emp_gender_ef + status_ef:committee_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                              data = dat_exp_2,
+                              family = binomial("probit"),
+                              nAGQ = 0)
+# lambda - emp_gender_ef
+lambda_emp_gender_red <- glmer(assessment ~ committee_ef * status_ef + status_ef:emp_gender_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                               data = dat_exp_2,
+                               family = binomial("probit"),
+                               nAGQ = 0)
+
+# lambda - emp_gender_ef:committee_ef
+# full model
+model_full <- glmer(assessment ~ committee_ef * emp_gender_ef * status_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+
+
+
+lambda_interaction <- glmer(assessment ~ committee_ef * status_ef + emp_gender_ef * status_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+
+#### Mu
+# full model - main effects lambda
+full_model_main_effects_mu <- glmer(assessment ~ emp_gender_ef * committee_ef + status_ef + status_ef:committee_ef +
+                                      status_ef:emp_gender_ef + (status_ef | id),
+                                    data = dat_exp_2,
+                                    family = binomial("probit"),
+                                    nAGQ = 0)
+# lambda - committee_ef
+mu_committee_red <- glmer(assessment ~ emp_gender_ef * committee_ef + status_ef * emp_gender_ef + (status_ef | id),
+                          data = dat_exp_2,
+                          family = binomial("probit"),
+                          nAGQ = 0)
+
+# lambda - emp_gender_ef
+mu_emp_gender_red <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * committee_ef + (status_ef | id),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+
+# lambda - emp_gender_ef:committee_ef
+# full model
+mu_interaction <- glmer(assessment ~ committee_ef * emp_gender_ef + emp_gender_ef * status_ef + committee_ef * status_ef + (status_ef | id),
+                        data = dat_exp_2,
+                        family = binomial("probit"),
+                        nAGQ = 0)
+
+
+# Test intercepts
+lambda_intercept_full <- glmer(assessment ~ 1 + status_ef + status_ef:committee_ef * status_ef:emp_gender_ef +
+                                 status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+lambda_intercept_red <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef * status_ef:emp_gender_ef +
+                                status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                              data = dat_exp_2,
+                              family = binomial("probit"),
+                              nAGQ = 0)
+mu_intercept_full <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef + (status_ef | id),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+mu_intercept_red <- glmer(assessment ~ committee_ef * emp_gender_ef + (status_ef | id),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+
+
+anova(lambda_committee_red, full_model_main_effects)
+anova(lambda_emp_gender_red, full_model_main_effects)
+anova(model_full, lambda_interaction)
+anova(mu_committee_red, full_model_main_effects_mu)
+anova(mu_emp_gender_red, full_model_main_effects_mu)
+anova(model_full, mu_interaction)
+
+anova(lambda_intercept_red, lambda_intercept_full)
+anova(lambda_intercept_red, lambda_intercept_full)
+
+chisquares_two_factors <- c(
+  -2 * (logLik(lambda_intercept_red) - logLik(lambda_intercept_full)),
+  -2 * (logLik(lambda_committee_red) - logLik(full_model_main_effects)),
+  -2 * (logLik(lambda_emp_gender_red) - logLik(full_model_main_effects)),
+  -2 * (logLik(lambda_interaction) - logLik(model_full)),
+  -2 * (logLik(mu_intercept_red) - logLik(mu_intercept_full)),
+  -2 * (logLik(mu_committee_red) - logLik(full_model_main_effects_mu)),
+  -2 * (logLik(mu_emp_gender_red) - logLik(full_model_main_effects_mu)),
+  -2 * (logLik(mu_interaction) - logLik(model_full))
+)
+
+
 usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_afex,
-                  model_test_uncor, model_test_uncor_afex,
+                  model_test_uncor, model_test_uncor_afex, dat_exp_2, chisquares_two_factors,
                   internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)
+
