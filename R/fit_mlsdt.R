@@ -326,7 +326,6 @@ fit_mlsdt <- function(formula_mu,
   }
 
   # Post-Processing the lme4 output
-  # TODO: this does not work for factors (rownames() is the problem)
   coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
   #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
   #rownames(coefs_lambda) <- colnames(mm[["lambda"]])

@@ -214,14 +214,22 @@ LRTs_exp_2_2
 #------------------------------------------------------------------------------#
 #### Factors with > 2 levels ####
 
-form_lambda <- ~ contingencies + (1 | id)
-form_mu <- ~ contingencies + (1 | id)
+form_lambda <- ~ 1 + (1 | id)
+form_mu <- ~ 1 + (1 | id)
 
 fit_exp_2 <- fit_mlsdt(form_mu,
                        form_lambda,
                        dv = "assessment",
                        trial_type_var = "status",
                        data = dat_exp_2)
+
+test <- glmer(assessment ~ status_ef + (status_ef | id),
+              data = dat_exp_2,
+              family = binomial("probit"),
+              nAGQ = 0)
+
+ranef(fit_exp_2$fit_obj)
+ranef(test)
 
 mm_exp_2 <- construct_modelmatrices(form_mu,
                                     form_lambda,
@@ -241,10 +249,32 @@ LRTs_exp_2_2 <- compute_LRTs(fit_exp_2$fit_obj,
 # This somehow works??
 
 
-
-
-
-
 # Goal for LRTs: option to test factors and to test single predictors
+# -> Sometime in the future
+
+#------------------------------------------------------------------------------#
+#### Crossed random effects ####
+
+form_cross <- assessment ~ status_ef + (1 | id) + (status_ef | id) + (1 | stimulus)
+lme4::findbars(form_cross)
+rdm_pred_lambda <- paste(sapply(lme4::findbars(form_cross), function(x) {
+  gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
+}), collapse = "+")
+
+# find a way to split random effects according to random-effects grouping factor
+
+mod_cross <- glmer(assessment ~ status_ef + (1 | id) + (1 | stimulus),
+                   data = dat_exp_2,
+                   family = binomial("probit"),
+                   nAGQ = 0)
+
+summary(mod_cross)
+
+rdm_pred_lambda <- paste(sapply(lme4::findbars(form_cross), function(x) {
+  gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
+}), collapse = "+")
+
+mm_rdm_lambda <- stats::model.matrix(formula(paste("~", rdm_pred_lambda, sep = "")),
+                                     data = dat_exp_2)
 
 

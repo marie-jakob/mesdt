@@ -3,7 +3,7 @@
 
 + support for "||" notation -> check
 + support for mix of correlated and uncorrelated random effects
-+ type 2 LRTs
++ type 2 LRTs -> check
 + parallelization
 + reduced random-effects structure
   + strategy 1: "keep it maximal"

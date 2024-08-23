@@ -155,7 +155,12 @@ dat_exp_2 <- readRDS("tests/test-dat/dat_exp_2.rds") %>%
   dplyr::mutate(committee = factor(committee_ef),
                 emp_gender = factor(emp_gender_ef),
                 status = factor(status_ef),
-                contingencies = factor(contingencies))
+                contingencies = factor(contingencies),
+                stimulus = sample(c("stim-1", "stim-2", "stim-3",
+                                    "stim-4", "stim-5", "stim-6",
+                                    "stim-7", "stim-8", "stim-9", "stim-10"),
+                                  nrow(dat_exp_2),
+                                  replace = T))
 
 contrasts(dat_exp_2$status) <- contr.sum(2)
 contrasts(dat_exp_2$committee) <- contr.sum(2)
@@ -406,14 +411,14 @@ anova(lambda_intercept_red, lambda_intercept_full)
 anova(lambda_intercept_red, lambda_intercept_full)
 
 chisquares_two_factors_2 <- c(
-  2 * (logLik(lambda_intercept_red) - logLik(lambda_intercept_full)),
-  2 * (logLik(lambda_committee_red) - logLik(full_model_main_effects)),
-  2 * (logLik(lambda_emp_gender_red) - logLik(full_model_main_effects)),
-  2 * (logLik(lambda_interaction) - logLik(model_full)),
-  2 * (logLik(mu_intercept_red) - logLik(mu_intercept_full)),
-  2 * (logLik(mu_committee_red) - logLik(full_model_main_effects_mu)),
-  2 * (logLik(mu_emp_gender_red) - logLik(full_model_main_effects_mu)),
-  2 * (logLik(mu_interaction) - logLik(model_full))
+  -2 * (logLik(lambda_intercept_red) - logLik(lambda_intercept_full)),
+  -2 * (logLik(lambda_committee_red) - logLik(full_model_main_effects)),
+  -2 * (logLik(lambda_emp_gender_red) - logLik(full_model_main_effects)),
+  -2 * (logLik(lambda_interaction) - logLik(model_full)),
+  -2 * (logLik(mu_intercept_red) - logLik(mu_intercept_full)),
+  -2 * (logLik(mu_committee_red) - logLik(full_model_main_effects_mu)),
+  -2 * (logLik(mu_emp_gender_red) - logLik(full_model_main_effects_mu)),
+  -2 * (logLik(mu_interaction) - logLik(model_full))
 )
 
 # Compute reduced Type III models
@@ -534,6 +539,9 @@ chisquares_contingencies_3 <- c(
   -2 * (logLik(mu_intercept_3) - logLik(model_full)),
   -2 * (logLik(model_mu_cont_red) - logLik(model_full))
 )
+
+
+
 
 
 #------------------------------------------------------------------------------#
