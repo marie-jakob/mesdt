@@ -29,11 +29,12 @@ test_that("compute_LRTs() computes the correct Chisq value for uncorrelated rand
   expect_equal(unname(unlist(lrts_test$LRTs[, 5])), model_test_uncor_afex$anova_table$`Pr(>Chisq)`, tolerance = 1e-2)
 })
 
-test_that("compute_LRTs() throws a message when trying to test an intercept without predictors", {
+test_that("compute_LRTs() throws a message when there is nothing to test in the model.", {
+  # Case 1: no predictors & test_intercepts = F
   fit <- fit_mlsdt(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
   mm <- construct_modelmatrices(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), data = internal_sdt_data)
   expect_message(compute_LRTs(fit, ~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data,
-                              mm  = mm, test_intercepts = T))
+                              mm  = mm, test_intercepts = F))
   #expect_equal(compute_LRTs(fit, ~ 1 + (x1 || ID), ~ 0 + (x1 || ID), dv = "y", data = internal_sdt_data,
   #                          mm  = mm, test_intercepts = T),
   #             NULL)
@@ -44,8 +45,160 @@ test_that("compute_LRTs() throws a message when trying to test an intercept with
 #------------------------------------------------------------------------------#
 #### Type II SS ####
 
-test_that("compute_LRTs() Type II works with a standard two-factorial design without test_intercepts", {
+
+test_that("compute_LRTs() works only with intercepts", {
+
+  form_mu <- ~ 1 + (1 | id)
+  form_lambda <- ~ 1 + (1 | id)
+  fit <- fit_mlsdt(form_lambda, form_mu,
+                   dv = "assessment",
+                   trial_type_var = "status_ef",
+                   data = dat_exp_2)
+
+  mm <- construct_modelmatrices(form_mu, form_lambda,
+                                dv = "assessment",
+                                trial_type_var = "status",
+                                data = dat_exp_2)
+
+  LRTs_2 <- compute_LRTs(fit$fit_obj,
+                         form_mu, form_lambda,
+                         dv = "assessment",
+                         data = dat_exp_2,
+                         type = 2,
+                         mm,
+                         test_intercepts = T)
+  LRTs_3 <- compute_LRTs(fit$fit_obj,
+                         form_mu, form_lambda,
+                         dv = "assessment",
+                         data = dat_exp_2,
+                         type = 3,
+                         mm,
+                         test_intercepts = T)
+  # Should be equal to each other
+  expect_equal(unlist(LRTs_3$LRTs[, 4]), unlist(LRTs_2$LRTs[, 4]), tolerance = 1e-4)
+  # And equal to models fitted by hand
+  expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chi_squares_intercepts, tolerance = 1e-4)
+})
+
+
+
+test_that("compute_LRTs() Type II works with one predictor on mu", {
+  form_mu <- ~ committee_ef + (1 | id)
+  form_lambda <- ~ 1 + (1 | id)
   # Same for the uncorrelated model
+  fit <- fit_mlsdt(form_mu, form_lambda,
+                   dv = "assessment",
+                   trial_type_var = "status_ef",
+                   data = dat_exp_2)
+
+  mm <- construct_modelmatrices(form_mu, form_lambda,
+                                dv = "assessment",
+                                trial_type_var = "status",
+                                data = dat_exp_2)
+
+  # Type 2 - test_intercepts = T
+  LRTs_2_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                       dv = "assessment",
+                       data = dat_exp_2,
+                       type = 2,
+                       mm,
+                       test_intercepts = T)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chi_squares_one_pred_mu_2, tolerance = 1e-4)
+
+  # Type 2 - test_intercepts = F
+  LRTs_2 <- compute_LRTs(fit$fit_obj,
+                         form_mu, form_lambda,
+                         dv = "assessment",
+                         data = dat_exp_2,
+                         type = 2,
+                         mm,
+                         test_intercepts = F)
+  expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chi_squares_one_pred_mu_2[3], tolerance = 1e-4)
+
+  # Type 3 - test_intercepts = T
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = T)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chi_squares_one_pred_mu_3, tolerance = 1e-4)
+
+  # Type 3 - test_intercepts = F
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = F)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chi_squares_one_pred_mu_3[3], tolerance = 1e-4)
+
+})
+
+
+
+test_that("compute_LRTs() Type II works with one predictor on mu and lambda", {
+  form_mu <- ~ committee_ef + (1 | id)
+  form_lambda <- ~ committee_ef + (1 | id)
+  # Same for the uncorrelated model
+  fit <- fit_mlsdt(form_mu, form_lambda,
+                   dv = "assessment",
+                   trial_type_var = "status_ef",
+                   data = dat_exp_2)
+
+  mm <- construct_modelmatrices(form_mu, form_lambda,
+                                dv = "assessment",
+                                trial_type_var = "status",
+                                data = dat_exp_2)
+
+  # Type 2 - test_intercepts = T
+  LRTs_2_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 2,
+                                    mm,
+                                    test_intercepts = T)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chisquares_one_factor_2, tolerance = 1e-4)
+
+  # Type 2 - test_intercepts = F
+  LRTs_2 <- compute_LRTs(fit$fit_obj,
+                         form_mu, form_lambda,
+                         dv = "assessment",
+                         data = dat_exp_2,
+                         type = 2,
+                         mm,
+                         test_intercepts = F)
+  expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chisquares_one_factor_2[c(2, 4)], tolerance = 1e-4)
+
+  # Type 3 - test_intercepts = T
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = T)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_one_factor_3, tolerance = 1e-4)
+
+  # Type 3 - test_intercepts = F
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = F)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_one_factor_3[c(2, 4)], tolerance = 1e-4)
+
+})
+
+
+test_that("compute_LRTs() works with a standard two-factorial design", {
+  # Type II, test_intercepts = T
   fit <- fit_mlsdt(formula_lambda = ~ committee_ef * emp_gender_ef + (1 | id),
                    formula_mu = ~ committee_ef * emp_gender_ef + (1 | id),
                    dv = "assessment",
@@ -66,26 +219,9 @@ test_that("compute_LRTs() Type II works with a standard two-factorial design wit
                        type = 2,
                        mm,
                        test_intercepts = T)
-  expect_equal(chisquares_two_factors, unlist(LRTs$LRTs[, 4]), tolerance = 1e-4)
-})
+  expect_equal(chisquares_two_factors_2, as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
 
-
-
-
-test_that("compute_LRTs() Type II works with a standard two-factorial design with test_intercepts", {
-  # Same for the uncorrelated model
-  fit <- fit_mlsdt(formula_lambda = ~ committee_ef * emp_gender_ef + (1 | id),
-                   formula_mu = ~ committee_ef * emp_gender_ef + (1 | id),
-                   dv = "assessment",
-                   trial_type_var = "status_ef",
-                   data = dat_exp_2)
-
-  mm <- construct_modelmatrices(~ committee * emp_gender +  (1 | id),
-                                ~ committee * emp_gender + (1 | id),
-                                dv = "assessment",
-                                trial_type_var = "status",
-                                data = dat_exp_2)
-
+  # Type II, test_intercepts = F
   LRTs <- compute_LRTs(fit$fit_obj,
                        ~ committee * emp_gender + (1 | id),
                        ~ committee * emp_gender + (1 | id),
@@ -93,11 +229,92 @@ test_that("compute_LRTs() Type II works with a standard two-factorial design wit
                        data = dat_exp_2,
                        type = 2,
                        mm)
-  expect_equal(chisquares_two_factors[-c(1, 5)], unlist(LRTs$LRTs[, 4]), tolerance = 1e-4)
+  expect_equal(chisquares_two_factors_2[-c(1, 5)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  # Type III, test_intercepts = T
+  LRTs <- compute_LRTs(fit$fit_obj,
+                       ~ committee * emp_gender + (1 | id),
+                       ~ committee * emp_gender + (1 | id),
+                       dv = "assessment",
+                       data = dat_exp_2,
+                       type = 3,
+                       mm,
+                       test_intercepts = T)
+  expect_equal(chisquares_two_factors_3, as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-3)
+
+  # Type III, test_intercepts = T
+  LRTs <- compute_LRTs(fit$fit_obj,
+                       ~ committee * emp_gender + (1 | id),
+                       ~ committee * emp_gender + (1 | id),
+                       dv = "assessment",
+                       data = dat_exp_2,
+                       type = 3,
+                       mm,
+                       test_intercepts = F)
+  expect_equal(chisquares_two_factors_3[-c(1, 5)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-3)
 })
 
 
-# Appropriate error messages
+
+#------------------------------------------------------------------------------#
+#### Factors with > 2 levels ####
+
+test_that("compute_LRTs() works for factors with > 2 levels", {
+  # Type II, test_intercepts = T
+  form_mu <- ~ contingencies + (1 | id)
+  form_lambda <- ~ contingencies + (1 | id)
+  # Same for the uncorrelated model
+  fit <- fit_mlsdt(form_mu, form_lambda,
+                   dv = "assessment",
+                   trial_type_var = "status_ef",
+                   data = dat_exp_2)
+
+  mm <- construct_modelmatrices(form_mu, form_lambda,
+                                dv = "assessment",
+                                trial_type_var = "status",
+                                data = dat_exp_2)
+
+  # Type 2 - test_intercepts = T
+  LRTs_2_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 2,
+                                    mm,
+                                    test_intercepts = T)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chisquares_contingencies_2, tolerance = 1e-4)
+
+  # Type 2 - test_intercepts = F
+  LRTs_2 <- compute_LRTs(fit$fit_obj,
+                         form_mu, form_lambda,
+                         dv = "assessment",
+                         data = dat_exp_2,
+                         type = 2,
+                         mm,
+                         test_intercepts = F)
+  expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chisquares_contingencies_2[c(2, 4)], tolerance = 1e-4)
+
+  # Type 3 - test_intercepts = T
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = T)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_contingencies_3, tolerance = 1e-4)
+
+  # Type 3 - test_intercepts = F
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = F)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_contingencies_3[c(2, 4)], tolerance = 1e-4)
+
+})
 
 
 

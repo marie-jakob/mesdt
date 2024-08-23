@@ -164,8 +164,8 @@ chisquares_two_factors <- c(
 
 # -> should be identical for Type II and Type III SS
 # and identical to afex Type III
-form_lambda <- ~ 1 + (1 | id)
-form_mu <- ~ 1 + (1 | id)
+form_lambda <- ~ emp_gender * committee + (1 | id)
+form_mu <- ~ emp_gender * committee + (1 | id)
 
 fit_exp_2 <- fit_mlsdt(form_mu,
                        form_lambda,
@@ -203,4 +203,48 @@ LRTs_exp_2_3 <- compute_LRTs(fit_exp_2$fit_obj,
 LRTs_exp_2_3
 fit_exp_2_afex
 LRTs_exp_2_2
+
+
+# Tests:
+# Only intercepts
+# one intercept + one predictor
+# one predictor mu + lambda
+
+
+#------------------------------------------------------------------------------#
+#### Factors with > 2 levels ####
+
+form_lambda <- ~ contingencies + (1 | id)
+form_mu <- ~ contingencies + (1 | id)
+
+fit_exp_2 <- fit_mlsdt(form_mu,
+                       form_lambda,
+                       dv = "assessment",
+                       trial_type_var = "status",
+                       data = dat_exp_2)
+
+mm_exp_2 <- construct_modelmatrices(form_mu,
+                                    form_lambda,
+                                    dv = "assessment",
+                                    trial_type_var = "status",
+                                    data = dat_exp_2)
+
+LRTs_exp_2_2 <- compute_LRTs(fit_exp_2$fit_obj,
+                             form_mu,
+                             form_lambda,
+                             dv = "assessment",
+                             data = dat_exp_2,
+                             type = 3,
+                             mm_exp_2,
+                             test_intercepts = T)
+
+# This somehow works??
+
+
+
+
+
+
+# Goal for LRTs: option to test factors and to test single predictors
+
 

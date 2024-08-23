@@ -162,6 +162,151 @@ contrasts(dat_exp_2$committee) <- contr.sum(2)
 contrasts(dat_exp_2$emp_gender) <- contr.sum(2)
 contrasts(dat_exp_2$contingencies) <- contr.sum(3)
 
+#------------------------------------------------------------------------------#
+#### Only Intercepts ####
+
+full_model <- glmer(assessment ~ status_ef + (status_ef | id),
+                                 data = dat_exp_2,
+                                 family = binomial("probit"),
+                                 nAGQ = 0)
+fit_red_lambda <- glmer(assessment ~ 0 + status_ef + (status_ef | id),
+                        data = dat_exp_2,
+                        family = binomial("probit"),
+                        nAGQ = 0)
+fit_red_mu <- glmer(assessment ~ 1 + (status_ef | id),
+                        data = dat_exp_2,
+                        family = binomial("probit"),
+                        nAGQ = 0)
+
+anova(full_model, fit_red_lambda)
+anova(full_model, fit_red_mu)
+
+chi_squares_intercepts <- c(
+  -2 * (logLik(fit_red_lambda) - logLik(full_model)),
+  -2 * (logLik(fit_red_mu) - logLik(full_model))
+)
+
+
+#------------------------------------------------------------------------------#
+#### One predictor on mu ####
+
+full_model <- glmer(assessment ~ status_ef + status_ef:committee_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+
+# Intercept lambda -> compare with full model
+intercept_lambda <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef + (status_ef | id),
+                          data = dat_exp_2,
+                          family = binomial("probit"),
+                          nAGQ = 0)
+
+# Intercept mu
+intercept_mu_full <- glmer(assessment ~ 1 + status_ef + (status_ef | id),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+intercept_mu_red <- glmer(assessment ~ 1 + (status_ef | id),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+# committee mu
+committee_mu_red <- intercept_mu_full
+
+
+anova(full_model, intercept_lambda)
+anova(intercept_mu_full, intercept_mu_red)
+anova(full_model, committee_mu_red)
+
+chi_squares_one_pred_mu_2 <- c(
+  2 * (logLik(full_model) - logLik(intercept_lambda)),
+  2 * (logLik(intercept_mu_full) - logLik(intercept_mu_red)),
+  2 * (logLik(full_model) - logLik(committee_mu_red))
+)
+
+
+#### Type 3
+intercept_mu_3 <- glmer(assessment ~ 1 + status_ef:committee_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+
+chi_squares_one_pred_mu_3 <- c(
+  2 * (logLik(full_model) - logLik(intercept_lambda)),
+  2 * (logLik(full_model) - logLik(intercept_mu_3)),
+  2 * (logLik(full_model) - logLik(committee_mu_red))
+)
+
+
+#------------------------------------------------------------------------------#
+#### One-factorial design ####
+
+
+full_model <- glmer(assessment ~ status_ef * committee_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+
+intercept_lambda_full <- glmer(assessment ~ 1 + status_ef + status_ef:committee_ef + (status_ef | id),
+                              data = dat_exp_2,
+                              family = binomial("probit"),
+                              nAGQ = 0)
+intercept_lambda_red <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef + (status_ef | id),
+                               data = dat_exp_2,
+                               family = binomial("probit"),
+                               nAGQ = 0)
+intercept_mu_full <- glmer(assessment ~ committee_ef + status_ef + (status_ef | id),
+                               data = dat_exp_2,
+                               family = binomial("probit"),
+                               nAGQ = 0)
+intercept_mu_red <- glmer(assessment ~ committee_ef + (status_ef | id),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+
+lambda_committee <- intercept_lambda_full
+
+mu_committee <- intercept_mu_full
+
+anova(intercept_lambda_full, intercept_lambda_red)
+anova(intercept_mu_full, intercept_mu_red)
+anova(full_model, lambda_committee)
+anova(full_model, mu_committee)
+
+chisquares_one_factor_2 <- c(
+  -2 * (logLik(intercept_lambda_red) - logLik(intercept_lambda_full)),
+  -2 * (logLik(lambda_committee) - logLik(full_model)),
+  -2 * (logLik(intercept_mu_red) - logLik(intercept_mu_full)),
+  -2 * (logLik(mu_committee) - logLik(full_model))
+)
+
+
+#### Type 3
+# -> only different for intercepts
+
+lambda_intercept_3 <-  glmer(assessment ~ 0 + status_ef * committee_ef + (status_ef | id),
+                             data = dat_exp_2,
+                             family = binomial("probit"),
+                             nAGQ = 0)
+mu_intercept_3 <-  glmer(assessment ~ committee_ef + committee_ef:status_ef + (status_ef | id),
+                             data = dat_exp_2,
+                             family = binomial("probit"),
+                             nAGQ = 0)
+
+chisquares_one_factor_3 <- c(
+  -2 * (logLik(lambda_intercept_3) - logLik(full_model)),
+  -2 * (logLik(lambda_committee) - logLik(full_model)),
+  -2 * (logLik(mu_intercept_3) - logLik(full_model)),
+  -2 * (logLik(mu_committee) - logLik(full_model))
+)
+
+
+
+
+#------------------------------------------------------------------------------#
+#### Two-factorial design ####
+
+
 fit <- fit_mlsdt(~ committee * emp_gender + (1 | id),
                  ~ committee * emp_gender + (1 | id),
                  data = dat_exp_2,
@@ -232,9 +377,9 @@ mu_interaction <- glmer(assessment ~ committee_ef * emp_gender_ef + emp_gender_e
 # Test intercepts
 lambda_intercept_full <- glmer(assessment ~ 1 + status_ef + status_ef:committee_ef * status_ef:emp_gender_ef +
                                  status_ef:committee_ef:emp_gender_ef + (status_ef | id),
-                           data = dat_exp_2,
-                           family = binomial("probit"),
-                           nAGQ = 0)
+                               data = dat_exp_2,
+                               family = binomial("probit"),
+                               nAGQ = 0)
 lambda_intercept_red <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef * status_ef:emp_gender_ef +
                                 status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                               data = dat_exp_2,
@@ -245,9 +390,9 @@ mu_intercept_full <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef
                            family = binomial("probit"),
                            nAGQ = 0)
 mu_intercept_red <- glmer(assessment ~ committee_ef * emp_gender_ef + (status_ef | id),
-                           data = dat_exp_2,
-                           family = binomial("probit"),
-                           nAGQ = 0)
+                          data = dat_exp_2,
+                          family = binomial("probit"),
+                          nAGQ = 0)
 
 
 anova(lambda_committee_red, full_model_main_effects)
@@ -260,20 +405,147 @@ anova(model_full, mu_interaction)
 anova(lambda_intercept_red, lambda_intercept_full)
 anova(lambda_intercept_red, lambda_intercept_full)
 
-chisquares_two_factors <- c(
-  -2 * (logLik(lambda_intercept_red) - logLik(lambda_intercept_full)),
-  -2 * (logLik(lambda_committee_red) - logLik(full_model_main_effects)),
-  -2 * (logLik(lambda_emp_gender_red) - logLik(full_model_main_effects)),
-  -2 * (logLik(lambda_interaction) - logLik(model_full)),
-  -2 * (logLik(mu_intercept_red) - logLik(mu_intercept_full)),
-  -2 * (logLik(mu_committee_red) - logLik(full_model_main_effects_mu)),
-  -2 * (logLik(mu_emp_gender_red) - logLik(full_model_main_effects_mu)),
-  -2 * (logLik(mu_interaction) - logLik(model_full))
+chisquares_two_factors_2 <- c(
+  2 * (logLik(lambda_intercept_red) - logLik(lambda_intercept_full)),
+  2 * (logLik(lambda_committee_red) - logLik(full_model_main_effects)),
+  2 * (logLik(lambda_emp_gender_red) - logLik(full_model_main_effects)),
+  2 * (logLik(lambda_interaction) - logLik(model_full)),
+  2 * (logLik(mu_intercept_red) - logLik(mu_intercept_full)),
+  2 * (logLik(mu_committee_red) - logLik(full_model_main_effects_mu)),
+  2 * (logLik(mu_emp_gender_red) - logLik(full_model_main_effects_mu)),
+  2 * (logLik(mu_interaction) - logLik(model_full))
+)
+
+# Compute reduced Type III models
+
+lambda_intercept_3 <- glmer(assessment ~ 0 + committee_ef * emp_gender_ef * status_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+lambda_committee_3 <- glmer(assessment ~ emp_gender_ef * status_ef + committee_ef:status_ef +
+                              committee_ef:emp_gender_ef + committee_ef:emp_gender_ef:status_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+lambda_emp_gender_3 <- glmer(assessment ~ committee_ef * status_ef + committee_ef:status_ef + emp_gender_ef:status_ef +
+                               committee_ef:emp_gender_ef + committee_ef:emp_gender_ef:status_ef + (status_ef | id),
+                             data = dat_exp_2,
+                             family = binomial("probit"),
+                             nAGQ = 0)
+lambda_interaction_3 <- glmer(assessment ~ committee_ef * status_ef + emp_gender_ef * status_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+
+mu_intercept_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef:committee_ef +
+                          status_ef:emp_gender_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                        data = dat_exp_2,
+                        family = binomial("probit"),
+                        nAGQ = 0)
+mu_committee_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * emp_gender_ef +
+                          status_ef:emp_gender_ef:committee_ef + (status_ef | id),
+                        data = dat_exp_2,
+                        family = binomial("probit"),
+                        nAGQ = 0)
+mu_emp_gender_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * committee_ef +
+                          status_ef:emp_gender_ef:committee_ef + (status_ef | id),
+                        data = dat_exp_2,
+                        family = binomial("probit"),
+                        nAGQ = 0)
+mu_interaction_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * committee_ef +
+                           status_ef * emp_gender_ef + (status_ef | id),
+                         data = dat_exp_2,
+                         family = binomial("probit"),
+                         nAGQ = 0)
+
+
+
+
+chisquares_two_factors_3 <- c(
+  2 * (logLik(model_full) - logLik(lambda_intercept_3)),
+  2 * (logLik(model_full) - logLik(lambda_committee_3)),
+  2 * (logLik(model_full) - logLik(lambda_emp_gender_3)),
+  2 * (logLik(model_full) - logLik(lambda_interaction_3)),
+  2 * (logLik(model_full) - logLik(mu_intercept_3)),
+  2 * (logLik(model_full) - logLik(mu_committee_3)),
+  2 * (logLik(model_full) - logLik(mu_emp_gender_3)),
+  2 * (logLik(model_full) - logLik(mu_interaction_3))
 )
 
 
+#------------------------------------------------------------------------------#
+#### Factors with > 2 levels ####
+
+model_full <- glmer(assessment ~ contingencies_ef_1 * status_ef + + contingencies_ef_2 * status_ef +
+                      (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+# Type II SS
+model_lambda_intercept <- glmer(assessment ~ 1 + status_ef + status_ef:contingencies_ef_1 +
+                                  status_ef:contingencies_ef_2 + (status_ef | id),
+                                data = dat_exp_2,
+                                family = binomial("probit"),
+                                nAGQ = 0)
+
+model_lambda_intercept_red <- glmer(assessment ~ 0 + status_ef + status_ef:contingencies_ef_1 +
+                                      status_ef:contingencies_ef_2 + (status_ef | id),
+                                data = dat_exp_2,
+                                family = binomial("probit"),
+                                nAGQ = 0)
+
+model_lambda_cont_red <- model_lambda_intercept
+
+model_mu_intercept <- glmer(assessment ~ contingencies_ef_1 + contingencies_ef_2 + status_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+model_mu_intercept_red <- glmer(assessment ~ contingencies_ef_1 + contingencies_ef_2 + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+model_mu_cont_red <- model_mu_intercept
+
+chisquares_contingencies_2 <- c(
+  -2 * (logLik(model_lambda_intercept_red) - logLik(model_lambda_intercept)),
+  -2 * (logLik(model_lambda_cont_red) - logLik(model_full)),
+  -2 * (logLik(model_mu_intercept_red) - logLik(model_mu_intercept)),
+  -2 * (logLik(model_mu_cont_red) - logLik(model_full))
+)
+
+
+# Type III
+
+lambda_intercept_3 <- glmer(assessment ~ 0 + status_ef * contingencies_ef_1 +
+                              status_ef * contingencies_ef_2 + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+mu_intercept_3 <- glmer(assessment ~ contingencies_ef_1 + contingencies_ef_2 +
+                          status_ef:contingencies_ef_1 + status_ef:contingencies_ef_2 + (status | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+
+
+chisquares_contingencies_3 <- c(
+  -2 * (logLik(lambda_intercept_3) - logLik(model_full)),
+  -2 * (logLik(model_lambda_cont_red) - logLik(model_full)),
+  -2 * (logLik(mu_intercept_3) - logLik(model_full)),
+  -2 * (logLik(model_mu_cont_red) - logLik(model_full))
+)
+
+
+#------------------------------------------------------------------------------#
+#### Store internal data ####
+
+
 usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_afex,
-                  model_test_uncor, model_test_uncor_afex, dat_exp_2, chisquares_two_factors,
+                  model_test_uncor, model_test_uncor_afex, dat_exp_2,
+                  chi_squares_intercepts, chi_squares_one_pred_mu_2, chi_squares_one_pred_mu_3,
+                  chisquares_one_factor_2, chisquares_one_factor_3,
+                  chisquares_two_factors_2, chisquares_two_factors_3,
+                  chisquares_contingencies_2, chisquares_contingencies_3,
                   internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)
 
