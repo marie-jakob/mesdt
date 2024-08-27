@@ -221,6 +221,11 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
         "p.value" = p_value
       ))
     })
+
+    to_return <- list(
+      "reduced_fits" = reduced_fits,
+      "LRTs" = t(LRT_results)
+    )
   }
 
   else if (type == 2) {
@@ -283,13 +288,15 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
 
     LRT_results <- cbind(LRTs_lambda, LRTs_mu)
     reduced_fits <- c(reduced_fits_lambda, reduced_fits_mu)
+    full_fits <- c(full_fits_lambda, full_fits_mu)
+
+    to_return <- list(
+      "LRTs" = t(LRT_results),
+      "reduced_fits" = reduced_fits,
+      "full_fits" = full_fits
+    )
   }
-
-
   # compute LRTs
-  return(list(
-    "reduced_fits" = reduced_fits,
-    "LRTs" = t(LRT_results)
-  ))
+  return(to_return)
 }
 

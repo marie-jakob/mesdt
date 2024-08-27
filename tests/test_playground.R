@@ -255,15 +255,24 @@ LRTs_exp_2_2 <- compute_LRTs(fit_exp_2$fit_obj,
 #------------------------------------------------------------------------------#
 #### Crossed random effects ####
 
-form_cross <- assessment ~ status_ef + (1 | id) + (status_ef | id) + (1 | stimulus)
+form_cross <- assessment ~ status_ef + (1 | id) + (status_ef + committee_ef | id) + (1 | stimulus)
 lme4::findbars(form_cross)
-rdm_pred_lambda <- paste(sapply(lme4::findbars(form_cross), function(x) {
+
+rdm_facs_lambda <- sapply(lme4::findbars(form_cross), function(x) {
+  gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+})
+
+rdm_pred_lambda <- sapply(lme4::findbars(form_cross), function(x) {
   gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
-}), collapse = "+")
+})
+
+
+
+
 
 # find a way to split random effects according to random-effects grouping factor
 
-mod_cross <- glmer(assessment ~ status_ef + (1 | id) + (1 | stimulus),
+mod_cross <- glmer(assessment ~ status_ef + (1 || id),
                    data = dat_exp_2,
                    family = binomial("probit"),
                    nAGQ = 0)
@@ -276,5 +285,19 @@ rdm_pred_lambda <- paste(sapply(lme4::findbars(form_cross), function(x) {
 
 mm_rdm_lambda <- stats::model.matrix(formula(paste("~", rdm_pred_lambda, sep = "")),
                                      data = dat_exp_2)
+
+construct_glmer_formula(~ x1 + (1 | ID) + (1 | stim), ~ x1 + (1 | ID) + (1 | stim), dv = "trial_type",
+                        correlate_sdt_params = F)
+
+
+construct_modelmatrices(~ committee + (1 | id) + (1 | stimulus), ~ committee + (1 | id) + (1 | stimulus),
+                        trial_type_var = "assessment", data = dat_exp_2) -> test_mm
+
+
+test_cross <- fit_mlsdt(~ committee + (1 | id) + (1 | stimulus), ~ committee + (1 | id) + (1 | stimulus),
+                        dv = "assessment", trial_type_var = "status", data = dat_exp_2)
+
+
+
 
 

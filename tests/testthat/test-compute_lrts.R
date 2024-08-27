@@ -220,6 +220,15 @@ test_that("compute_LRTs() works with a standard two-factorial design", {
                        mm,
                        test_intercepts = T)
   expect_equal(chisquares_two_factors_2, as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+  # check dfs
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[1]]), stats::df.residual(fit$fit_obj) + 4)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[2]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[3]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[4]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[5]]), stats::df.residual(fit$fit_obj) + 4)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[6]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[7]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[8]]), stats::df.residual(fit$fit_obj) + 1)
 
   # Type II, test_intercepts = F
   LRTs <- compute_LRTs(fit$fit_obj,
@@ -231,6 +240,14 @@ test_that("compute_LRTs() works with a standard two-factorial design", {
                        mm)
   expect_equal(chisquares_two_factors_2[-c(1, 5)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
 
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[1]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[2]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[3]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[4]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[5]]), stats::df.residual(fit$fit_obj) + 2)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[6]]), stats::df.residual(fit$fit_obj) + 1)
+
+
   # Type III, test_intercepts = T
   LRTs <- compute_LRTs(fit$fit_obj,
                        ~ committee * emp_gender + (1 | id),
@@ -241,6 +258,14 @@ test_that("compute_LRTs() works with a standard two-factorial design", {
                        mm,
                        test_intercepts = T)
   expect_equal(chisquares_two_factors_3, as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-3)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[1]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[2]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[3]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[4]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[5]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[6]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[7]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[8]]), stats::df.residual(fit$fit_obj) + 1)
 
   # Type III, test_intercepts = T
   LRTs <- compute_LRTs(fit$fit_obj,
@@ -252,6 +277,12 @@ test_that("compute_LRTs() works with a standard two-factorial design", {
                        mm,
                        test_intercepts = F)
   expect_equal(chisquares_two_factors_3[-c(1, 5)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-3)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[1]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[2]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[3]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[4]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[5]]), stats::df.residual(fit$fit_obj) + 1)
+  expect_equal(stats::df.residual(LRTs$reduced_fits[[6]]), stats::df.residual(fit$fit_obj) + 1)
 })
 
 

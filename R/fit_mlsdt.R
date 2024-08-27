@@ -3,6 +3,7 @@
 #' @param formula_mu formula for sensitivity
 #' @param formula_lambda formula for response bias
 #' @param dv name of dependent variable
+#' @param correlate_sdt_params model correlations between mu and lambda random effects?
 #' @param mm model matrices (corresponding to the formulas) -> only necessary for formulas with uncorrelated random effects
 #' @param param_idc optional vector of parameters indices to be removed to construct a reduced formula
 #' @param remove_from_mu optional argument to indicate whether the to-be-removed parameter
@@ -20,7 +21,8 @@
 #'   dv = "y",
 #'   trial_type_var = "trial_type"
 #' )
-construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL, param_idc = NULL, remove_from_mu = NULL) {
+construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sdt_params = T,
+                                    mm = NULL, param_idc = NULL, remove_from_mu = NULL) {
 
   # Handle missing random effects terms
   if (is.null(lme4::findbars(formula_lambda)) | is.null(lme4::findbars(formula_mu))) {
@@ -29,48 +31,82 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL, p
   }
 
   # check if the random grouping factor is the same for mu and lambda
-  rdm_fac_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][2]
-  rdm_fac_lambda <- strsplit(as.character(lme4::findbars(formula_lambda)), "\\|")[[1]][2]
-
-  if (rdm_fac_mu != rdm_fac_lambda) {
-    message("Random grouping factors must be the same for sensitivity and response bias.")
-    return()
-  } else rdm_fac <- rdm_fac_mu
-
+  rdm_facs_mu <- sapply(lme4::findbars(formula_mu), function(x) {
+    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+  })
+  rdm_facs_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
+    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+  })
 
   # Handle given random effects-structure and convert to the corresponding internal formula
   # Logic: Variables are in the same parentheses if they are correlated (no "||" stuff)
 
-  rd_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
+  rdm_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
     gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
   })
-  rd_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
+  rdm_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
     gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
   })
+  # add "_rdm_fac" to the model matrix to allow for multiple random effects
+  # TODO: adapt for multiple factors
+
 
   # Case 1: Everything Correlated
   # -> one random-effects term
   # -> ~ ... + (mm[["rdm_mu"]] + mm[["rdm_lambda]] | ID)
   # 0 to suppress automatic intercept (is contained in the mm)
-  if (length(lme4::findbars(formula_lambda)) == 1 & length(lme4::findbars(formula_mu)) == 1) {
-    rdm_formula <- paste("(0 + mm[['rdm_lambda']] + mm[['rdm_mu']] | ", rdm_fac, ")", sep = "")
+  rdm_formula_parts <- list()
+  if (length(rdm_facs_lambda) == length(unique(rdm_facs_lambda)) &
+      length(rdm_facs_mu) == length(unique(rdm_facs_mu))) {
+    if (correlate_sdt_params) {
+      for (rdm_fac in rdm_facs_lambda) {
+        if (rdm_fac %in% rdm_facs_mu) {
+          rdm_formula_parts <- append(rdm_formula_parts,
+                                paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+        } else {
+          rdm_formula_parts <- append(rdm_formula_parts,
+                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+        }
+      }
+      for (rdm_fac in rdm_facs_mu) {
+        if (! rdm_fac %in% rdm_facs_lambda) {
+          rdm_formula_parts <- append(rdm_formula_parts,
+                                      paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+        }
+      }
+    } else {
+      for (rdm_fac in rdm_facs_lambda) {
+        rdm_formula_parts <- append(rdm_formula_parts,
+                                    paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+      }
+      for (rdm_fac in rdm_facs_mu) {
+        rdm_formula_parts <- append(rdm_formula_parts,
+                                    paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+      }
+    }
   } else {
     message("Given random-effects structure contains uncorrelated terms. Modeling all random effects
             parametes as uncorrelated since a mix of correlated and uncorrelated terms is not
             supported at the moment.")
+    if (correlate_sdt_params) message("Correlating SDT Parameters is not possible in the presence of uncorrelated terms.")
+
     # Case 2: No Correlations
     # -> as many random-effects terms as predictors in the model
-    rdm_formula_lambda <- paste(sapply(1:ncol(mm[["rdm_lambda"]]), function(x) {
-      return(paste("(0 + mm[['rdm_lambda']][, ", x, "] | ", rdm_fac, ")", sep =""))
-    }), collapse = "+")
+    print(rdm_facs_mu)
 
-    rdm_formula_mu <- paste(sapply(1:ncol(mm[["rdm_mu"]]), function(x) {
-      return(paste("(0 + mm[['rdm_mu']][, ", x, "] | ", rdm_fac, ")", sep =""))
-    }), collapse = "+")
-
-    rdm_formula <- paste(rdm_formula_lambda, rdm_formula_mu, sep = " + ")
+    for (rdm_fac in unique(rdm_facs_lambda)) {
+      rdm_formula_parts <- append(rdm_formula_parts, paste(sapply(1:ncol(mm[[paste("rdm_lambda_", rdm_fac, sep = "")]]), function(x) {
+        return(paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, ", x, "] | ", rdm_fac, ")", sep =""))
+      }), collapse = "+"))
+    }
+    for (rdm_fac in unique(rdm_facs_mu)) {
+      rdm_formula_parts <- append(rdm_formula_parts, paste(sapply(1:ncol(mm[[paste("rdm_mu_", rdm_fac, sep = "")]]), function(x) {
+        return(paste("(0 + mm[['rdm_mu_", rdm_fac, "']][, ", x, "] | ", rdm_fac, ")", sep =""))
+      }), collapse = "+"))
+    }
 
   }
+  rdm_formula <- paste(rdm_formula_parts, collapse = " + ")
     # Case 3: Mix -> TODO for later
     # -> some terms correlated, some not
     # -> ~ ... + (mm[["rdm_mu"]] + mm[["rdm_lambda]] | ID)
@@ -86,7 +122,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, mm = NULL, p
       # make a reduced model formula
       param_idc_char <- deparse(param_idc)
       if (grepl(":", param_idc_char)) {
-        print("hi")
         param_idc_char <- paste("c(", param_idc_char, ")", sep = "")
       }
       if (remove_from_mu) {
@@ -160,25 +195,46 @@ construct_modelmatrices <- function(formula_mu,
   mm_mu <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
   mm_mu <- mm_mu * trial_type_ef
 
+  to_return <- list(
+    "mu" = mm_mu,
+    "lambda" = mm_lambda
+  )
+
   # mm_rdm_lambda
-  rdm_pred_lambda <- paste(sapply(lme4::findbars(formula_lambda), function(x) {
-    gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
-    }), collapse = "+")
+  # check if the random grouping factor is the same for mu and lambda
+  rdm_facs_mu <- sapply(lme4::findbars(formula_mu), function(x) {
+    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+  })
+  rdm_facs_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
+    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+  })
+  rdm_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
+    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+  })
+  rdm_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
+    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+  })
 
-  mm_rdm_lambda <- stats::model.matrix(formula(paste("~", rdm_pred_lambda, sep = "")),
-                                          data = data)
-
-  # mm_rdm_mu
-  # rdm_pred_mu <- strsplit(as.character(lme4::findbars(formula_mu)), "\\|")[[1]][1]
-  rdm_pred_mu <- paste(sapply(lme4::findbars(formula_mu), function(x) {
-    gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
-    }), collapse = "+")
-
-  mm_rdm_mu <- stats::model.matrix(formula(paste("~ ", rdm_pred_mu, sep = "")),
-                                      data = data)
-  # As above: multiply this with trial_type variable to code interaction with that factor
-  mm_rdm_mu <- mm_rdm_mu * trial_type_ef
-
+  for (rdm_fac in unique(rdm_facs_mu)) {
+    # get all predictors "belonging" to one random effects grouping factor
+    rdm_pred_mu_tmp <- paste(rdm_pred_mu[which(rdm_facs_mu == rdm_fac)], collapse = "+")
+    form_tmp <- formula(paste("~", rdm_pred_mu_tmp, sep = ""))
+    mm_rdm_mu_tmp <- stats::model.matrix(form_tmp,
+                                             data = data)
+    mm_rdm_mu_tmp <- mm_rdm_mu_tmp * trial_type_ef
+    name_rdm_mu_tmp <- paste("rdm_mu_", rdm_fac, sep = "")
+    to_return[[name_rdm_mu_tmp]] <- mm_rdm_mu_tmp
+  }
+  for (rdm_fac in unique(rdm_facs_lambda)) {
+    # get all predictors "belonging" to one random effects grouping factor
+    rdm_pred_lambda_tmp <- paste(rdm_pred_lambda[which(rdm_facs_lambda == rdm_fac)], collapse = "+")
+    #print(rdm_pred_lambda_tmp)
+    form_tmp <- formula(paste("~", rdm_pred_lambda_tmp, sep = ""))
+    mm_rdm_lambda_tmp <- stats::model.matrix(form_tmp,
+                                             data = data)
+    name_rdm_lambda_tmp <- paste("rdm_lambda_", rdm_fac, sep = "")
+    to_return[[name_rdm_lambda_tmp]] <- mm_rdm_lambda_tmp
+  }
 
   # the model matrices consist only of the predictor variables for mu and lambda
   # for the fixed and random effects, respectively
@@ -188,12 +244,7 @@ construct_modelmatrices <- function(formula_mu,
   # all parameters of a model term (i.e., all effect-coded predictors for a 3-level
   # factor x1) can be removed from the model matrices for LRTs of nested models
 
-  return(list(
-    "mu" = mm_mu,
-    "lambda" = mm_lambda,
-    "rdm_mu" = mm_rdm_mu,
-    "rdm_lambda" = mm_rdm_lambda
-  ))
+  return(to_return)
 }
 
 
@@ -213,7 +264,6 @@ reduce_random_effects_structure <- function(glmer_formula, fit_obj) {
   # If correlations are in the model, remove the correlations first
   correlations_in_model <- ifelse(all(dim(attr(unclass(VarCorr(fit_obj))$ID, "correlation")) != c(1, 1)),
                                   T, F)
-  print(correlations_in_model)
   if (correlations_in_model) {
     print("Removing Correlations between random effects.")
     # remove correlations between random effects
@@ -255,12 +305,13 @@ fit_mlsdt <- function(formula_mu,
                       dv,
                       trial_type_var = "trial_type",
                       data,
+                      correlate_sdt_params = T,
                       backend = "lme4",
                       max_iter = 1e6) {
 
   if (backend == "lme4") {
     mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
-    glmer_formula_full <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm)
+    glmer_formula_full <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm, correlate_sdt_params = T)
 
     # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
     # (y, ID)
