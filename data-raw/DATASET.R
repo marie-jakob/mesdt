@@ -540,7 +540,23 @@ chisquares_contingencies_3 <- c(
   -2 * (logLik(model_mu_cont_red) - logLik(model_full))
 )
 
+#------------------------------------------------------------------------------#
+#### Uncorrelated mu and lambda ####
 
+model_uncor_sdt <- glmer(assessment ~ committee_ef * status_ef + (1 + committee_ef | id) + (0 + status_ef + status_ef:committee_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+
+
+#------------------------------------------------------------------------------#
+#### Crossed random effects ####
+
+fit_cross_intercept <- glmer(assessment ~ status_ef + (status_ef | id) + (0 + status_ef | file_name),
+                             data = dat_exp_2, family = binomial("probit"), nAGQ = 0)
+
+fit_cross_slopes <- glmer(assessment ~ committee_ef * status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                             data = dat_exp_2, family = binomial("probit"), nAGQ = 0)
 
 
 
@@ -554,6 +570,10 @@ usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_
                   chisquares_one_factor_2, chisquares_one_factor_3,
                   chisquares_two_factors_2, chisquares_two_factors_3,
                   chisquares_contingencies_2, chisquares_contingencies_3,
+                  fit_cross_intercept, fit_cross_slopes,
                   internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)
+
+
+
 

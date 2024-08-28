@@ -298,6 +298,27 @@ test_cross <- fit_mlsdt(~ committee + (1 | id) + (1 | stimulus), ~ committee + (
                         dv = "assessment", trial_type_var = "status", data = dat_exp_2)
 
 
+#------------------------------------------------------------------------------#
+#### Fit crossed random effects model ####
 
 
+fit_cross_intercept <- glmer(assessment ~ status_ef + (status_ef | file_name),
+                             data = dat_exp_2,
+                             family = binomial("probit"),
+                             nAGQ = 0)
 
+summary(fit_cross_intercept)
+
+
+test <- fit_mlsdt(~ 1 + (1 | file_name),
+          ~ 1 + (1 | file_name),
+          data = dat_exp_2,
+          dv = "assessment",
+          trial_type_var = "status")
+summary(test$fit_obj)
+logLik(test$fit_obj)
+logLik(fit_cross_intercept)
+df.residual(test$fit_obj)
+df.residual(fit_cross_intercept)
+
+ranef(fit_cross_intercept)
