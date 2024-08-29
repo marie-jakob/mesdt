@@ -1,4 +1,3 @@
-
 #' Fit a multilevel signal detection theory model
 #'
 #' @param formula_mu Formula specifying fixed and random effects on sensitivity
@@ -21,78 +20,76 @@ fit_mlsdt <- function(formula_mu,
                       trial_type_var = "trial_type",
                       data,
                       correlate_sdt_params = T,
-                      backend = "lme4",
-                      max_iter = 1e6) {
+                      max_iter = 1e6,
+                      fast = T) {
+  mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
+  glmer_formula_full <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
+                                                correlate_sdt_params = correlate_sdt_params)
 
-  if (backend == "lme4") {
-    mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
-    glmer_formula_full <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm, correlate_sdt_params = T)
+  # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
+  # (y, ID)
 
-    # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
-    # (y, ID)
+  # Do the random-effects structure selection
+  # Starting with the faster optimizer (nAGQ = 0)
+  glmer_formula <- glmer_formula_full
+  count <- 0
+  #while (TRUE) {
+  #  print("Fitting")
+  # 1. Fit the full model
+  fit_obj <- fit_glmm(glmer_formula, data)
 
-    # Do the random-effects structure selection
-    # Starting with the faster optimizer (nAGQ = 0)
-    glmer_formula <- glmer_formula_full
-    count <- 0
-    #while (TRUE) {
-    #  print("Fitting")
-    # 1. Fit the full model
-    fit_obj_fast <- lme4::glmer(glmer_formula,
-                                data = data,
-                                family = binomial(link = "probit"),
-                                # this is only for testing speed -> changed for actual use
-                                nAGQ = 0)
-    #if (isSingular(fit_obj_fast) | length(fit_obj_fast@optinfo$conv$lme4) > 0) {
-    #  count <- count + 1
-    #  if (count > 1) break;
-    #  glmer_formula <- reduce_random_effects_structure(glmer_formula, fit_obj_fast)
-    #  print(glmer_formula)
+  #if (isSingular(fit_obj_fast) | length(fit_obj_fast@optinfo$conv$lme4) > 0) {
+  #  count <- count + 1
+  #  if (count > 1) break;
+  #  glmer_formula <- reduce_random_effects_structure(glmer_formula, fit_obj_fast)
+  #  print(glmer_formula)
 
-    #} else {
-    # 2. Try including the correlations between random effects again
+  #} else {
+  # 2. Try including the correlations between random effects again
 
-    # If the model converges, use that one, else the one before
-    #  break;
-    #}
+  # If the model converges, use that one, else the one before
+  #  break;
+  #}
 
 
-    #}
-    fit_obj <- fit_obj_fast
-    # Continue with nAGQ = 1
-    #fit_obj <- lme4::glmer(glmer_formula,
-    #                       data = data,
-    #                       family = binomial(link = "probit"),
-    #                       # this is only for testing speed -> changed for actual use
-    #                       nAGQ = 1)
+  #}
+  # fit_obj <- fit_obj_fast
+  # Continue with nAGQ = 1
+  #fit_obj <- lme4::glmer(glmer_formula,
+  #                       data = data,
+  #                       family = binomial(link = "probit"),
+  #                       # this is only for testing speed -> changed for actual use
+  #                       nAGQ = 1)
 
-    # Ensure convergence: increase iterations until the model converges
-    #count = 1;
-    #while (TRUE) {
-    #  if (count > (max_iter / 1e4)) {
-    #    stop("Final Model did not converge in the given maximal number of iterations.
-    #         Please increase max_iter and try again.")
-    #    break;
-    #  }
-    #  if (length(model_base_fin@optinfo$conv$lme4) == 0) break;
+  # Ensure convergence: increase iterations until the model converges
+  #count = 1;
+  #while (TRUE) {
+  #  if (count > (max_iter / 1e4)) {
+  #    stop("Final Model did not converge in the given maximal number of iterations.
+  #         Please increase max_iter and try again.")
+  #    break;
+  #  }
+  #  if (length(model_base_fin@optinfo$conv$lme4) == 0) break;
 
-    #  print(count);
-    #  pars = getME(model_base_fin, c("theta","fixef"))
-    #  fit_obj <- update(fit_obj,
-    #                           start = pars,
-    #                           control = glmerControl(optCtrl = list(maxfun = 1e4)))
-    #  print(model_base_fin@optinfo$conv$lme4)
+  #  print(count);
+  #  pars = getME(model_base_fin, c("theta","fixef"))
+  #  fit_obj <- update(fit_obj,
+  #                           start = pars,
+  #                           control = glmerControl(optCtrl = list(maxfun = 1e4)))
+  #  print(model_base_fin@optinfo$conv$lme4)
 
-    #  count = count + 1
-    #}
-    # TODO: decide whether to do the thing with adding the correlations again.
-  } else {
-    message("Only lme4 backend supported at the moment.")
-    return()
-  }
+  #  count = count + 1
+  #}
+  # TODO: decide whether to do the thing with adding the correlations again.
 
   # Post-Processing the lme4 output
-  coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
+  if (backend == "lme4") {
+    coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
+    coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
+  } else if (backend == "glmmTMB") {
+    coefs_lambda <- summary(fit_obj)$coefficients$cond[grepl("lambda", rownames(summary(fit_obj)$coefficients$cond)), ]
+    coefs_mu <- summary(fit_obj)$coefficients$cond[grepl("mu", rownames(summary(fit_obj)$coefficients$cond)), ]
+  }
   #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
   #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
   if (is.null(nrow(coefs_lambda))) {
@@ -102,7 +99,6 @@ fit_mlsdt <- function(formula_mu,
   }
   rownames(coefs_lambda) <- colnames(mm[["lambda"]])
 
-  coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
   if (is.null(nrow(coefs_mu))) {
     coefs_mu <- t(data.frame(coefs_mu))
   } else {
