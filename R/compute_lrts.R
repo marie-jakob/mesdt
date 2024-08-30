@@ -28,13 +28,13 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
   if (type == 3) {
     reduced_formulas_lambda <- lapply(range_lambda, function(x) {
-      to_remove <- which(attr(mm[["lambda"]], "assign") == x)
+      to_remove <- as.numeric(which(attr(mm[["lambda"]], "assign") == x))
       if (length(to_remove) == dim(mm[["lambda"]])[2]) to_remove = Inf
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                               param_idc = to_remove, remove_from_mu = F)
     })
     reduced_formulas_mu <- lapply(range_mu, function(x) {
-      to_remove <- which(attr(mm[["mu"]], "assign") == x)
+      to_remove <- as.numeric(which(attr(mm[["mu"]], "assign") == x))
       if (length(to_remove) == dim(mm[["mu"]])[2]) to_remove = Inf
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                               param_idc = to_remove, remove_from_mu = T)
@@ -60,7 +60,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       else n_orders_lambda <- 1:(max(orders) - 1)
       full_formulas_lambda <- lapply(n_orders_lambda, function(x) {
         # add 0 for the intercept (which is dropped since it has no order)
-        to_remove <- which(c(0, orders[assigns]) > x)
+        to_remove <- as.numeric(which(c(0, orders[assigns]) > x))
         if (length(to_remove) == dim(mm[["lambda"]])[2]) to_remove = Inf
         construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                                 param_idc = to_remove, remove_from_mu = F)
@@ -71,9 +71,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     reduced_formulas_lambda <- lapply(range_lambda, function(x) {
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
-      to_remove <- c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x))
+      to_remove <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
       if (length(to_remove) == dim(mm[["lambda"]])[2]) to_remove = Inf
-      print(paste("to_remove lambda: ", to_remove))
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                               param_idc = to_remove, remove_from_mu = F)
     })
@@ -87,8 +86,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       else n_orders_mu <- 1:(max(orders) - 1)
 
       full_formulas_mu <- lapply(n_orders_mu, function(x) {
-        to_remove <- which(c(0, orders[assigns]) > x)
-        print(paste("to_remove lambda: ", to_remove))
+        to_remove <- as.numeric(which(c(0, orders[assigns]) > x))
         construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                                 param_idc = to_remove, remove_from_mu = T)
       })
@@ -97,7 +95,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     reduced_formulas_mu <- lapply(range_mu, function(x) {
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
-      to_remove <- c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x))
+      to_remove <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
       if (length(to_remove) == dim(mm[["mu"]])[2]) to_remove = Inf
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
                               param_idc = to_remove, remove_from_mu = T)
@@ -124,19 +122,11 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     print("Fitting full models")
     full_fits_lambda <- lapply(full_formulas_lambda, function(formula_tmp) {
       print(paste("Fitting ", formula_tmp, sep = ""))
-      fit_full <- lme4::glmer(formula_tmp,
-                              data = data,
-                              family = binomial(link = "probit"),
-                              # this is only for testing speed -> changed for actual use
-                              nAGQ = 0)
+      return(fit_glmm(formula_tmp, data, mm))
     })
     full_fits_mu <- lapply(full_formulas_mu, function(formula_tmp) {
       print(paste("Fitting ", formula_tmp, sep = ""))
-      fit_full <- lme4::glmer(formula_tmp,
-                              data = data,
-                              family = binomial(link = "probit"),
-                              # this is only for testing speed -> changed for actual use
-                              nAGQ = 0)
+      return(fit_glmm(formula_tmp, data, mm))
     })
     print("Fitting reduced models")
     full_formulas_lambda_char <- sapply(full_formulas_lambda, function(x) {as.character(x)[3]})
@@ -144,14 +134,10 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       if (as.character(formula_tmp)[3] %in% full_formulas_lambda_char) {
         print(paste("Copying ", formula_tmp, sep = ""))
         which_model_equal <- which(full_formulas_lambda_char == as.character(formula_tmp)[3])
-        fit_reduced <- full_fits_lambda[[which_model_equal]]
+        return(full_fits_lambda[[which_model_equal]])
       } else {
         print(paste("Fitting ", formula_tmp, sep = ""))
-        fit_reduced <- lme4::glmer(formula_tmp,
-                                   data = data,
-                                   family = binomial(link = "probit"),
-                                   # this is only for testing speed -> changed for actual use
-                                   nAGQ = 0)
+        return(fit_glmm(formula_tmp, data, mm))
       }
     })
 
@@ -161,14 +147,10 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
         print(paste("Copying ", formula_tmp, sep = ""))
         which_model_equal <- which(full_formulas_mu_char == as.character(formula_tmp)[3])
         print(which_model_equal)
-        fit_reduced <- full_fits_mu[[which_model_equal]]
+        return(full_fits_mu[[which_model_equal]])
       } else {
         print(paste("Fitting ", formula_tmp, sep = ""))
-        fit_reduced <- lme4::glmer(formula_tmp,
-                                   data = data,
-                                   family = binomial(link = "probit"),
-                                   # this is only for testing speed -> changed for actual use
-                                   nAGQ = 0)
+        return(fit_glmm(formula_tmp, data, mm))
       }
 
     })
@@ -177,11 +159,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     print("Fitting reduced models")
     reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), function(formula_tmp) {
       print(paste("Fitting ", formula_tmp, sep = ""))
-      fit_reduced <- lme4::glmer(formula_tmp,
-                                 data = data,
-                                 family = binomial(link = "probit"),
-                                 # this is only for testing speed -> changed for actual use
-                                 nAGQ = 0)
+      return(fit_glmm(formula_tmp, data, mm))
     })
   }
 
@@ -233,21 +211,22 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
     reduced_fits_lambda <- submodels[["reduced_fits_lambda"]]
     reduced_fits_mu <- submodels[["reduced_fits_mu"]]
     # full fit for the highest-order effects is the already-fitted full model
-    full_fits_lambda <- append(submodels[["full_fits_lambda"]], fit_obj)
-    full_fits_mu <- append(submodels[["full_fits_mu"]], fit_obj)
+    # full_fits_lambda <- append(submodels[["full_fits_lambda"]], fit_obj)
+    full_fits_lambda <- submodels[["full_fits_lambda"]]
+    full_fits_lambda[[length(full_fits_lambda) + 1]] <- fit_obj
+    full_fits_mu <- submodels[["full_fits_mu"]]
+    full_fits_mu[[length(full_fits_mu) + 1]] <- fit_obj
     # assigns <- attr(mm[["lambda"]], "assign")
 
     # Compute Lambda LRTs if there are parameters to test
     if (length(reduced_fits_lambda) > 0) {
-      print(paste("length(full_fits_lambda): ", length(full_fits_lambda)))
       orders_lambda <- attr(terms(lme4::nobars(formula_lambda)), "order")
       if (test_intercepts) orders_lambda <- c(0, orders_lambda)
       LRTs_lambda <- sapply(1:length(reduced_fits_lambda), function(fit_ind) {
-        print(fit_ind)
-        print(orders_lambda[fit_ind] + as.numeric(test_intercepts))
         fit_tmp <- reduced_fits_lambda[[fit_ind]]
         LL_reduced <- stats::logLik(fit_tmp)
         LL_full <- stats::logLik(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
+
         chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
         p_value <- pchisq(q = chisq, df = 1, lower.tail = F)
         df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])

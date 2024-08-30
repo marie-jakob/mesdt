@@ -141,5 +141,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
                               # parent.frame() sets scope of the parent environment (i.e., where the function
                               # is called from) for the formula -> necessary such that model matrices can be found
                               env = parent.frame())
+                              #env = getNamespace("mlsdt"))
   return(glmer_formula)
 }

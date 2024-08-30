@@ -558,6 +558,67 @@ fit_cross_intercept <- glmer(assessment ~ status_ef + (status_ef | id) + (0 + st
 fit_cross_slopes <- glmer(assessment ~ committee_ef * status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
                              data = dat_exp_2, family = binomial("probit"), nAGQ = 0)
 
+# LRTs for crossed random effects
+full_model <- glmer(assessment ~ status_ef * committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
+
+intercept_lambda_full <- glmer(assessment ~ 1 + status_ef + status_ef:committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                               data = dat_exp_2,
+                               family = binomial("probit"),
+                               nAGQ = 0)
+intercept_lambda_red <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                              data = dat_exp_2,
+                              family = binomial("probit"),
+                              nAGQ = 0)
+intercept_mu_full <- glmer(assessment ~ committee_ef + status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                           data = dat_exp_2,
+                           family = binomial("probit"),
+                           nAGQ = 0)
+intercept_mu_red <- glmer(assessment ~ committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                          data = dat_exp_2,
+                          family = binomial("probit"),
+                          nAGQ = 0)
+
+lambda_committee <- intercept_lambda_full
+
+mu_committee <- intercept_mu_full
+
+anova(intercept_lambda_full, intercept_lambda_red)
+anova(intercept_mu_full, intercept_mu_red)
+anova(full_model, lambda_committee)
+anova(full_model, mu_committee)
+
+chisquares_cross_2 <- c(
+  -2 * (logLik(intercept_lambda_red) - logLik(intercept_lambda_full)),
+  -2 * (logLik(lambda_committee) - logLik(full_model)),
+  -2 * (logLik(intercept_mu_red) - logLik(intercept_mu_full)),
+  -2 * (logLik(mu_committee) - logLik(full_model))
+)
+
+
+#### Type 3
+# -> only different for intercepts
+
+lambda_intercept_3 <-  glmer(assessment ~ 0 + status_ef * committee_ef +(committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                             data = dat_exp_2,
+                             family = binomial("probit"),
+                             nAGQ = 0)
+mu_intercept_3 <-  glmer(assessment ~ committee_ef + committee_ef:status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                         data = dat_exp_2,
+                         family = binomial("probit"),
+                         nAGQ = 0)
+
+chisquares_cross_3 <- c(
+  -2 * (logLik(lambda_intercept_3) - logLik(full_model)),
+  -2 * (logLik(lambda_committee) - logLik(full_model)),
+  -2 * (logLik(mu_intercept_3) - logLik(full_model)),
+  -2 * (logLik(mu_committee) - logLik(full_model))
+)
+
+
+
 
 
 #------------------------------------------------------------------------------#
@@ -565,12 +626,13 @@ fit_cross_slopes <- glmer(assessment ~ committee_ef * status_ef + (committee_ef 
 
 
 usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_afex,
-                  model_test_uncor, model_test_uncor_afex, dat_exp_2,
+                  model_test_uncor, model_test_uncor_afex, dat_exp_2, model_uncor_sdt,
                   chi_squares_intercepts, chi_squares_one_pred_mu_2, chi_squares_one_pred_mu_3,
                   chisquares_one_factor_2, chisquares_one_factor_3,
                   chisquares_two_factors_2, chisquares_two_factors_3,
                   chisquares_contingencies_2, chisquares_contingencies_3,
                   fit_cross_intercept, fit_cross_slopes,
+                  chisquares_cross_2, chisquares_cross_3,
                   internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)
 

@@ -348,11 +348,62 @@ test_that("compute_LRTs() works for factors with > 2 levels", {
 })
 
 
+#------------------------------------------------------------------------------#
+#### Crossed random effects ####
 
 
+test_that("compute_LRTs() Type II works with one predictor on mu and lambda and crossed random effects", {
+  form_mu <- ~ committee_ef + (1 | id) + (1 | file_name)
+  form_lambda <- ~ committee_ef + (committee_ef | id)
+  # Same for the uncorrelated model
+  fit <- fit_mlsdt(form_mu, form_lambda,
+                   dv = "assessment",
+                   trial_type_var = "status_ef",
+                   data = dat_exp_2)
 
+  mm <- construct_modelmatrices(form_mu, form_lambda,
+                                dv = "assessment",
+                                trial_type_var = "status",
+                                data = dat_exp_2)
 
+  # Type 2 - test_intercepts = T
+  LRTs_2_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 2,
+                                    mm,
+                                    test_intercepts = T)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chisquares_cross_2, tolerance = 1e-3)
 
+  # Type 2 - test_intercepts = F
+  LRTs_2 <- compute_LRTs(fit$fit_obj,
+                         form_mu, form_lambda,
+                         dv = "assessment",
+                         data = dat_exp_2,
+                         type = 2,
+                         mm,
+                         test_intercepts = F)
+  expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chisquares_cross_2[c(2, 4)], tolerance = 1e-3)
 
+  # Type 3 - test_intercepts = T
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = T)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_cross_3, tolerance = 1e-3)
 
+  # Type 3 - test_intercepts = F
+  LRTs_3_intercepts <- compute_LRTs(fit$fit_obj,
+                                    form_mu, form_lambda,
+                                    dv = "assessment",
+                                    data = dat_exp_2,
+                                    type = 3,
+                                    mm,
+                                    test_intercepts = F)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_cross_3[c(2, 4)], tolerance = 1e-3)
 
+})

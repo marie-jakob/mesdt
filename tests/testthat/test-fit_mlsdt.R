@@ -41,38 +41,46 @@ test_that("fit_mlsdt() estimates the correct model", {
 
 
 test_that("fit_mlsdt() works for uncorrelated mu and lambda effects", {
-  #fit <- fit_mlsdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
+  fit <- fit_mlsdt(~ 1 + committee + (1 + committee | id),
+                   ~ 1 + committee + (1 + committee | id),
+                   dv = "assessment", data = dat_exp_2, trial_type_var = "status",
+                   correlate_sdt_params = F)$fit_obj
 
   # Number of estimated fixed effects parameters
-  #expect_equal(length(fixef(fit)), length(fixef(model_test_uncor)))
+  expect_equal(length(fixef(fit)), length(fixef(model_uncor_sdt)))
   # Number of estimated random effects parameters
-  #expect_equal(length(ranef(fit)), length(ranef(model_test_uncor)))
-  #expect_equal(length(unlist(VarCorr(fit))), length(unlist(VarCorr(model_test_uncor))))
+  expect_equal(length(ranef(fit)), length(ranef(model_uncor_sdt)))
+  expect_equal(length(unlist(VarCorr(fit))), length(unlist(VarCorr(model_uncor_sdt))))
 
   # fixed effects estimates
-  #expect_equal(unname(fixef(fit))[1:2], unname(fixef(model_test_uncor))[1:2], tolerance = 1e-4)
+  expect_equal(unname(fixef(fit))[1], unname(fixef(model_uncor_sdt))[1], tolerance = 1e-4)
+  expect_equal(unname(fixef(fit))[2], unname(fixef(model_uncor_sdt))[2] * -1, tolerance = 1e-4)
   # mu fixef effects
-  #expect_equal(unname(fixef(fit))[3:4], unname(fixef(model_test_uncor))[3:4] * 2, tolerance = 1e-4)
+  expect_equal(unname(fixef(fit))[3], unname(fixef(model_uncor_sdt))[3] * -2, tolerance = 1e-4)
+  expect_equal(unname(fixef(fit))[4], unname(fixef(model_uncor_sdt))[4] * 2, tolerance = 1e-3)
 
   # observed Fisher information
-  #expect_equal(unname(vcov(fit))[1:2, 1:2], unname(vcov(model_test_uncor))[1:2, 1:2], tolerance = 1e-3)
-  #expect_equal(unname(vcov(fit))[3:4, 3:4], unname(vcov(model_test_uncor))[3:4, 3:4] * 4, tolerance = 1e-3)
-  #expect_equal(unname(vcov(fit))[1:2, 3:4], unname(vcov(model_test_uncor))[1:2, 3:4] * 2, tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[1, 1], unname(vcov(model_uncor_sdt))[1, 1], tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[2, 2], unname(vcov(model_uncor_sdt))[2, 2], tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[3, 3], unname(vcov(model_uncor_sdt))[3, 3] * 4, tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[4, 4], unname(vcov(model_uncor_sdt))[4, 4] * 4, tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[1, 2], unname(vcov(model_uncor_sdt))[1, 2] * -1, tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[1, 3], unname(vcov(model_uncor_sdt))[1, 3] * 2, tolerance = 1e-3)
+  expect_equal(unname(vcov(fit))[1, 4], unname(vcov(model_uncor_sdt))[1, 4] * 2, tolerance = 1e-3)
 
   # lambda random effect variances
-  #expect_equal(as.data.frame(VarCorr(fit))$vcov[1:2], as.data.frame(VarCorr(model_test_uncor))$vcov[1:2], tolerance = 1e-3)
-  #expect_equal(as.data.frame(VarCorr(fit))$vcov[3:4], as.data.frame(VarCorr(model_test_uncor))$vcov[3:4] * 4, tolerance = 1e-3)
-
+  expect_equal(as.data.frame(VarCorr(fit))$vcov[1:2], as.data.frame(VarCorr(model_uncor_sdt))$vcov[1:2], tolerance = 1e-3)
+  expect_equal(as.data.frame(VarCorr(fit))$vcov[4], as.data.frame(VarCorr(model_uncor_sdt))$vcov[4] * 4, tolerance = 1e-3)
+  expect_equal(as.data.frame(VarCorr(fit))$vcov[5], as.data.frame(VarCorr(model_uncor_sdt))$vcov[5], tolerance = 1e-3)
   # random effects correlations
-  #expect_equal(as.data.frame(VarCorr(fit))$sdcor[5:10],
-  #             as.data.frame(VarCorr(model_test_uncor))$sdcor[5:10],
-  #             tolerance = 1e-3)
+  expect_equal(as.data.frame(VarCorr(fit))$sdcor[3], as.data.frame(VarCorr(model_uncor_sdt))$sdcor[3] * -1, tolerance = 1e-3)
+  expect_equal(as.data.frame(VarCorr(fit))$sdcor[6], as.data.frame(VarCorr(model_uncor_sdt))$sdcor[6] * -1, tolerance = 1e-3)
 
   # random effects estimates
-  #expect_equal(ranef(fit)$ID[, 1], ranef(model_test_uncor)$ID[, 1], tolerance = 1e-4)
-  #expect_equal(ranef(fit)$ID[, 2], ranef(model_test_uncor)$ID[, 2], tolerance = 1e-4)
-  #expect_equal(ranef(fit)$ID[, 3], ranef(model_test_uncor)$ID[, 3] * 2, tolerance = 1e-4)
-  #expect_equal(ranef(fit)$ID[, 4], ranef(model_test_uncor)$ID[, 4] * 2, tolerance = 1e-4)
+  expect_equal(ranef(fit)$id[, 1], ranef(model_uncor_sdt)$id[, 1], tolerance = 1e-4)
+  expect_equal(ranef(fit)$id[, 2], ranef(model_uncor_sdt)$id[, 2] * -1, tolerance = 1e-4)
+  expect_equal(ranef(fit)$id[, 3], ranef(model_uncor_sdt)$id[, 3] * -2, tolerance = 1e-4)
+  expect_equal(ranef(fit)$id[, 4], ranef(model_uncor_sdt)$id[, 4] * 2, tolerance = 1e-3)
 
 }
 )
@@ -211,3 +219,42 @@ test_that("fit_mlsdt() works for crossed random effects with random intercepts, 
   # -> does not work here for singular fits...
 }
 )
+
+#------------------------------------------------------------------------------#
+#### glmmTMB ####
+
+test_that("fit_mlsdt() estimates the correct model", {
+  options("mlsdt.backend" = "lme4")
+  fit_lme <- fit_mlsdt(~ x1 + (x1 | ID),
+                       ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                       fast = F)$fit_obj
+  options("mlsdt.backend" = "glmmTMB")
+  mm1 <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)
+  fit_tmb <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
+  logLik(fit_lme)
+  logLik(fit_tmb)
+  fixef(fit_lme)
+  fixef(fit_tmb)
+
+  mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_sdt_data)
+
+  options("mlsdt.backend" = "lme4")
+  lrts_lme4_3 <- compute_LRTs(fit_lme, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                            mm = mm, test_intercepts = T, type = 3)
+
+  options("mlsdt.backend" = "glmmTMB")
+  lrts_tmb_3 <- compute_LRTs(fit_tmb, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                            mm = mm, test_intercepts = T, type = 3)
+
+  expect_equal(lrts_lme4_3$LRTs[, 4], lrts_tmb_3$LRTs[, 4], tolerance = 1e-2)
+
+  options("mlsdt.backend" = "lme4")
+  lrts_lme4_2 <- compute_LRTs(fit_lme, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                              mm = mm, test_intercepts = T, type = 2)
+
+  options("mlsdt.backend" = "glmmTMB")
+  lrts_tmb_2 <- compute_LRTs(fit_tmb, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                             mm = mm, test_intercepts = T, type = 2)
+  expect_equal(lrts_lme4_2$LRTs[, 4], lrts_tmb_2$LRTs[, 4], tolerance = 1e-2)
+
+})

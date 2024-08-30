@@ -10,7 +10,9 @@ fit_mlsdt(
   dv,
   trial_type_var = "trial_type",
   data,
-  backend = "lme4"
+  correlate_sdt_params = T,
+  max_iter = 1e+06,
+  fast = T
 )
 }
 \arguments{

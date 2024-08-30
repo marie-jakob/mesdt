@@ -36,7 +36,7 @@ fit_mlsdt <- function(formula_mu,
   #while (TRUE) {
   #  print("Fitting")
   # 1. Fit the full model
-  fit_obj <- fit_glmm(glmer_formula, data)
+  fit_obj <- fit_glmm(glmer_formula, data, mm)
 
   #if (isSingular(fit_obj_fast) | length(fit_obj_fast@optinfo$conv$lme4) > 0) {
   #  count <- count + 1
@@ -53,7 +53,7 @@ fit_mlsdt <- function(formula_mu,
 
 
   #}
-  # fit_obj <- fit_obj_fast
+  #fit_obj <- fit_obj_fast
   # Continue with nAGQ = 1
   #fit_obj <- lme4::glmer(glmer_formula,
   #                       data = data,
@@ -83,10 +83,12 @@ fit_mlsdt <- function(formula_mu,
   # TODO: decide whether to do the thing with adding the correlations again.
 
   # Post-Processing the lme4 output
-  if (backend == "lme4") {
+  # backend = ifelse(options("backend") == "", "lme4", options("backend"))
+  if (options("mlsdt.backend") == "lme4") {
+    print("Hi")
     coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
     coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
-  } else if (backend == "glmmTMB") {
+  } else if (options("mlsdt.backend") == "glmmTMB") {
     coefs_lambda <- summary(fit_obj)$coefficients$cond[grepl("lambda", rownames(summary(fit_obj)$coefficients$cond)), ]
     coefs_mu <- summary(fit_obj)$coefficients$cond[grepl("mu", rownames(summary(fit_obj)$coefficients$cond)), ]
   }
