@@ -74,15 +74,15 @@ test_that("construct_modelmatrices() constructs valid mm for crossed random effe
     construct_modelmatrices(formula_mu = ~ 1 + (1 | id) + (1 | file_name),
                             formula_lambda = ~ 1 + (1 | id) + (1 | file_name),
                             dv = "y",
-                            trial_type_var = "status",
+                            trial_type_var = "status_fac",
                             data = dat_exp_2),
     list("mu" = stats::model.matrix(~ 1, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ 1, data = dat_exp_2),
          "rdm_mu_id" = stats::model.matrix(~ 1, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "rdm_mu_file_name" = stats::model.matrix(~ 1, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "rdm_lambda_id" = stats::model.matrix(~ 1, data = dat_exp_2),
          "rdm_lambda_file_name" = stats::model.matrix(~ 1, data = dat_exp_2)
     ))
@@ -94,15 +94,15 @@ test_that("construct_modelmatrices() constructs valid mm for crossed random effe
     construct_modelmatrices(formula_mu = ~ committee + (committee | id) + (committee | file_name),
                             formula_lambda = ~ committee + (committee | id) + (committee | file_name),
                             dv = "y",
-                            trial_type_var = "status",
+                            trial_type_var = "status_fac",
                             data = dat_exp_2),
     list("mu" = stats::model.matrix(~ committee, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ committee, data = dat_exp_2),
          "rdm_mu_id" = stats::model.matrix(~ committee, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "rdm_mu_file_name" = stats::model.matrix(~ committee, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "rdm_lambda_id" = stats::model.matrix(~ committee, data = dat_exp_2),
          "rdm_lambda_file_name" = stats::model.matrix(~ committee, data = dat_exp_2)
     ))
@@ -113,13 +113,13 @@ test_that("construct_modelmatrices() constructs valid mm for different random ef
     construct_modelmatrices(formula_mu = ~ 1 + (emp_gender | id),
                             formula_lambda = ~ 1 + (committee | file_name),
                             dv = "y",
-                            trial_type_var = "status",
+                            trial_type_var = "status_fac",
                             data = dat_exp_2),
     list("mu" = stats::model.matrix(~ 1, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "lambda" = stats::model.matrix(~ 1, data = dat_exp_2),
          "rdm_mu_id" = stats::model.matrix(~ emp_gender, data = dat_exp_2) *
-           stats::model.matrix(~ status, data = dat_exp_2)[, 2] * 0.5,
+           stats::model.matrix(~ status_fac, data = dat_exp_2)[, 2] * 0.5,
          "rdm_lambda_file_name" = stats::model.matrix(~ committee, data = dat_exp_2)
     ))
 })

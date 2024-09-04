@@ -54,15 +54,16 @@ __glmmTMB__ package:
 
 + New R package using automatic differentiation to estimate GLMMs
 
-+ may be faster than lme4 (but has less functionality at the moment)
++ may be faster than lme4 (but has less functionality at the moment) -> definitely faster by a lot
 
 + https://glmmtmb.github.io/glmmTMB__glmmTMB__ package: 
 
-+ New R package using automatic differentiation to estimate GLMMs
 
-+ may be faster than lme4 (but has less functionality at the moment)
+__glmmADMB__ package:
 
-+ https://glmmtmb.github.io/glmmTMB/
++ also uses automatic differentiation
+
++ older than glmmTMB and does not seem to be actively supported anymore
 
 ### Determining the Random-Effects Structure
 

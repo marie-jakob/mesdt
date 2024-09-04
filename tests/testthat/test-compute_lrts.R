@@ -1,4 +1,6 @@
 
+options("mlsdt.backend" = "lme4")
+
 #------------------------------------------------------------------------------#
 #### compute_LRTs() ####
 
@@ -52,12 +54,12 @@ test_that("compute_LRTs() works only with intercepts", {
   form_lambda <- ~ 1 + (1 | id)
   fit <- fit_mlsdt(form_lambda, form_mu,
                    dv = "assessment",
-                   trial_type_var = "status_ef",
+                   trial_type_var = "status_fac",
                    data = dat_exp_2)
 
   mm <- construct_modelmatrices(form_mu, form_lambda,
                                 dv = "assessment",
-                                trial_type_var = "status",
+                                trial_type_var = "status_fac",
                                 data = dat_exp_2)
 
   LRTs_2 <- compute_LRTs(fit$fit_obj,
@@ -88,12 +90,12 @@ test_that("compute_LRTs() Type II works with one predictor on mu", {
   # Same for the uncorrelated model
   fit <- fit_mlsdt(form_mu, form_lambda,
                    dv = "assessment",
-                   trial_type_var = "status_ef",
+                   trial_type_var = "status_fac",
                    data = dat_exp_2)
 
   mm <- construct_modelmatrices(form_mu, form_lambda,
                                 dv = "assessment",
-                                trial_type_var = "status",
+                                trial_type_var = "status_fac",
                                 data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
@@ -146,12 +148,12 @@ test_that("compute_LRTs() Type II works with one predictor on mu and lambda", {
   # Same for the uncorrelated model
   fit <- fit_mlsdt(form_mu, form_lambda,
                    dv = "assessment",
-                   trial_type_var = "status_ef",
+                   trial_type_var = "status_fac",
                    data = dat_exp_2)
 
   mm <- construct_modelmatrices(form_mu, form_lambda,
                                 dv = "assessment",
-                                trial_type_var = "status",
+                                trial_type_var = "status_fac",
                                 data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
@@ -202,13 +204,13 @@ test_that("compute_LRTs() works with a standard two-factorial design", {
   fit <- fit_mlsdt(formula_lambda = ~ committee_ef * emp_gender_ef + (1 | id),
                    formula_mu = ~ committee_ef * emp_gender_ef + (1 | id),
                    dv = "assessment",
-                   trial_type_var = "status_ef",
+                   trial_type_var = "status_fac",
                    data = dat_exp_2)
 
   mm <- construct_modelmatrices(~ committee * emp_gender +  (1 | id),
                                 ~ committee * emp_gender + (1 | id),
                                 dv = "assessment",
-                                trial_type_var = "status",
+                                trial_type_var = "status_fac",
                                 data = dat_exp_2)
 
   LRTs <- compute_LRTs(fit$fit_obj,
@@ -297,12 +299,12 @@ test_that("compute_LRTs() works for factors with > 2 levels", {
   # Same for the uncorrelated model
   fit <- fit_mlsdt(form_mu, form_lambda,
                    dv = "assessment",
-                   trial_type_var = "status_ef",
+                   trial_type_var = "status_fac",
                    data = dat_exp_2)
 
   mm <- construct_modelmatrices(form_mu, form_lambda,
                                 dv = "assessment",
-                                trial_type_var = "status",
+                                trial_type_var = "status_fac",
                                 data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
@@ -358,12 +360,12 @@ test_that("compute_LRTs() Type II works with one predictor on mu and lambda and 
   # Same for the uncorrelated model
   fit <- fit_mlsdt(form_mu, form_lambda,
                    dv = "assessment",
-                   trial_type_var = "status_ef",
+                   trial_type_var = "status_fac",
                    data = dat_exp_2)
 
   mm <- construct_modelmatrices(form_mu, form_lambda,
                                 dv = "assessment",
-                                trial_type_var = "status",
+                                trial_type_var = "status_fac",
                                 data = dat_exp_2)
 
   # Type 2 - test_intercepts = T

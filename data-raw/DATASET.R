@@ -72,8 +72,8 @@ for (i in 1:n_subj) {
 # 1st half: signals (X1 = 1), 2nd half lures (X1 = -1)
 
 Y <- c(signals_high, signals_low, lures_high, lures_low)
-X1 <- c(rep(1, n_subj * n_trials * 2),
-        rep(-1, n_subj * n_trials * 2))
+X1 <- c(rep(0.5, n_subj * n_trials * 2),
+        rep(-0.5, n_subj * n_trials * 2))
 
 X2 <- c(rep(1, n_subj * n_trials),
         rep(-1, n_subj * n_trials),
@@ -94,7 +94,8 @@ sim_data <- data.frame(sim3)
 names(sim_data) <- c("y", "trial_type", "x1", "ID")
 
 sim_data$y <- factor(sim_data$y)
-#sim_data$trial_type <- factor(sim_data$trial_type)
+sim_data$trial_type_fac <- factor(sim_data$trial_type, levels = c(0.5, -0.5))
+contrasts(sim_data$trial_type_fac) <- contr.sum(2)
 #sim_data$x1 <- factor(sim_data$x1)
 sim_data$ID <- factor(sim_data$ID)
 
@@ -106,10 +107,9 @@ internal_sdt_data <- sim_data
 #### GLMM for sim data ####
 
 
-
-
 model_test <- glmer(y ~ x1 * trial_type + (x1 * trial_type | ID),
                     family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 0)
+
 
 model_test_afex <- afex::mixed(y ~ x1 * trial_type + (x1 * trial_type | ID),
                                 family = binomial(link = "probit"), data = internal_sdt_data,
@@ -121,6 +121,16 @@ model_test_uncor <- glmer(y ~ x1 * trial_type + (x1 * trial_type || ID),
 model_test_uncor_afex <- afex::mixed(y ~ x1 * trial_type + (x1 * trial_type || ID),
                                family = binomial(link = "probit"), data = internal_sdt_data,
                                method = "LRT", test_intercept = T)
+
+# same with glmmTMB
+model_test_tmb <- glmmTMB(y ~ x1 * trial_type + (x1 * trial_type | ID),
+                    family = binomial(link = "probit"), data = internal_sdt_data)
+
+model_test_uncor_tmb <- glmmTMB(y ~ x1 * trial_type + (x1 * trial_type | ID),
+                    family = binomial(link = "probit"), data = internal_sdt_data)
+
+
+
 
 
 #------------------------------------------------------------------------------#
@@ -151,18 +161,20 @@ internal_fake_data <- d
 dat_exp_2 <- readRDS("tests/test-dat/dat_exp_2.rds") %>%
   dplyr::filter(id %in% c("regular-4", "regular-5",
                           "reversed-1", "reversed-2",
-                          "balanced-1", "balanced-2")) %>%
+                          "balanced-1", "balanced-2"))
+dat_exp_2 %>%
   dplyr::mutate(committee = factor(committee_ef),
                 emp_gender = factor(emp_gender_ef),
-                status = factor(status_ef),
+                status_fac = factor(status_ef),
+                status_ef = status_ef / 2,
                 contingencies = factor(contingencies),
                 stimulus = sample(c("stim-1", "stim-2", "stim-3",
                                     "stim-4", "stim-5", "stim-6",
                                     "stim-7", "stim-8", "stim-9", "stim-10"),
                                   nrow(dat_exp_2),
-                                  replace = T))
+                                  replace = T)) -> dat_exp_2
 
-contrasts(dat_exp_2$status) <- contr.sum(2)
+contrasts(dat_exp_2$status_fac) <- contr.sum(2)
 contrasts(dat_exp_2$committee) <- contr.sum(2)
 contrasts(dat_exp_2$emp_gender) <- contr.sum(2)
 contrasts(dat_exp_2$contingencies) <- contr.sum(3)
@@ -310,14 +322,6 @@ chisquares_one_factor_3 <- c(
 
 #------------------------------------------------------------------------------#
 #### Two-factorial design ####
-
-
-fit <- fit_mlsdt(~ committee * emp_gender + (1 | id),
-                 ~ committee * emp_gender + (1 | id),
-                 data = dat_exp_2,
-                 dv = "assessment",
-                 trial_type_var = "status")
-
 
 
 # Compute LRTs manually for testing
@@ -527,7 +531,7 @@ lambda_intercept_3 <- glmer(assessment ~ 0 + status_ef * contingencies_ef_1 +
                             family = binomial("probit"),
                             nAGQ = 0)
 mu_intercept_3 <- glmer(assessment ~ contingencies_ef_1 + contingencies_ef_2 +
-                          status_ef:contingencies_ef_1 + status_ef:contingencies_ef_2 + (status | id),
+                          status_ef:contingencies_ef_1 + status_ef:contingencies_ef_2 + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
                             nAGQ = 0)
@@ -627,6 +631,7 @@ chisquares_cross_3 <- c(
 
 usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_afex,
                   model_test_uncor, model_test_uncor_afex, dat_exp_2, model_uncor_sdt,
+                  model_test_tmb, model_test_uncor_tmb,
                   chi_squares_intercepts, chi_squares_one_pred_mu_2, chi_squares_one_pred_mu_3,
                   chisquares_one_factor_2, chisquares_one_factor_3,
                   chisquares_two_factors_2, chisquares_two_factors_3,

@@ -85,7 +85,6 @@ fit_mlsdt <- function(formula_mu,
   # Post-Processing the lme4 output
   # backend = ifelse(options("backend") == "", "lme4", options("backend"))
   if (options("mlsdt.backend") == "lme4") {
-    print("Hi")
     coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
     coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
   } else if (options("mlsdt.backend") == "glmmTMB") {

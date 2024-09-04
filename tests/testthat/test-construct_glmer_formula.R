@@ -360,7 +360,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (committee || id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee || id) + (committee || stimulus),
                                    data = dat_exp_2,
-                                   trial_type_var = "status")
+                                   trial_type_var = "status_fac")
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -378,7 +378,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee || id) + (1 | stimulus),
                                    data = dat_exp_2,
-                                   trial_type_var = "status")
+                                   trial_type_var = "status_fac")
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -395,7 +395,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee || id) + (1 | stimulus),
                                    data = dat_exp_2,
-                                   trial_type_var = "status")
+                                   trial_type_var = "status_fac")
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -413,7 +413,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
                                    formula_lambda = ~ committee + (committee | id),
                                    data = dat_exp_2,
-                                   trial_type_var = "status")
+                                   trial_type_var = "status_fac")
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']] + mm[['rdm_mu_id']] | id) +
@@ -427,7 +427,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee | id),
                                    data = dat_exp_2,
-                                   trial_type_var = "status")
+                                   trial_type_var = "status_fac")
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
