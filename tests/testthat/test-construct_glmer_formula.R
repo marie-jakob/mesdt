@@ -435,6 +435,69 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
                             (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
 
 
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = F,
+      param_idc = c(1, 2),
+      remove_from_mu = T,
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac")
+    )),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']][, -c(1, 2)] +
+                            (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_id']][, 1] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
+
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = F,
+      param_idc = c(1, 3),
+      remove_from_mu = F,
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac")
+    )),
+    as.character(as.formula("y ~ 0 + mm[['lambda']][, -c(1, 3)] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_id']][, 1] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
+
+
 }
 )
 
+
+#------------------------------------------------------------------------------#
+#### Remove random effects ####
+
+# TODO: handle uncorrelated random effects
+
+test_that("construct_glmer_formula() removes indices from random effects", {
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      param_idc = c(1, 3),
+      remove_from_mu = F,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac")
+    )),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, -c(1, 3)] + mm[['rdm_mu_id']] | id) +
+                            (0 + mm[['rdm_mu_stimulus']] | stimulus)")))
+
+}

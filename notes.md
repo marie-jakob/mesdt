@@ -106,7 +106,7 @@ __glmmADMB__ package:
 
 + Automatically use effect coding for categorical predictors?
 
-+ automatically center continous predictors? 
++ automatically center continuous predictors? 
 
 + afex: automatically sets effect coding and gives a warning if continuous predictors are not centered
 
@@ -171,11 +171,31 @@ __glmmADMB__ package:
 
 + TODO: balanced vs. strict null stuff -> I don't think this "strict null" stuff makes a lot of sense -> Instead there will be the possibility to test for variability in the fixed effect separately
 
+
 ##### Random-Effects Tests
 
 + test variability in fixed effects -> LRTs or parametric bootstrapping for random slopes
++ needed for the Bates et al. (2015) / Matuschek et al. (2017) strategy (at least the one based on the LRT, the other strategies simply compare all models via AIC)
+
++ Scheipl et al. (2008): propose a number of tests based on REML estimation, which is (to my knowledge) not possible for GLMM
+
 + LRTs: dfs are difficult since we are at the edge of the parameter space (i.e., var = 0) -> sampling distribution is a mixture of chi^2 distributions
+	+ Davis-Stober (2009) references Chant, 1974; Chernoff, 1954; Robertson, Wright, & Dykstra, 1988; Shapiro, 1985; Wilks, 1938
 	+ formula for df = 1
+	+ from Thorstens foundations lectures: If the models differ by one variance and _k_ covariance parameters, the reference distribution is 0.5 * chi^2(1 + _k_) + 0.5 * chi^2(1 + _k_)
+	+ 50:50 mixture
+
++ without adhering to marginality: Type III-like (remove exactly the to-be-tested random effect from the model)
++ does this make sense for type II? -> yes, but similar to the fixed effects, new full models need to be estimated
++ crossed random effects: for both type II and type III, all random effects for a different grouping factor are left in the model
+
+##### Parametric Bootstrapping
+
++ afex does this using pbkrtest (Halekoh \& Hoojsgaard, 2014)
+	+ built on lme4
+	+ implements pb for glmm as well (but focus on LMM)
++ 
+
 
 ### Prediction & Simulation
 

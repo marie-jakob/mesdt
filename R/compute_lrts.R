@@ -279,3 +279,14 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
   return(to_return)
 }
 
+
+
+pchisqmix <- function(q, df, mix, lower.tail = TRUE) {
+  df_vec <- rep(df, length(q))
+  mix_vec <- rep(mix, length(q))
+  upper <- stats::pchisq(q = q, df = df, lower.tail = lower.tail)
+  lower <- ifelse(df == 1, if (lower.tail) 1 else 0,
+                  pchisq(q, df-1, lower.tail = lower.tail))
+  return(mix * lower + (1 - mix) * upper)
+}
+

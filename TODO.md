@@ -9,9 +9,11 @@
 + documentation
 + optionally test parameters instead of whole factors
 + parametric bootstrap
++ test random effects for significance
 + reduced random-effects structure
   + strategy 1: "keep it maximal"
   + strategy 2: Matuschek et al. 
+
 
 + optional other backends:
   + Julia MixedModels

@@ -322,3 +322,61 @@ df.residual(test$fit_obj)
 df.residual(fit_cross_intercept)
 
 ranef(fit_cross_intercept)
+
+
+
+#------------------------------------------------------------------------------#
+#### LRTs for random effects ####
+
+
+# Does anova() do this correctly?
+form_lambda <- ~ emp_gender * committee + (committee || id)
+form_mu <- ~ emp_gender * committee + (1 | id)
+
+fit_exp_2 <- fit_mlsdt(form_mu,
+                       form_lambda,
+                       dv = "assessment",
+                       trial_type_var = "status_fac",
+                       data = dat_exp_2)
+
+fit_exp_2_red <- fit_mlsdt(form_lambda,
+                           ~ emp_gender * committee + (1 | id),
+                           dv = "assessment",
+                           trial_type_var = "status_fac",
+                       data = dat_exp_2)
+logLik(fit_exp_2$fit_obj)
+logLik(fit_exp_2_red$fit_obj)
+
+anova(fit_exp_2$fit_obj, fit_exp_2_red$fit_obj)
+
+# Does drop1() do this correctly?
+mu_committee_red <- glmer(assessment ~ emp_gender_ef * committee_ef + status_ef * emp_gender_ef + (status_ef || id),
+                          data = dat_exp_2,
+                          family = binomial("probit"),
+                          nAGQ = 0)
+drop1(mu_committee_red, ~ (status_ef | id), test = "Chisq")
+# -> No: no Chisq and p values
+
+
+construct_glmer_formula(
+  formula_mu = ~ 1 + x1 + (x1 | VP),
+  formula_lambda = ~ 1 + x2 + (x2 | VP),
+  dv = "dv",
+  param_idc = 3,
+  remove_from_mu = F,
+  remove_from_rdm = "VP"
+)
+
+
+as.character(as.formula("dv ~ 0 + mm[['lambda']][, -3] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_VP']] + mm[['rdm_mu_VP']] | VP)")
+)
+
+
+
+#------------------------------------------------------------------------------#
+#### Parametric Bootstrapping ####
+
+
+
+

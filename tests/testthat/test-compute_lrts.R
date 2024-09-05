@@ -409,3 +409,27 @@ test_that("compute_LRTs() Type II works with one predictor on mu and lambda and 
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_cross_3[c(2, 4)], tolerance = 1e-3)
 
 })
+
+#------------------------------------------------------------------------------#
+#### pchisqmix ####
+
+test_that("pchisqmix works", {
+  library(emdbook)
+  for (q in seq(0, 5, 0.2)) {
+    expect_equal(pchisqmix(q, df = 1, mix = 0.5), pchibarsq(q))
+    expect_equal(pchisqmix(q, df = 2, mix = 0.5), pchibarsq(q, df = 2))
+    expect_equal(pchisqmix(q, df = 3, mix = 0.5), pchibarsq(q, df = 3))
+    expect_equal(pchisqmix(q, df = 1, mix = 0.2), pchibarsq(q, mix = 0.2))
+    expect_equal(pchisqmix(q, df = 2, mix = 0.4), pchibarsq(q, df = 2, mix = 0.4))
+    expect_equal(pchisqmix(q, df = 3, mix = 0.6), pchibarsq(q, df = 3, mix = 0.6))
+  }
+
+  # vectorized
+  expect_equal(pchisqmix(seq(0:5), df = 1, mix = 0.5), pchibarsq(seq(0:5)))
+
+  # equal to pchisq for mix = 1
+  expect_equal(pchisqmix(3, df = 2, mix = 1), pchisq(3, df = 1))
+  expect_equal(pchisqmix(3, df = 2, mix = 0), pchisq(3, df = 2))
+
+})
+

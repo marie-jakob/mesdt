@@ -22,9 +22,11 @@
 #'   trial_type_var = "trial_type"
 #' )
 construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sdt_params = T,
-                                    mm = NULL, param_idc = NULL, remove_from_mu = NULL) {
+                                    mm = NULL, param_idc = NULL, remove_from_mu = F,
+                                    remove_from_rdm = "") {
 
   # Handle missing random effects terms
+  # TODO: this needs to be possible
   if (is.null(lme4::findbars(formula_lambda)) | is.null(lme4::findbars(formula_mu))) {
     message("At least one formula does not contain any random-effects terms. Returning NULL.")
     return()
@@ -50,6 +52,12 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
   # add "_rdm_fac" to the model matrix to allow for multiple random effects
   # TODO: adapt for multiple factors
 
+  if (! is.null(param_idc)) {
+    param_idc_char <- deparse(param_idc)
+    if (grepl(":", param_idc_char)) {
+      param_idc_char <- paste("c(", param_idc_char, ")", sep = "")
+    }
+  }
 
   # Case 1: Everything Correlated
   # -> one random-effects term
@@ -60,9 +68,17 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
       length(rdm_facs_mu) == length(unique(rdm_facs_mu))) {
     if (correlate_sdt_params) {
       for (rdm_fac in rdm_facs_lambda) {
+
         if (rdm_fac %in% rdm_facs_mu) {
-          rdm_formula_parts <- append(rdm_formula_parts,
-                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+          if (remove_from_rdm == rdm_fac) {
+            form_part_tmp <- ifelse(remove_from_mu,
+                                    paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']][, -", param_idc_char, "] | ", rdm_fac, ")", sep = ""),
+                                    paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, -", param_idc_char, "] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+            rdm_formula_parts <- append(rdm_formula_parts, form_part_tmp)
+          } else {
+            rdm_formula_parts <- append(rdm_formula_parts,
+                                        paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+          }
         } else {
           rdm_formula_parts <- append(rdm_formula_parts,
                                       paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
@@ -70,8 +86,13 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
       }
       for (rdm_fac in rdm_facs_mu) {
         if (! rdm_fac %in% rdm_facs_lambda) {
-          rdm_formula_parts <- append(rdm_formula_parts,
-                                      paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+          if (remove_from_rdm == rdm_fac & remove_from_mu) {
+            form_part_tmp <- paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, -", param_idc_char, "] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = "")
+          } else {
+            form_part_tmp <- paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = "")
+          }
+          print(form_part_tmp)
+          rdm_formula_parts <- append(rdm_formula_parts, form_part_tmp)
         }
       }
     } else {
@@ -112,18 +133,14 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
   # -> ~ ... + (mm[["rdm_mu"]] + mm[["rdm_lambda]] | ID)
 
   # make the full model formula if no parameter index to be removed is given
-  if (is.null(param_idc))  fixed_formula <- "0 + mm[['lambda']] + mm[['mu']]"
-  else {
+  fixed_formula <- "0 + mm[['lambda']] + mm[['mu']]"
+  if (remove_from_rdm == ""&  !is.null(param_idc) ) {
     # check if everything is removed -> remove the whole matrix then
-    if (all(param_idc == Inf)) {
+    if (!is.null(param_idc) & all(param_idc == Inf)) {
       if (remove_from_mu) fixed_formula <- "0 + mm[['lambda']]"
       else fixed_formula <- "0 + mm[['mu']]"
     } else {
       # make a reduced model formula
-      param_idc_char <- deparse(param_idc)
-      if (grepl(":", param_idc_char)) {
-        param_idc_char <- paste("c(", param_idc_char, ")", sep = "")
-      }
       if (remove_from_mu) {
         #print(deparse(param_idc))
         # deparse() vector for nonstandard evaluation
