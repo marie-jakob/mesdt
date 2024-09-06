@@ -14,8 +14,15 @@ fit_glmm <- function(glmer_formula,
   # only applies to lme4, defaults to 0 at the moment
   # -> might be changed later to a function argument
   nAGQ = ifelse(is.null(options("nAGQ")$nAGQ), 0, options("nAGQ"))
+  print(nAGQ)
 
-  if ((options("mlsdt.backend") == "lme4")) {
+  # Fit a GLM if there are no random effects
+  if (is.null(lme4::findbars(glmer_formula))) {
+    message("Formula does not contain any random terms. Fitting a single-level model.")
+    fit_obj <- stats::glm(glmer_formula,
+                          data = data,
+                          family = binomial(link = "probit"))
+  } else if ((options("mlsdt.backend") == "lme4")) {
     print("fitting with lme4")
     fit_obj <- lme4::glmer(glmer_formula,
                            data = data,

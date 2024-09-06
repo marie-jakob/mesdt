@@ -1,4 +1,5 @@
-fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F) {
+fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F,
+                          rem_ran_ef = F) {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
 
@@ -12,14 +13,28 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     #  message("Can only test intercepts if there are predictors in the model. Returning NULL.")
     #  return()
     #}
-    range_lambda <- 0:max(attr(mm[["lambda"]], "assign"))
-    range_mu <- 0:max(attr(mm[["mu"]], "assign"))
+    if (rem_ran_ef) {
+      #range_lambda and range_mu are now list (to accommodate multiple random effects)
+      range_lambda <- list(); range_mu <- list();
+      for (i in 1:length(mm)) {
+        if (grepl("rdm_lambda", names(mm)[i])) {
+          range_lambda[[names(mm)[i]]] <- 0:max(attr(mm[[names(mm)[i]]], "assign"))
+        } else if (grepl("rdm_mu", names(mm)[i])) {
+          range_mu[[names(mm)[i]]] <- 0:max(attr(mm[[names(mm)[i]]], "assign"))
+        }
+      }
+    } else {
+      range_lambda <- list(0:max(attr(mm[["lambda"]], "assign"))); names(range_lambda) <- c("lambda")
+      range_mu <- list(0:max(attr(mm[["mu"]], "assign"))); names(range_mu) <- c("mu")
+      }
   } else {
     # If there are no predictors in the model and ! test_intercepts, throw a message
     if (length(attr(mm[["lambda"]], "assign")) == 1) range_lambda <- c()
-    else  range_lambda <- 1:max(attr(mm[["lambda"]], "assign"))
+    else  range_lambda <- list(1:max(attr(mm[["lambda"]], "assign")))
     if (length(attr(mm[["mu"]], "assign")) == 1) range_mu <- c()
-    else range_mu <- 1:max(attr(mm[["mu"]], "assign"))
+    else range_mu <- list(1:max(attr(mm[["mu"]], "assign")))
+    if (length(range_lambda) > 0) names(range_lambda) <- "lambda";
+    if (length(range_mu) > 0) names(range_mu) <- "mu";
     if (length(range_lambda) == 0 & length(range_mu) == 0) {
       message("Nothing to test in the model. Returning NULL.")
       return(NULL)
@@ -27,18 +42,31 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   }
 
   if (type == 3) {
-    reduced_formulas_lambda <- lapply(range_lambda, function(x) {
-      to_remove <- as.numeric(which(attr(mm[["lambda"]], "assign") == x))
-      if (length(to_remove) == dim(mm[["lambda"]])[2]) to_remove = Inf
-      construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                              param_idc = to_remove, remove_from_mu = F)
-    })
-    reduced_formulas_mu <- lapply(range_mu, function(x) {
-      to_remove <- as.numeric(which(attr(mm[["mu"]], "assign") == x))
-      if (length(to_remove) == dim(mm[["mu"]])[2]) to_remove = Inf
-      construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                              param_idc = to_remove, remove_from_mu = T)
-    })
+    reduced_formulas_lambda <- list()
+    for (i in 1:length(range_lambda)) {
+      forms_tmp <- lapply(range_lambda[[i]], function(x) {
+        to_remove <- as.numeric(which(attr(mm[[names(range_lambda)[i]]], "assign") == x))
+        if (length(to_remove) == dim(mm[[names(range_lambda)[i]]])[2]) to_remove = Inf
+        remove_from_rdm_tmp <- ifelse(grepl("rdm", names(range_lambda)[i]), gsub("rdm_lambda_", "", names(range_lambda)[i]), "")
+        return(construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
+                                       param_idc = to_remove, remove_from_mu = F,
+                                       remove_from_rdm = remove_from_rdm_tmp))
+      })
+      reduced_formulas_lambda <- append(reduced_formulas_lambda, forms_tmp)
+    }
+    reduced_formulas_mu <- list()
+    for (i in 1:length(range_mu)) {
+      forms_tmp <- lapply(range_mu[[i]], function(x) {
+        to_remove <- as.numeric(which(attr(mm[[names(range_mu)[i]]], "assign") == x))
+        if (length(to_remove) == dim(mm[[names(range_mu)[i]]])[2]) to_remove = Inf
+        remove_from_rdm_tmp <- ifelse(grepl("rdm", names(range_mu)[i]), gsub("rdm_mu_", "", names(range_mu)[i]), "")
+        return(construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
+                                       param_idc = to_remove, remove_from_mu = T,
+                                       remove_from_rdm = remove_from_rdm_tmp))
+
+      })
+      reduced_formulas_mu <- append(reduced_formulas_mu, forms_tmp)
+    }
   } else if (type == 2) {
     # full_formulas contain as many formulas as there are levels of interaction in the model
     # (e.g., three formulas when there are main effects, two-way and three-way interactions)
@@ -68,7 +96,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     }
     # reduced_formulas are constructed for all predictors in the model for both mu and lambda
     # -> in order of the order of terms in the model matrix
-    reduced_formulas_lambda <- lapply(range_lambda, function(x) {
+    reduced_formulas_lambda <- lapply(range_lambda[[1]], function(x) {
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
       to_remove <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
@@ -92,7 +120,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       })
     }
 
-    reduced_formulas_mu <- lapply(range_mu, function(x) {
+    reduced_formulas_mu <- lapply(range_mu[[1]], function(x) {
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
       to_remove <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
@@ -109,14 +137,17 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     names_lambda <- c("Intercept")
     names_mu <- c("Intercept")
   }
-  if (length(attr(terms(nobars(formula_lambda)), "term.labels")) > 0) {
-    names_lambda <- c(names_lambda, paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
+  if (! rem_ran_ef) {
+    if (length(attr(terms(nobars(formula_lambda)), "term.labels")) > 0) {
+      names_lambda <- c(names_lambda, paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
+    }
+    if (length(attr(terms(nobars(formula_mu)), "term.labels")) > 0) {
+      names_mu <- c(names_mu, paste(attr(terms(nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
+    }
+
+    names(reduced_formulas_lambda) <- names_lambda
+    names(reduced_formulas_mu) <- names_mu
   }
-  if (length(attr(terms(nobars(formula_mu)), "term.labels")) > 0) {
-    names_mu <- c(names_mu, paste(attr(terms(nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
-  }
-  names(reduced_formulas_lambda) <- names_lambda
-  names(reduced_formulas_mu) <- names_mu
 
   if (type == 2) {
     print("Fitting full models")
@@ -172,13 +203,13 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
 
 compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
-                         mm, type = 3, test_intercepts = F) {
+                         mm, type = 3, test_intercepts = F, test_ran_ef = F) {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
-  # TODO: also test intercept of both model matrices --> mean sensitivity and response bias
 
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
 
-  submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts)
+  submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts,
+                             rem_ran_ef = test_ran_ef)
   if(is.null(submodels)) return(NULL)
   if (type == 3) {
     reduced_fits <- submodels
@@ -187,9 +218,9 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
 
       LL_reduced <- stats::logLik(fit_tmp)
       chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
-      p_value <- pchisq(q = chisq, df = 1, lower.tail = F)
       df <- stats::df.residual(fit_tmp) - stats::df.residual(fit_obj)
-
+      if (test_ran_ef) p_value <- pchisqmix(q = chisq, df = 1, lower.tail = F, mix = 0.5)
+      else p_value <- pchisq(q = chisq, df = df, lower.tail = F)
       return(data.frame(
         # columns names inspired by afex
         "deviance_full" = -2 * LL_full,
@@ -280,7 +311,6 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
 }
 
 
-
 pchisqmix <- function(q, df, mix, lower.tail = TRUE) {
   df_vec <- rep(df, length(q))
   mix_vec <- rep(mix, length(q))
@@ -289,4 +319,3 @@ pchisqmix <- function(q, df, mix, lower.tail = TRUE) {
                   pchisq(q, df-1, lower.tail = lower.tail))
   return(mix * lower + (1 - mix) * upper)
 }
-

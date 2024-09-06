@@ -430,6 +430,45 @@ test_that("pchisqmix works", {
   # equal to pchisq for mix = 1
   expect_equal(pchisqmix(3, df = 2, mix = 1), pchisq(3, df = 1))
   expect_equal(pchisqmix(3, df = 2, mix = 0), pchisq(3, df = 2))
+})
+
+
+#------------------------------------------------------------------------------#
+#### Random Effects ####
+
+
+test_that("compute_LRTs() works for testing random effects", {
+  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
+  mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_sdt_data)
+  lrts_test <- compute_LRTs(fit, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                            mm  = mm, test_intercepts = T, test_ran_ef = T)
+  summary(lrts_test$reduced_fits[[1]])
+  df.residual(fit)
+  df.residual(lrts_test$reduced_fits[[1]])
+  df.residual(lrts_test$reduced_fits[[2]])
+  summary(lrts_test$reduced_fits[[2]])
+
+  # Chisq values
+  # low tolerance because the package function fits with nAGQ = 0 (afex with nAGQ = 1)
+  expect_equal(unname(unlist(lrts_test$LRTs[, 4])), model_test_afex$anova_table$Chisq, tolerance = 1e-2)
+
+  expect_equal(unname(unlist(lrts_test$LRTs[, 5])), model_test_afex$anova_table$`Pr(>Chisq)`, tolerance = 1e-2)
+
+  form_mu <- ~ committee_ef + (committee_ef || id)
+  form_lambda <- ~ committee_ef + (committee_ef || id)
+  # Same for the uncorrelated model
+  fit <- fit_mlsdt(form_mu, form_lambda,
+                   dv = "assessment",
+                   trial_type_var = "status_fac",
+                   data = dat_exp_2)$fit_obj
+
+
+  mm <- construct_modelmatrices(form_mu, form_lambda, data = dat_exp_2, trial_type_var = "status_fac")
+  lrts_test <- compute_LRTs(fit, form_mu, form_lambda, dv = "assessment", data = dat_exp_2,
+                            mm  = mm, test_intercepts = T, test_ran_ef = T)
+
 
 })
 
+
+# TODO: does the random stuff work for factors with multiple levels?

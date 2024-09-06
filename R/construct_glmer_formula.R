@@ -4,7 +4,8 @@
 #' @param formula_lambda formula for response bias
 #' @param dv name of dependent variable
 #' @param correlate_sdt_params model correlations between mu and lambda random effects?
-#' @param mm model matrices (corresponding to the formulas) -> only necessary for formulas with uncorrelated random effects
+#' @param mm model matrices (corresponding to the formulas) -> necessary for formulas with uncorrelated
+#'    random effects and for indices to be removed
 #' @param param_idc optional vector of parameters indices to be removed to construct a reduced formula
 #' @param remove_from_mu optional argument to indicate whether the to-be-removed parameter
 #'    should be removed from mu or lambda model matrix
@@ -25,13 +26,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
                                     mm = NULL, param_idc = NULL, remove_from_mu = F,
                                     remove_from_rdm = "") {
 
-  # Handle missing random effects terms
-  # TODO: this needs to be possible
-  if (is.null(lme4::findbars(formula_lambda)) | is.null(lme4::findbars(formula_mu))) {
-    message("At least one formula does not contain any random-effects terms. Returning NULL.")
-    return()
-  }
-
   # check if the random grouping factor is the same for mu and lambda
   rdm_facs_mu <- sapply(lme4::findbars(formula_mu), function(x) {
     gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
@@ -39,7 +33,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
   rdm_facs_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
     gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
   })
-
   # Handle given random effects-structure and convert to the corresponding internal formula
   # Logic: Variables are in the same parentheses if they are correlated (no "||" stuff)
 
@@ -68,61 +61,83 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
       length(rdm_facs_mu) == length(unique(rdm_facs_mu))) {
     if (correlate_sdt_params) {
       for (rdm_fac in rdm_facs_lambda) {
-
         if (rdm_fac %in% rdm_facs_mu) {
           if (remove_from_rdm == rdm_fac) {
-            form_part_tmp <- ifelse(remove_from_mu,
-                                    paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']][, -", param_idc_char, "] | ", rdm_fac, ")", sep = ""),
-                                    paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, -", param_idc_char, "] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
-            rdm_formula_parts <- append(rdm_formula_parts, form_part_tmp)
+            if (remove_from_mu) {
+              form_part_tmp <- ifelse(all(param_idc == Inf),
+                                      # remove whole random mu model matrix
+                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""),
+                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']][, -", param_idc_char, "] | ", rdm_fac, ")", sep = ""))
+            } else {
+              form_part_tmp <- ifelse(all(param_idc == Inf),
+                                      # remove whole random lambda model matrix
+                                      paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""),
+                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, -", param_idc_char, "] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+            }
+
           } else {
-            rdm_formula_parts <- append(rdm_formula_parts,
-                                        paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+            form_part_tmp <- paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = "")
           }
         } else {
-          rdm_formula_parts <- append(rdm_formula_parts,
-                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+          form_part_tmp <- paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = "")
         }
+        rdm_formula_parts <- append(rdm_formula_parts, form_part_tmp)
       }
       for (rdm_fac in rdm_facs_mu) {
         if (! rdm_fac %in% rdm_facs_lambda) {
           if (remove_from_rdm == rdm_fac & remove_from_mu) {
-            form_part_tmp <- paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, -", param_idc_char, "] + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = "")
+            form_part_tmp <- paste("(0 + mm[['rdm_mu_", rdm_fac, "']][, -", param_idc_char, "] | ", rdm_fac, ")", sep = "")
           } else {
             form_part_tmp <- paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = "")
           }
-          print(form_part_tmp)
           rdm_formula_parts <- append(rdm_formula_parts, form_part_tmp)
         }
       }
     } else {
       for (rdm_fac in rdm_facs_lambda) {
-        rdm_formula_parts <- append(rdm_formula_parts,
-                                    paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+        if (remove_from_rdm == rdm_fac & ! remove_from_mu) {
+          rdm_formula_parts <- append(rdm_formula_parts,
+                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, -", param_idc_char, "] | ", rdm_fac, ")", sep = ""))
+        } else {
+          rdm_formula_parts <- append(rdm_formula_parts,
+                                      paste("(0 + mm[['rdm_lambda_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+        }
+
       }
       for (rdm_fac in rdm_facs_mu) {
-        rdm_formula_parts <- append(rdm_formula_parts,
-                                    paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+        if (remove_from_rdm == rdm_fac & remove_from_mu) {
+          rdm_formula_parts <- append(rdm_formula_parts,
+                                      paste("(0 + mm[['rdm_mu_", rdm_fac, "']][, -", param_idc_char, "] | ", rdm_fac, ")", sep = ""))
+          } else {
+            rdm_formula_parts <- append(rdm_formula_parts,
+                                        paste("(0 + mm[['rdm_mu_", rdm_fac, "']] | ", rdm_fac, ")", sep = ""))
+          }
       }
     }
   } else {
     message("Given random-effects structure contains uncorrelated terms. Modeling all random effects
             parametes as uncorrelated since a mix of correlated and uncorrelated terms is not
             supported at the moment.")
-    if (correlate_sdt_params) message("Correlating SDT Parameters is not possible in the presence of uncorrelated terms.")
-
+    if (correlate_sdt_params) {
+      message("Correlating SDT Parameters is not possible in the presence of uncorrelated terms.")
+    }
+    if (is.null(mm)) {
+      message("Model matrices are needed to generate a formula for uncorrelated random terms.")
+      return()
+    }
     # Case 2: No Correlations
     # -> as many random-effects terms as predictors in the model
-    print(rdm_facs_mu)
 
     for (rdm_fac in unique(rdm_facs_lambda)) {
       rdm_formula_parts <- append(rdm_formula_parts, paste(sapply(1:ncol(mm[[paste("rdm_lambda_", rdm_fac, sep = "")]]), function(x) {
-        return(paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, ", x, "] | ", rdm_fac, ")", sep =""))
+        if (rdm_fac == remove_from_rdm & ! remove_from_mu & x %in% param_idc) return()
+        else return(paste("(0 + mm[['rdm_lambda_", rdm_fac, "']][, ", x, "] | ", rdm_fac, ")", sep ="", recycle0 = T))
       }), collapse = "+"))
     }
     for (rdm_fac in unique(rdm_facs_mu)) {
       rdm_formula_parts <- append(rdm_formula_parts, paste(sapply(1:ncol(mm[[paste("rdm_mu_", rdm_fac, sep = "")]]), function(x) {
-        return(paste("(0 + mm[['rdm_mu_", rdm_fac, "']][, ", x, "] | ", rdm_fac, ")", sep =""))
+        if (rdm_fac == remove_from_rdm & remove_from_mu & x %in% param_idc) return()
+        else return(paste("(0 + mm[['rdm_mu_", rdm_fac, "']][, ", x, "] | ", rdm_fac, ")", sep =""))
       }), collapse = "+"))
     }
 
@@ -153,11 +168,18 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
     }
 
   }
+  if (is.null(lme4::findbars(formula_lambda)) & is.null(lme4::findbars(formula_mu))) {
+    glmer_formula <- as.formula(paste(dv, " ~ ", fixed_formula, sep = ""),
+                                # parent.frame() sets scope of the parent environment (i.e., where the function
+                                # is called from) for the formula -> necessary such that model matrices can be found
+                                env = parent.frame())
 
-  glmer_formula <- as.formula(paste(dv, " ~ ", fixed_formula, " + ", rdm_formula, sep = ""),
-                              # parent.frame() sets scope of the parent environment (i.e., where the function
-                              # is called from) for the formula -> necessary such that model matrices can be found
-                              env = parent.frame())
-                              #env = getNamespace("mlsdt"))
+  } else {
+    glmer_formula <- as.formula(paste(dv, " ~ ", fixed_formula, " + ", rdm_formula, sep = ""),
+                                # parent.frame() sets scope of the parent environment (i.e., where the function
+                                # is called from) for the formula -> necessary such that model matrices can be found
+                                env = parent.frame())
+  }
+
   return(glmer_formula)
 }

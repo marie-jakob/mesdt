@@ -186,22 +186,6 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
   )
 })
 
-
-#test_that("construct_glmer_formula() does not accept different random effect identifiers.", {
-#  expect_message(construct_glmer_formula(
-#    formula_mu = ~ x2 + (1 | rdm),
-#    formula_lambda = ~ x2 + (1 | rdm2),
-#    dv = "dv",
-#  ))
-#
-#  expect_equal(construct_glmer_formula(
-#    formula_mu = ~ x2 + (1 | rdm),
-#    formula_lambda = ~ x2 + (1 | rdm2),
-#    dv = "dv",
-#  ),
-#  NULL)
-#})
-
 test_that("construct_glmer_formula() accepts different random effect identifiers.", {
 
   expect_equal(as.character(construct_glmer_formula(
@@ -212,35 +196,6 @@ test_that("construct_glmer_formula() accepts different random effect identifiers
   as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_rdm2']] | rdm2) + (0 + mm[['rdm_mu_rdm']] | rdm)")))
 })
-
-
-# TODO: Do we maybe want to accept this?
-test_that("construct_glmer_formula() does not accept formulas without random effects.", {
-  expect_message(construct_glmer_formula(
-    formula_mu = ~ x2 + (1 | rdm),
-    formula_lambda = ~ x2,
-    dv = "dv",
-  ))
-
-  expect_equal(construct_glmer_formula(
-    formula_mu = ~ x2 + (1 | rdm),
-    formula_lambda = ~ x2,
-    dv = "dv",
-  ), NULL)
-
-  expect_message(construct_glmer_formula(
-    formula_mu = ~ x2 + (1 | rdm),
-    formula_lambda = ~ x2,
-    dv = "dv",
-  ))
-  expect_equal(construct_glmer_formula(
-    formula_mu = ~ x2 + (1 | rdm),
-    formula_lambda = ~ x2,
-    dv = "dv",
-  ), NULL)
-})
-
-
 
 test_that("construct_glmer_formula() removes model matrix if all columns are removed", {
   expect_equal(
@@ -482,6 +437,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
 # TODO: handle uncorrelated random effects
 
 test_that("construct_glmer_formula() removes indices from random effects", {
+  # correlated random effects - remove from lambda
   expect_equal(
     as.character(construct_glmer_formula(
       formula_mu = ~ committee + (1 | id) + (committee | stimulus),
@@ -500,4 +456,66 @@ test_that("construct_glmer_formula() removes indices from random effects", {
                             (0 + mm[['rdm_lambda_id']][, -c(1, 3)] + mm[['rdm_mu_id']] | id) +
                             (0 + mm[['rdm_mu_stimulus']] | stimulus)")))
 
+  # correlated random effects - remove from mu
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      param_idc = 2,
+      remove_from_mu = T,
+      remove_from_rdm = "stimulus",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac")
+    )),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']] + mm[['rdm_mu_id']] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, -2] | stimulus)")))
+
+  # correlated random effects - don't correlated SDT params
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | VP),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv",
+      correlate_sdt_params = F,
+      remove_from_rdm = "VP",
+      param_idc = 2
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_VP']][, -2] | VP) + (0 + mm[['rdm_mu_VP']] | VP)"))
+  )
+
+  # correlated random effects - don't correlate SDT params
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | VP) + (x1 | ID),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv",
+      correlate_sdt_params = F,
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_VP']] | VP) + (0 + mm[['rdm_mu_VP']] | VP) + (0 + mm[['rdm_mu_ID']] | ID)"))
+    )
+})
+
+
+#------------------------------------------------------------------------------#
+#### No random effects ####
+
+test_that("construct_glmer_formula() makes the correct formula without random effects", {
+  # -> We don't need mm here
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ x1 + x2,
+      formula_lambda = ~ x1 + x2,
+      dv = "y"
+    )),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']]"))
+  )
 }
+)
+

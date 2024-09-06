@@ -72,6 +72,7 @@ __glmmADMB__ package:
 	+ Barr et al. (2013): Maximal Model -> Start with maximal model, reduce sequentially and use the first model that fits the data -> adapted to SDT models (do this "separately" for Mu and Lambda -> see below)
 
 	+ Matuschek et al. (2017): Balancing power and Type I error rate -> determine maximal fitting model and reduce random-effects structure sequentially until there is a significantly worse model fit (determined by LRTs)
+	+ -> simplify this by (1) finding the maximal model (in a backward selection), (2) test all remaining random effects for significance and (3) remove all non-significant predictors (optionally (4) do this as long as there are nonsignificant random effects in the model)
 
 + ::buildmer package is probably not that easy to include -> do this manually
 
@@ -188,6 +189,9 @@ __glmmADMB__ package:
 + without adhering to marginality: Type III-like (remove exactly the to-be-tested random effect from the model)
 + does this make sense for type II? -> yes, but similar to the fixed effects, new full models need to be estimated
 + crossed random effects: for both type II and type III, all random effects for a different grouping factor are left in the model
+
++ implemented at the moment: type III like (since type II is a ton of work)
+	+ for correlated random effects, every term is removed together with its corresponding covariance terms (-> dfs > 1)
 
 ##### Parametric Bootstrapping
 

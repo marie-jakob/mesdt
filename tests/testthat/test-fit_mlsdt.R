@@ -167,3 +167,42 @@ test_that("fit_mlsdt() works for crossed random effects with random intercepts, 
 }
 )
 
+
+test_that("fit_mlsdt() works when only mu or lambda have random effects", {
+  fit <- fit_mlsdt(~ committee,
+                   ~ committee + (1 | id),
+                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+  fit_test <- glmer(assessment ~ status_ef * committee + (1 | id), data = dat_exp_2, family = binomial("probit"),
+                    nAGQ = 0)
+  expect_equal(logLik(fit), logLik(fit_test))
+  expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))))
+  expect_equal(as.numeric(ranef(fit)), as.numeric(ranef(fit_test)))
+  expect_equal(as.numeric(VarCorr(fit)), as.numeric(VarCorr(fit_test)), tolerance = 1e-5)
+
+
+  fit <- fit_mlsdt(~ committee + (1 | id),
+                   ~ committee,
+                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+  fit_test <- glmer(assessment ~ status_ef * committee + (0 + status_ef | id), data = dat_exp_2, family = binomial("probit"),
+                    nAGQ = 0)
+  expect_equal(logLik(fit), logLik(fit_test))
+  expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))))
+  expect_equal(as.numeric(ranef(fit)), as.numeric(ranef(fit_test)))
+  expect_equal(as.numeric(VarCorr(fit)), as.numeric(VarCorr(fit_test)), tolerance = 1e-5)
+
+
+}
+)
+
+test_that("fit_mlsdt() works without any random effects", {
+  expect_message(fit_mlsdt(~ committee,
+                           ~ emp_gender,
+                           dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac"))
+  fit <- fit_mlsdt(~ committee,
+                   ~ committee,
+                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+  fit_test <- glm(assessment ~ status_ef * committee, data = dat_exp_2, family = binomial("probit"))
+  expect_equal(logLik(fit), logLik(fit_test))
+  expect_equal(sort(abs(as.numeric(coefficients(fit)))), sort(abs(as.numeric(coefficients(fit_test)))))
+}
+)
