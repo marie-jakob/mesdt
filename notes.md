@@ -178,6 +178,8 @@ __glmmADMB__ package:
 + test variability in fixed effects -> LRTs or parametric bootstrapping for random slopes
 + needed for the Bates et al. (2015) / Matuschek et al. (2017) strategy (at least the one based on the LRT, the other strategies simply compare all models via AIC)
 
++ Stoel et al. (2006): LRTs for parameters with boundary constraints are tested with mixtures of Chi^2 distributions
+
 + Scheipl et al. (2008): propose a number of tests based on REML estimation, which is (to my knowledge) not possible for GLMM
 
 + LRTs: dfs are difficult since we are at the edge of the parameter space (i.e., var = 0) -> sampling distribution is a mixture of chi^2 distributions

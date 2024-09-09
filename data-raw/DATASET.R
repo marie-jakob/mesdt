@@ -623,6 +623,100 @@ chisquares_cross_3 <- c(
 
 
 
+#------------------------------------------------------------------------------#
+#### Random effects tests ####
+
+full_model <- glmmTMB(assessment ~ committee_ef * status_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"))
+
+mod_lambda_intercept <- glmmTMB(assessment ~ committee_ef * status_ef + (0 + status_ef | id),
+                              data = dat_exp_2,
+                              family = binomial("probit"))
+
+mod_mu_intercept <- glmmTMB(assessment ~ committee_ef * status_ef + (1 | id),
+                          data = dat_exp_2,
+                          family = binomial("probit"))
+anova(full_model, mod_lambda_intercept)
+anova(full_model, mod_mu_intercept)
+
+chi_squares_rdm_intercepts <- c(
+  -2 * (logLik(mod_lambda_intercept) - logLik(full_model)),
+  -2 * (logLik(mod_mu_intercept) - logLik(full_model))
+)
+
+# Without correlations
+
+
+full_model <- glmmTMB(assessment ~ committee_ef * status_ef + (status_ef || id),
+                    data = dat_exp_2,
+                    family = binomial("probit"))
+
+anova(full_model, mod_lambda_intercept)
+anova(full_model, mod_mu_intercept)
+
+chi_squares_rdm_intercepts_uncor <- c(
+  -2 * (logLik(mod_lambda_intercept) - logLik(full_model)),
+  -2 * (logLik(mod_mu_intercept) - logLik(full_model))
+)
+
+
+
+# Crossed random effects
+
+
+fit_cross_slopes <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                          data = dat_exp_2, family = binomial("probit"))
+
+cross_lambda_intercept <- glmmTMB(assessment ~ committee_ef * status_ef + (0 + committee_ef + status_ef | id) + (0 + status_ef | file_name),
+                                data = dat_exp_2, family = binomial("probit"))
+cross_mu_intercept <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef | id) + (0 + status_ef | file_name),
+                            data = dat_exp_2, family = binomial("probit"))
+cross_lambda_committee <- glmmTMB(assessment ~ committee_ef * status_ef + (status_ef | id) + (0 + status_ef | file_name),
+                                data = dat_exp_2, family = binomial("probit"))
+cross_mu_fn <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef + status_ef | id),
+                                data = dat_exp_2, family = binomial("probit"))
+
+
+anova(fit_cross_slopes, cross_lambda_intercept)
+anova(fit_cross_slopes, cross_mu_intercept)
+anova(fit_cross_slopes, cross_lambda_committee)
+anova(fit_cross_slopes, cross_mu_fn)
+
+chi_squares_rdm_cross <- c(
+  -2 * (logLik(cross_lambda_intercept) - logLik(fit_cross_slopes)),
+  -2 * (logLik(cross_lambda_committee) - logLik(fit_cross_slopes)),
+  -2 * (logLik(cross_mu_intercept) - logLik(fit_cross_slopes)),
+  -2 * (logLik(cross_mu_fn) - logLik(fit_cross_slopes))
+)
+
+# without correlations
+
+fit_cross_slopes <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef + status_ef || id) + (0 + status_ef || file_name),
+                          data = dat_exp_2, family = binomial("probit"))
+
+cross_lambda_intercept <- glmmTMB(assessment ~ committee_ef * status_ef + (0 + committee_ef + status_ef || id) + (0 + status_ef || file_name),
+                                data = dat_exp_2, family = binomial("probit"))
+cross_mu_intercept <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef || id) + (0 + status_ef || file_name),
+                            data = dat_exp_2, family = binomial("probit"))
+cross_lambda_committee <- glmmTMB(assessment ~ committee_ef * status_ef + (status_ef || id) + (0 + status_ef || file_name),
+                                data = dat_exp_2, family = binomial("probit"))
+cross_mu_fn <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef + status_ef || id),
+                     data = dat_exp_2, family = binomial("probit"))
+
+
+anova(fit_cross_slopes, cross_lambda_intercept)
+anova(fit_cross_slopes, cross_mu_intercept)
+anova(fit_cross_slopes, cross_lambda_committee)
+anova(fit_cross_slopes, cross_mu_fn)
+
+chi_squares_rdm_cross_uncor <- c(
+  -2 * (logLik(cross_lambda_intercept) - logLik(fit_cross_slopes)),
+  -2 * (logLik(cross_lambda_committee) - logLik(fit_cross_slopes)),
+  -2 * (logLik(cross_mu_intercept) - logLik(fit_cross_slopes)),
+  -2 * (logLik(cross_mu_fn) - logLik(fit_cross_slopes))
+)
+
 
 
 #------------------------------------------------------------------------------#
@@ -638,6 +732,8 @@ usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_
                   chisquares_contingencies_2, chisquares_contingencies_3,
                   fit_cross_intercept, fit_cross_slopes,
                   chisquares_cross_2, chisquares_cross_3,
+                  chi_squares_rdm_intercepts, chi_squares_rdm_intercepts_uncor,
+                  chi_squares_rdm_cross,
                   internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)
 

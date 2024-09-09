@@ -25,22 +25,6 @@ test_that("construct_glmer_formula() makes the correct formula", {
 }
 )
 
-# TODO: I think that's actually possible
-#test_that("construct_glmer_formula() handles wrong input properly", {
-#  expect_message(construct_glmer_formula(
-#    formula_mu = ~ 1 + x1 + (x1 | ID),
-#    formula_lambda = ~ 1 + x2 + (x2 | VP),
-#    dv = "dv"
-#  ))
-#  expect_equal(
-#    construct_glmer_formula(
-#      formula_mu = ~ 1 + x1 + (x1 | ID),
-#      formula_lambda = ~ 1 + x2 + (x2 | VP),
-#      dv = "dv"
-#    ),
-#    NULL
-#  )
-#})
 
 test_that("construct_glmer_formula() accepts different random effects grouping factors", {
   expect_equal(
@@ -100,7 +84,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ 1 + x1 + (x1 || ID),
       formula_lambda = ~ 1 + x1 + (x1 || ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ 1 + x1 + (x1 | ID), ~1 + x1 + (x1 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ 1 + x1 + (x1 || ID), ~1 + x1 + (x1 || ID), data = internal_fake_data),
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
                             (0 + mm[['rdm_lambda_ID']][, 2] | ID) + (0 + mm[['rdm_mu_ID']][, 1] | ID) +
@@ -224,6 +208,12 @@ test_that("construct_glmer_formula() removes model matrix if all columns are rem
 })
 
 
+#------------------------------------------------------------------------------#
+#### correlate_sdt_params ####
+
+
+
+
 test_that("construct_glmer_formula() handles correlate_sdt_params argument correctly", {
   expect_equal(
     as.character(construct_glmer_formula(
@@ -272,6 +262,8 @@ test_that("construct_glmer_formula() handles correlate_sdt_params argument corre
                             (0 + mm[['rdm_mu_ID']][, 2] | ID)"))
   )
 })
+
+
 
 
 
@@ -500,6 +492,210 @@ test_that("construct_glmer_formula() removes indices from random effects", {
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_VP']] | VP) + (0 + mm[['rdm_mu_VP']] | VP) + (0 + mm[['rdm_mu_ID']] | ID)"))
     )
+
+  # remove whole model matrix when nothing is left in the model
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ 1 + x1 + (x1 | VP) + (1 | ID),
+      formula_lambda = ~ 1 + x2 + (x2 | VP),
+      dv = "dv",
+      correlate_sdt_params = F,
+      remove_from_rdm = "ID",
+      remove_from_mu = T,
+      param_idc = Inf
+    )),
+    as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_VP']] | VP) + (0 + mm[['rdm_mu_VP']] | VP)"))
+  )
+})
+
+
+# TODO: uncorrelated random effects
+test_that("construct_glmer_formula() removes indices from random effects", {
+  # correlated random effects - remove from lambda
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      param_idc = c(1, 3),
+      remove_from_mu = F,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, -c(1, 3)] + mm[['rdm_mu_id']] | id) +
+                            (0 + mm[['rdm_mu_stimulus']] | stimulus)")))
+
+  # correlated random effects - remove from mu
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      param_idc = c(1, 3),
+      remove_from_mu = T,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']] + mm[['rdm_mu_id']][, -c(1, 3)] | id) +
+                            (0 + mm[['rdm_mu_stimulus']] | stimulus)")))
+
+  # correlated random effects - remove from mu (stimulus)
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      param_idc = c(1, 3),
+      remove_from_mu = T,
+      remove_from_rdm = "stimulus",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']] + mm[['rdm_mu_id']] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, -c(1, 3)] | stimulus)")))
+
+  # correlated random effects - remove whole matrix when nothing is left
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      param_idc = Inf,
+      remove_from_mu = T,
+      remove_from_rdm = "stimulus",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']] + mm[['rdm_mu_id']] | id)")))
+
+  # correlated random effects - uncorrelated mu and lambda
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = F,
+      param_idc = c(1, 3),
+      remove_from_mu = T,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']] | id) + (0 + mm[['rdm_mu_id']][, -c(1, 3)] | id) +
+                            (0 + mm[['rdm_mu_stimulus']] | stimulus)")))
+
+
+  # correlated random effects - remove whole matrix when nothing is left
+  # uncorrelated mu and lambda
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = F,
+      param_idc = Inf,
+      remove_from_mu = T,
+      remove_from_rdm = "stimulus",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']] | id) +(0 + mm[['rdm_mu_id']] | id)")))
+})
+
+
+
+
+
+test_that("construct_glmer_formula() removes indices from random effects (uncorrelated)", {
+  # uncorrelated random effects - remove from lambda
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+      formula_lambda = ~ committee + (committee || id),
+      dv = "y",
+      param_idc = 1,
+      remove_from_mu = F,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+                                   formula_lambda = ~ committee + (committee || id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_id']][, 1] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
+
+  # uncorrelated random effects - remove from mu
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+      formula_lambda = ~ committee + (committee || id),
+      dv = "y",
+      param_idc = 1,
+      remove_from_mu = T,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+                                   formula_lambda = ~ committee + (committee || id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
+
+  # uncorrelated random effects - remove whole matrix when nothing is left
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+      formula_lambda = ~ committee + (committee || id),
+      dv = "y",
+      correlate_sdt_params = F,
+      param_idc = Inf,
+      remove_from_mu = T,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
+
+  # uncorrelated random effects - remove whole matrix when nothing is left (lambda)
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee || stimulus),
+      formula_lambda = ~ committee + (committee || id),
+      dv = "y",
+      correlate_sdt_params = F,
+      param_idc = Inf,
+      remove_from_mu = F,
+      remove_from_rdm = "id",
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_mu_id']][, 1] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
 })
 
 
@@ -519,3 +715,61 @@ test_that("construct_glmer_formula() makes the correct formula without random ef
 }
 )
 
+#------------------------------------------------------------------------------#
+#### remove_correlations argument ####
+
+test_that("construct_glmer_formula() removes correlations from correlated formula", {
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      remove_correlations = T,
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_id']][, 1] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
+
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      remove_correlations = T,
+      remove_from_mu = F,
+      remove_from_rdm = "id",
+      param_idc = 1,
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_id']][, 1] | id) +
+                            (0 + mm[['rdm_mu_stimulus']][, 1] | stimulus) + (0 + mm[['rdm_mu_stimulus']][, 2] | stimulus)")))
+
+  expect_equal(
+    as.character(construct_glmer_formula(
+      formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+      formula_lambda = ~ committee + (committee | id),
+      dv = "y",
+      correlate_sdt_params = T,
+      remove_correlations = T,
+      remove_from_mu = T,
+      remove_from_rdm = "stimulus",
+      param_idc = Inf,
+      mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
+                                   formula_lambda = ~ committee + (committee | id),
+                                   data = dat_exp_2,
+                                   trial_type_var = "status_fac"))),
+    as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
+                            (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
+                            (0 + mm[['rdm_mu_id']][, 1] | id)")))
+}
+)

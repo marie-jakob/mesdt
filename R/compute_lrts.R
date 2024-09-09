@@ -219,7 +219,7 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
       LL_reduced <- stats::logLik(fit_tmp)
       chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
       df <- stats::df.residual(fit_tmp) - stats::df.residual(fit_obj)
-      if (test_ran_ef) p_value <- pchisqmix(q = chisq, df = 1, lower.tail = F, mix = 0.5)
+      if (test_ran_ef) p_value <- pchisqmix(q = chisq, df = df, lower.tail = F, mix = 0.5)
       else p_value <- pchisq(q = chisq, df = df, lower.tail = F)
       return(data.frame(
         # columns names inspired by afex
@@ -315,7 +315,7 @@ pchisqmix <- function(q, df, mix, lower.tail = TRUE) {
   df_vec <- rep(df, length(q))
   mix_vec <- rep(mix, length(q))
   upper <- stats::pchisq(q = q, df = df, lower.tail = lower.tail)
-  lower <- ifelse(df == 1, if (lower.tail) 1 else 0,
+  lower <- ifelse(df_vec == 1, if (lower.tail) 1 else 0,
                   pchisq(q, df-1, lower.tail = lower.tail))
-  return(mix * lower + (1 - mix) * upper)
+  return(mix_vec * lower + (1 - mix_vec) * upper)
 }
