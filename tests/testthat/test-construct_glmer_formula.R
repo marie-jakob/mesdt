@@ -39,12 +39,15 @@ test_that("construct_glmer_formula() accepts different random effects grouping f
 })
 
 test_that("construct_glmer_formula() makes a valid reduced formula", {
+
+  tbr <- list("mu" = 2)
+
   expect_equal(
     as.character(construct_glmer_formula(
       formula_mu = ~ 1 + x1 + (x1 | VP),
       formula_lambda = ~ 1 + x2 + (x2 | VP),
       dv = "dv",
-      param_idc = 2,
+      to_be_removed = 2,
       remove_from_mu = T
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']][, -2] +
