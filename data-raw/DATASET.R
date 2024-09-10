@@ -692,7 +692,7 @@ chi_squares_rdm_cross <- c(
 
 # without correlations
 
-fit_cross_slopes <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef + status_ef || id) + (0 + status_ef || file_name),
+fit_cross_slopes_uncor <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef + status_ef || id) + (0 + status_ef || file_name),
                           data = dat_exp_2, family = binomial("probit"))
 
 cross_lambda_intercept <- glmmTMB(assessment ~ committee_ef * status_ef + (0 + committee_ef + status_ef || id) + (0 + status_ef || file_name),
@@ -705,16 +705,16 @@ cross_mu_fn <- glmmTMB(assessment ~ committee_ef * status_ef + (committee_ef + s
                      data = dat_exp_2, family = binomial("probit"))
 
 
-anova(fit_cross_slopes, cross_lambda_intercept)
-anova(fit_cross_slopes, cross_mu_intercept)
-anova(fit_cross_slopes, cross_lambda_committee)
-anova(fit_cross_slopes, cross_mu_fn)
+anova(fit_cross_slopes_uncor, cross_lambda_intercept)
+anova(fit_cross_slopes_uncor, cross_mu_intercept)
+anova(fit_cross_slopes_uncor, cross_lambda_committee)
+anova(fit_cross_slopes_uncor, cross_mu_fn)
 
 chi_squares_rdm_cross_uncor <- c(
-  -2 * (logLik(cross_lambda_intercept) - logLik(fit_cross_slopes)),
-  -2 * (logLik(cross_lambda_committee) - logLik(fit_cross_slopes)),
-  -2 * (logLik(cross_mu_intercept) - logLik(fit_cross_slopes)),
-  -2 * (logLik(cross_mu_fn) - logLik(fit_cross_slopes))
+  -2 * (logLik(cross_lambda_intercept) - logLik(fit_cross_slopes_uncor)),
+  -2 * (logLik(cross_lambda_committee) - logLik(fit_cross_slopes_uncor)),
+  -2 * (logLik(cross_mu_intercept) - logLik(fit_cross_slopes_uncor)),
+  -2 * (logLik(cross_mu_fn) - logLik(fit_cross_slopes_uncor))
 )
 
 
@@ -733,7 +733,7 @@ usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_
                   fit_cross_intercept, fit_cross_slopes,
                   chisquares_cross_2, chisquares_cross_3,
                   chi_squares_rdm_intercepts, chi_squares_rdm_intercepts_uncor,
-                  chi_squares_rdm_cross,
+                  chi_squares_rdm_cross, chi_squares_rdm_cross_uncor,
                   internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)
 

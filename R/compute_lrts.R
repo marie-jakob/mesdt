@@ -45,25 +45,25 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     reduced_formulas_lambda <- list()
     for (i in 1:length(range_lambda)) {
       forms_tmp <- lapply(range_lambda[[i]], function(x) {
-        to_remove <- as.numeric(which(attr(mm[[names(range_lambda)[i]]], "assign") == x))
-        if (length(to_remove) == dim(mm[[names(range_lambda)[i]]])[2]) to_remove = Inf
-        remove_from_rdm_tmp <- ifelse(grepl("rdm", names(range_lambda)[i]), gsub("rdm_lambda_", "", names(range_lambda)[i]), "")
+        name_tmp <- names(range_lambda)[i]
+        to_remove <- list()
+        to_remove[[name_tmp]] <- as.numeric(which(attr(mm[[name_tmp]], "assign") == x))
+        print(to_remove)
+        if (length(to_remove[[name_tmp]]) == dim(mm[[name_tmp]])[2]) to_remove[[name_tmp]] = Inf
         return(construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                       param_idc = to_remove, remove_from_mu = F,
-                                       remove_from_rdm = remove_from_rdm_tmp))
+                                      to_remove = to_remove))
       })
       reduced_formulas_lambda <- append(reduced_formulas_lambda, forms_tmp)
     }
     reduced_formulas_mu <- list()
     for (i in 1:length(range_mu)) {
       forms_tmp <- lapply(range_mu[[i]], function(x) {
-        to_remove <- as.numeric(which(attr(mm[[names(range_mu)[i]]], "assign") == x))
-        if (length(to_remove) == dim(mm[[names(range_mu)[i]]])[2]) to_remove = Inf
-        remove_from_rdm_tmp <- ifelse(grepl("rdm", names(range_mu)[i]), gsub("rdm_mu_", "", names(range_mu)[i]), "")
+        name_tmp <- names(range_mu)[i]
+        to_remove <- list()
+        to_remove[[name_tmp]] <- as.numeric(which(attr(mm[[name_tmp]], "assign") == x))
+        if (length(to_remove[[name_tmp]]) == dim(mm[[name_tmp]])[2]) to_remove[[name_tmp]] = Inf
         return(construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                       param_idc = to_remove, remove_from_mu = T,
-                                       remove_from_rdm = remove_from_rdm_tmp))
-
+                                       to_remove = to_remove))
       })
       reduced_formulas_mu <- append(reduced_formulas_mu, forms_tmp)
     }
@@ -78,20 +78,18 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
     assigns <- attr(mm[["lambda"]], "assign")
     orders <- attr(terms(lme4::nobars(formula_lambda)), "order")
-    #if (test_intercepts) orders <- c(0, orders)
-    # no need to fit new full models if there are only main effects in the model
-    # (if ! test_intercepts) or if there are no predictors in the model (if test_intercepts)
-    # if ((max(orders) < 2) & ! test_intercepts) full_formulas_lambda <- NULL
+
     if ((max(c(0, orders)) + as.numeric(test_intercepts)) < 2) full_formulas_lambda <- NULL
     else {
       if (test_intercepts) n_orders_lambda <- 0:(max(orders) - 1)
       else n_orders_lambda <- 1:(max(orders) - 1)
       full_formulas_lambda <- lapply(n_orders_lambda, function(x) {
         # add 0 for the intercept (which is dropped since it has no order)
-        to_remove <- as.numeric(which(c(0, orders[assigns]) > x))
-        if (length(to_remove) == dim(mm[["lambda"]])[2]) to_remove = Inf
+        to_remove <- list()
+        to_remove[["lambda"]] <- as.numeric(which(c(0, orders[assigns]) > x))
+        if (length(to_remove[["lambda"]]) == dim(mm[["lambda"]])[2]) to_remove[["lambda"]] <- Inf
         construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                param_idc = to_remove, remove_from_mu = F)
+                                to_remove = to_remove)
       })
     }
     # reduced_formulas are constructed for all predictors in the model for both mu and lambda
@@ -99,34 +97,38 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     reduced_formulas_lambda <- lapply(range_lambda[[1]], function(x) {
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
-      to_remove <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
-      if (length(to_remove) == dim(mm[["lambda"]])[2]) to_remove = Inf
+      to_remove <- list()
+      to_remove[["lambda"]] <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
+      if (length(to_remove[["lambda"]]) == dim(mm[["lambda"]])[2]) to_remove[["lambda"]] <- Inf
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                              param_idc = to_remove, remove_from_mu = F)
+                              to_remove = to_remove)
     })
 
     assigns <- attr(mm[["mu"]], "assign")
     orders <- attr(terms(lme4::nobars(formula_mu)), "order")
-    #if ((max(orders) < 2) & ! test_intercepts) full_formulas_mu <- NULL
+
     if ((max(c(0, orders)) + as.numeric(test_intercepts)) < 2) full_formulas_mu <- NULL
     else {
       if (test_intercepts) n_orders_mu <- 0:(max(orders) - 1)
       else n_orders_mu <- 1:(max(orders) - 1)
 
       full_formulas_mu <- lapply(n_orders_mu, function(x) {
-        to_remove <- as.numeric(which(c(0, orders[assigns]) > x))
+        to_remove <- list()
+        to_remove[["mu"]] <- as.numeric(which(c(0, orders[assigns]) > x))
+        if (length(to_remove[["mu"]]) == dim(mm[["mu"]])[2]) to_remove[["mu"]] <- Inf
         construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                param_idc = to_remove, remove_from_mu = T)
+                                to_remove = to_remove)
       })
     }
 
     reduced_formulas_mu <- lapply(range_mu[[1]], function(x) {
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
-      to_remove <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
-      if (length(to_remove) == dim(mm[["mu"]])[2]) to_remove = Inf
+      to_remove <- list()
+      to_remove[["mu"]] <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
+      if (length(to_remove[["mu"]]) == dim(mm[["mu"]])[2]) to_remove[["mu"]] <- Inf
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                              param_idc = to_remove, remove_from_mu = T)
+                              to_remove = to_remove)
     })
   }
 

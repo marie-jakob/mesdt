@@ -141,34 +141,35 @@ test_that("fit_mlsdt() works for crossed random effects with random intercepts a
 
 
 test_that("fit_mlsdt() works for crossed random effects with random intercepts, predictors and random slopes", {
+  options("mlsdt.backend" = "glmmTMB")
   fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name),
                    ~ committee + (committee | id),
                    dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
 
   # Number of estimated fixed effects parameters
-  expect_equal(length(fixef(fit)), length(fixef(fit_cross_slopes)))
+  expect_equal(length(fixef(fit)[[1]]), length(fixef(fit_cross_slopes)[[1]]))
   # Number of estimated random effects parameters
-  expect_equal(length(ranef(fit)), length(ranef(fit_cross_slopes)))
+  expect_equal(length(ranef(fit)[[1]]), length(ranef(fit_cross_slopes)[[1]]))
   expect_equal(length(unlist(VarCorr(fit))), length(unlist(VarCorr(fit_cross_slopes))))
   # dfs
   expect_equal(df.residual(fit), df.residual(fit_cross_slopes))
   # log likelihoods
-  expect_equal(logLik(fit), logLik(fit_cross_slopes), tolerance = 1e-4)
+  expect_equal(logLik(fit), logLik(fit_cross_slopes), tolerance = 1e-6)
 
   # fixed effects estimates
-  expect_equal(abs(unname(fixef(fit))), abs(unname(fixef(fit_cross_slopes))), tolerance = 1e-4)
+  expect_equal(abs(unname(fixef(fit)[[1]])), abs(unname(fixef(fit_cross_slopes)[[1]])), tolerance = 1e-6)
 
   # observed Fisher information
-  expect_equal(abs(unname(vcov(fit))[1:4, 1:4]), abs(unname(vcov(fit_cross_slopes))[1:4, 1:4]), tolerance = 1e-4)
+  expect_equal(abs(unname(vcov(fit)[[1]])[1:4, 1:4]), abs(unname(vcov(fit_cross_slopes)[[1]])[1:4, 1:4]), tolerance = 1e-4)
 
   # lambda random effect variances
-  expect_equal(abs(as.data.frame(VarCorr(fit))$vcov), abs(as.data.frame(VarCorr(fit_cross_slopes))$vcov), tolerance = 1e-4)
-
+  expect_equal(abs(unlist(VarCorr(fit))), abs(unlist(VarCorr(fit_cross_slopes))), tolerance = 1e-4)
 }
 )
 
 
 test_that("fit_mlsdt() works when only mu or lambda have random effects", {
+  options("mlsdt.backend" = "lme4")
   fit <- fit_mlsdt(~ committee,
                    ~ committee + (1 | id),
                    dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj

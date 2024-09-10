@@ -25,24 +25,32 @@
 construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sdt_params = T,
                                     mm = NULL, to_remove = NULL, remove_correlations = F) {
 
-  # check if the random grouping factor is the same for mu and lambda
+  # check if all fixed effects are removed
+  if (!is.null(to_remove[["lambda"]]) & !is.null(to_remove[["mu"]])) {
+    if (to_remove[["lambda"]] == Inf & to_remove[["mu"]] == Inf) {
+      message("Model must contain fixed effects.")
+      return()
+    }
+  }
+
+
+  # get random grouping factors for mu and lambda
   rdm_facs_mu <- sapply(lme4::findbars(formula_mu), function(x) {
     gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
   })
   rdm_facs_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
     gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
   })
-  # Handle given random effects-structure and convert to the corresponding internal formula
-  # Logic: Variables are in the same parentheses if they are correlated (no "||" stuff)
 
+  # Handle given random effects-structure and convert to the corresponding internal formula
   rdm_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
     gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
   })
   rdm_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
     gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
   })
-  # add "_rdm_fac" to the model matrix to allow for multiple random effects
 
+  # add "_rdm_fac" to the model matrix to allow for multiple random effects
   if (! is.null(to_remove)) {
     tbr_char <- c()
     for (i in to_remove) {
@@ -69,7 +77,7 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
       # 1. add the whole matrix
       lambda_tmp <- ifelse(is.null(to_remove[[name_lambda_tmp]]), paste("mm[['", name_lambda_tmp, "']]", sep = ""),
                            # 2. remove the whole matrix
-                           ifelse(to_remove[[name_lambda_tmp]] == Inf, NULL,
+                           ifelse(all(to_remove[[name_lambda_tmp]] == Inf), "",
                                   # 3. remove the given indices
                                   paste("mm[['", name_lambda_tmp, "']][, -", tbr_char[[name_lambda_tmp]], "]", sep = "")
                                   ))
@@ -78,16 +86,16 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
         # 1. add the whole matrix
         mu_tmp <- ifelse(is.null(to_remove[[name_mu_tmp]]), paste("mm[['", name_mu_tmp, "']]", sep = ""),
                              # 2. remove the whole matrix
-                             ifelse(to_remove[[name_mu_tmp]] == Inf, NULL,
+                             ifelse(all(to_remove[[name_mu_tmp]] == Inf), "",
                                     # 3. remove the given indices
                                     paste("mm[['", name_mu_tmp, "']][, -", tbr_char[[name_mu_tmp]], "]", sep = "")
                              ))
-        } else mu_tmp <- NULL
-      if (is.null(lambda_tmp) & is.null(mu_tmp)) {
-        form_part_tmp <- NULL
-      } else if (is.null(lambda_tmp)) {
+        } else mu_tmp <- ""
+      if (lambda_tmp == "" & mu_tmp == "") {
+        form_part_tmp <- ""
+      } else if (lambda_tmp == "") {
         form_part_tmp <- paste("(0 + ", mu_tmp, "| ", rdm_fac, ")", sep = "")
-      } else if (is.null(mu_tmp)) {
+      } else if (mu_tmp == "") {
         form_part_tmp <- paste("(0 + ", lambda_tmp, "| ", rdm_fac, ")", sep = "")
       } else {
         if (correlate_sdt_params) form_part_tmp <- paste("(0 + ", paste(lambda_tmp, mu_tmp, sep = " + "), " | ", rdm_fac, ")", sep = "")
@@ -103,15 +111,17 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
         # 1. add the whole matrix
         mu_tmp <- ifelse(is.null(to_remove[[name_mu_tmp]]), paste("mm[['", name_mu_tmp, "']]", sep = ""),
                           # 2. remove the whole matrix
-                          ifelse(to_remove[[name_mu_tmp]] == Inf, NULL,
+                          ifelse(all(to_remove[[name_mu_tmp]] == Inf), "",
                                 # 3. remove the given indices
-                                "mm[['", name_mu_tmp, "']][, -", tbr_char[[name_mu_tmp]], "]"
+                                paste("mm[['", name_mu_tmp, "']][, -", tbr_char[[name_mu_tmp]], "]", sep = "")
                            ))
-        if (! is.null(mu_tmp)) rdm_formula_parts <- append(rdm_formula_parts,
+
+        print(mu_tmp)
+        if (mu_tmp != "") rdm_formula_parts <- append(rdm_formula_parts,
                                                            paste("(0 + ", mu_tmp, " | ", rdm_fac, ")", sep = ""))
       }
     }
-    print(rdm_formula_parts)
+
     ################
     # Completely uncorrelated random effects
     ################
@@ -151,7 +161,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
       if (any(rdm_parts_tmp != "")) rdm_formula_parts <- append(rdm_formula_parts, paste(rdm_parts_tmp, collapse = "+"))
     }
   }
-  print(rdm_formula_parts)
   rdm_formula <- paste(rdm_formula_parts, collapse = " + ")
   # Case 3: Mix -> TODO for later
   # -> some terms correlated, some not
@@ -160,16 +169,17 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
   # make the full model formula if no parameter index to be removed is given
   #fixed_formula <- "0 + " #mm[['lambda']] + mm[['mu']]"
   fixed_formula <- "0"
+
   if (! is.null(to_remove[["lambda"]])) {
-    if (! to_remove[["lambda"]] == Inf) fixed_formula <- paste(fixed_formula, paste("mm[['lambda']][, -", tbr_char[["lambda"]], ']', sep = " + "))
+    if (! all(to_remove[["lambda"]] == Inf)) fixed_formula <- paste(fixed_formula, paste("mm[['lambda']][, -", tbr_char[["lambda"]], ']', sep = ""), sep = " + ")
   } else fixed_formula <- paste(fixed_formula, "mm[['lambda']]", sep = " + ")
 
   if (! is.null(to_remove[["mu"]])) {
-    if (! to_remove[["lambda"]] == Inf) fixed_formula <- paste(fixed_formula, paste("mm[['mu']][, -", tbr_char[["mu"]], ']', sep = " + "))
+    if (! all(to_remove[["mu"]] == Inf)) fixed_formula <- paste(fixed_formula, paste("mm[['mu']][, -", tbr_char[["mu"]], ']', sep = ""), sep = " + ")
   } else fixed_formula <- paste(fixed_formula, "mm[['mu']]", sep = " + ")
 
-
-  if (is.null(lme4::findbars(formula_lambda)) & is.null(lme4::findbars(formula_mu))) {
+  if ((is.null(lme4::findbars(formula_lambda)) & is.null(lme4::findbars(formula_mu))) |
+      rdm_formula == "") {
     glmer_formula <- as.formula(paste(dv, " ~ ", fixed_formula, sep = ""),
                                 # parent.frame() sets scope of the parent environment (i.e., where the function
                                 # is called from) for the formula -> necessary such that model matrices can be found
