@@ -380,3 +380,100 @@ as.character(as.formula("dv ~ 0 + mm[['lambda']][, -3] + mm[['mu']] +
 
 
 
+#------------------------------------------------------------------------------#
+#### Random Effects Selection ####
+
+# There are so many different opinions on this...
+# -> In the manuscript: emphasize that the algorithmic implementations are _heuristic_
+
+options("mlsdt.backend" = "lme4")
+
+model_1 <- fit_mlsdt(formula_mu = ~ emp_gender +
+                          (emp_gender | id) + (committee | file_name),
+                        formula_lambda = ~ emp_gender * committee +
+                          (emp_gender * committee | id) + (committee | file_name),
+                        data = dat_exp_2,
+                        dv = "assessment",
+                        trial_type_var = "status_fac")
+summary(model_1$fit_obj)
+isSingular(model_1$fit_obj)
+# singular fit -> remove correlations
+
+correlations_in_model <- ifelse(any(! is.na(data.frame(VarCorr(model_1$fit_obj))$var2)), T, F)
+
+# TODO: remove all correlations right away or (if multiple random effects grouping
+# factors are present) for one factor at a time
+# -> so far: only possible for all random effects at the same time
+model_2 <- fit_mlsdt(formula_mu = ~ emp_gender +
+                       (emp_gender || id) + (committee || file_name),
+                     formula_lambda = ~ emp_gender * committee +
+                       (emp_gender * committee || id) + (committee || file_name),
+                     data = dat_exp_2,
+                     dv = "assessment",
+                     trial_type_var = "status_fac")
+
+model_2_glmer <- glmer(assessment ~ status_ef * emp_gender_ef + committee_ef * emp_gender_ef +
+                         (status_ef * emp_gender_ef + emp_gender_ef * committee_ef || id) +
+                         (status_ef * committee_ef || file_name),
+                       family = binomial(link = "probit"),
+                       data = dat_exp_2,
+                       nAGQ = 0)
+
+
+isSingular(model_2$fit_obj)
+# singular fit
+correlations_in_model <- ifelse(any(! is.na(data.frame(VarCorr(model_2$fit_obj))$var2)), T, F)
+
+summary(model_2$fit_obj)
+# Remove all variance terms that are zero
+# or if there are none, the smallest ones
+to_remove <- list()
+var_corr <- data.frame(VarCorr(model_2$fit_obj))
+idc <- which(var_corr$vcov == min(var_corr$vcov))
+to_remove_idc <- sapply(strsplit(var_corr$var1[idc], "\\ "), function(x) return(as.numeric(substr(x[2], 1, 1))))
+
+to_remove_rdm_fac <- sapply(strsplit(var_corr$grp[idc], "\\."), function(x) return(x[1]))
+to_remove_sdt_param <- sapply(strsplit(var_corr$var1[idc], "\\_"), function(x) return(x[2]))
+
+names_tmp <- paste("rdm", to_remove_sdt_param, to_remove_rdm_fac, sep = "_")
+
+for (i in 1:length(names_tmp)) {
+  if (is.null(to_remove[[names_tmp[i]]])) to_remove[[names_tmp[i]]] <- to_remove_idc[i]
+  else to_remove[[names_tmp[i]]] <- c(to_remove[[names_tmp[i]]], to_remove_idc[i])
+}
+
+# Remove indices (filename intercept for mu and lambda)
+
+model_3 <- fit_mlsdt(formula_mu = ~ emp_gender +
+                       (emp_gender || id) + (0 + committee || file_name),
+                     formula_lambda = ~ emp_gender * committee +
+                       (emp_gender * committee || id) + (0 + committee || file_name),
+                     data = dat_exp_2,
+                     dv = "assessment",
+                     trial_type_var = "status_fac")
+
+
+summary(isSingular(model_3$fit_obj))
+correlations_in_model <- ifelse(any(! is.na(data.frame(VarCorr(model_3$fit_obj))$var2)), T, F)
+
+
+model_full$fit_obj$fit$message
+model_full$fit_obj$fit$convergence
+
+
+model_red_1$fit_obj$fit$message
+model_red_1$fit_obj$fit$convergence
+
+
+which(data.frame(VarCorr(model_red_1))$sdcor == min(data.frame(VarCorr(model_red_1))$sdcor))
+
+
+
+
+
+# TODO: convergence in glmmTMB
+# TODO: write issingular() function for glmmTMB
+# https://github.com/lme4/lme4/blob/bfd7a44d0a718fff090412871504858559a0829f/R/utilities.R#L1054
+
+
+

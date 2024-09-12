@@ -101,9 +101,6 @@ test_that("fit_mlsdt() notifies the user that only uncorrelated or correlated
   expect_message(fit_mlsdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 | ID), dv = "y", data = internal_sdt_data))
   expect_message(fit_mlsdt(~ 1 + x1 + (1 | ID) + (x1 | ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y", data = internal_sdt_data))
 
-  expect_no_message(fit_mlsdt(~ 1 + x1 + (x1 | ID), ~ 1 + x1 + (x1 | ID), dv = "y", data = internal_sdt_data))
-  expect_no_message(fit_mlsdt(~ 1 + x1 + (1 | ID), ~ 1 + x1 + (1 | ID), dv = "y", data = internal_sdt_data))
-
 })
 
 #------------------------------------------------------------------------------#

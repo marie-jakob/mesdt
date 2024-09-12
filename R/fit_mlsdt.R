@@ -21,44 +21,50 @@ fit_mlsdt <- function(formula_mu,
                       data,
                       correlate_sdt_params = T,
                       max_iter = 10,
-                      fast = T) {
+                      fast = T,
+                      selection = NULL) {
   mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
   glmer_formula_full <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
                                                 correlate_sdt_params = correlate_sdt_params)
 
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
   # (y, ID)
-  fit_obj_tmp <- fit_glmm(glmer_formula_full, data, mm)
+
   # Do the random-effects structure selection
   # Starting with the faster optimizer (nAGQ = 0)
-  #glmer_formula <- glmer_formula_full
-  #count <- 0; convergence <- F
-  #all_fits <- list(); all_forms <- list();
-  #tbr_indices <- c();
-  #while (TRUE) {
-  #  if (convergence | count == max_iter) break;
-  #  message(paste("Fitting model", as.character(glmer_formula)[2]))
-  #  fit_obj_tmp <- fit_glmm(glmer_formula, data, mm)
-  #  if (isSingular(fit_obj_tmp) | length(fit_obj_tmp@optinfo$conv$lme4) > 0)) {
-  #    convergence <- F
-  #    # 1. Remove correlations
-  #    correlations_in_model <- ifelse(all(dim(attr(unclass(VarCorr(fit_obj))$ID, "correlation")) != c(1, 1)),
-  #                                    T, F)
-  #    if (correlations_in_model) {
-  #      message("Removing correlations from the model")
-  #      glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
-  #                                               correlate_sdt_params = correlate_sdt_params,
-  #                                               remove_correlations = T)
-  #    } else {
-  #      # Remove random terms from the model
-#
-#
-  #    }
-#
-  #  } else convergence <- T
-#
-  ##}
-  fit_obj <- fit_obj_tmp
+  glmer_formula <- glmer_formula_full
+  count <- 0; convergence <- F
+  all_fits <- list(); all_forms <- list();
+  tbr_indices <- c();
+  while (TRUE) {
+    if (convergence | count == max_iter) break;
+    print("Hi")
+    message(paste("Fitting model", as.character(glmer_formula)[2]))
+    fit_tmp <- fit_glmm(glmer_formula, data, mm)
+
+    # If no selection strategy is provided, return the fit of the full model
+    if (is.null(selection)) convergence <- T
+    # else reduce the model
+    else if (isSingular(fit_tmp$fit_obj) | length(fit_tmp$fit_obj@optinfo$conv$lme4) > 0) {
+      convergence <- F
+      # 1. Remove correlations
+      correlations_in_model <- ifelse(all(dim(attr(unclass(VarCorr(fit_tmp$fit_obj))$ID, "correlation")) != c(1, 1)),
+                                      T, F)
+      if (correlations_in_model) {
+        message("Removing correlations from the model")
+        glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
+                                                 correlate_sdt_params = correlate_sdt_params,
+                                                 remove_correlations = T)
+      } else {
+        # Remove random terms from the model
+
+
+      }
+
+    } else convergence <- T
+
+  }
+  fit_obj <- fit_tmp
   # Continue with nAGQ = 1
   #fit_obj <- lme4::glmer(glmer_formula,
   #                       data = data,

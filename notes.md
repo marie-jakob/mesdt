@@ -1,6 +1,17 @@
 # Notes 
 
 
+### Open Questions - Raphi & Constantin
+
++ Remove correlations for all random effects grouping factors at once or sequentially or depending on there being correlations = 1 or = -1? 
++ Crossed random effects: do two separate selections and combine (and then do another selection)?
++ ANOVA stuff
++ 
++ genaues Setup Simulation
+
+
+
+
 ### Input Syntax
 
 + Use R formula stuff? -> afex: uses 3 different syntax variants for the ANOVA (might also be an option)
@@ -75,6 +86,10 @@ __glmmADMB__ package:
 	+ -> simplify this by (1) finding the maximal model (in a backward selection), (2) test all remaining random effects for significance and (3) remove all non-significant predictors (optionally (4) do this as long as there are nonsignificant random effects in the model)
 
 + ::buildmer package is probably not that easy to include -> do this manually
+
++ Constantin: adhere to marginality in the random-effects selection (wegen Reviewer)
+	+ optimal: optional forward & backward selection implementieren + testing strategies (e.g., LRT, AIC)
+	+ -> Empfehlung: forward selection for complex models, backward selection for less complex models
 
 ##### "Keep it maximal"
 
@@ -208,6 +223,12 @@ __glmmADMB__ package:
 + predict() function would be nice -> could run into problems with the way the model matrices are generated. Adding the variables from the model matrices to the data might help
 
 + simulating from known parameter values -> basis for future simulation-based power analysis functionality
+
+
+### Simulation Study
+
++ Goals: Power + Error Rate for Two-Step Procedure &  hierarchical approach (backward selection + parsimonious strategy + one-way ANOVA evtl.?)
++ 
 
 ## Resources
 
