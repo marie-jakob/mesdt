@@ -25,7 +25,7 @@
 	
 + "||" notation in input allowed if correlations are suppressed for both mu and lambda
 	+ works for factors as well (even though it does not work in lme4) because data are entered numerically via the model matrices (problem in lme4 is that factors with > 2 levels are not split into separate terms, afex allows this via expand_re)
-	+ "||" does weird stuff with matrices -> columns of a given model matrix are always correlated in the model (e.g., `~ ... + (m_matrix || ID)` -> `~ ... + (m_matrix[, 1] + m_matrix[, 2] + ... || ID)`
+	+ "||" does weird stuff with matrices -> columns of a given model matrix are always correlated in the model (e.g., `~ ... + (m_matrix || ID)` -> `~ ... + (m_matrix[, 1] + m_matrix[, 2] + ... || ID)`)
 
 
 ### GLMM Estimation with different backends
