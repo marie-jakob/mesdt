@@ -62,25 +62,17 @@ construct_modelmatrices <- function(formula_mu,
   rdm_facs_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
     gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
   })
-  #rdm_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
-  #  gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
-  #})
-  #rdm_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
-  #  gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
-  #})
   rdm_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
-    strsplit(as.character(x), "\\|")[2]
+    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
   })
   rdm_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
-    strsplit(as.character(x), "\\|")[2]
+    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
   })
-  print(rdm_pred_mu)
-  print(rdm_pred_lambda)
+
   for (rdm_fac in unique(rdm_facs_mu)) {
     # get all predictors "belonging" to one random effects grouping factor
     rdm_pred_mu_tmp <- paste(rdm_pred_mu[which(rdm_facs_mu == rdm_fac)], collapse = "+")
     form_tmp <- formula(paste("~", rdm_pred_mu_tmp, sep = ""))
-    print(form_tmp)
     mm_rdm_mu_tmp <- stats::model.matrix(form_tmp,
                                          data = data)
     mm_rdm_mu_tmp <- mm_rdm_mu_tmp * trial_type_ef
@@ -92,7 +84,6 @@ construct_modelmatrices <- function(formula_mu,
     rdm_pred_lambda_tmp <- paste(rdm_pred_lambda[which(rdm_facs_lambda == rdm_fac)], collapse = "+")
     #print(rdm_pred_lambda_tmp)
     form_tmp <- formula(paste("~", rdm_pred_lambda_tmp, sep = ""))
-    print(form_tmp)
     mm_rdm_lambda_tmp <- stats::model.matrix(form_tmp,
                                              data = data)
     name_rdm_lambda_tmp <- paste("rdm_lambda_", rdm_fac, sep = "")
@@ -109,5 +100,3 @@ construct_modelmatrices <- function(formula_mu,
 
   return(to_return)
 }
-
-
