@@ -205,8 +205,10 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
 
 compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
-                         mm, type = 3, test_intercepts = F, test_ran_ef = F) {
+                         mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F) {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
+
+  if (is.null(mm)) mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data)
 
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
 
