@@ -24,74 +24,11 @@ fit_mlsdt <- function(formula_mu,
                       fast = T,
                       selection = NULL) {
   mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
-  glmer_formula_full <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
+  glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
                                                 correlate_sdt_params = correlate_sdt_params)
-
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
   # (y, ID)
-
-  # Do the random-effects structure selection
-  # Starting with the faster optimizer (nAGQ = 0)
-  glmer_formula <- glmer_formula_full
-  count <- 0; convergence <- F
-  all_fits <- list(); all_forms <- list();
-  tbr_indices <- c();
-  while (TRUE) {
-    if (convergence | count == max_iter) break;
-    print("Hi")
-    message(paste("Fitting model", as.character(glmer_formula)[2]))
-    fit_tmp <- fit_glmm(glmer_formula, data, mm)
-
-    # If no selection strategy is provided, return the fit of the full model
-    if (is.null(selection)) convergence <- T
-    # else reduce the model
-    else if (isSingular(fit_tmp$fit_obj) | length(fit_tmp$fit_obj@optinfo$conv$lme4) > 0) {
-      convergence <- F
-      # 1. Remove correlations
-      correlations_in_model <- ifelse(all(dim(attr(unclass(VarCorr(fit_tmp$fit_obj))$ID, "correlation")) != c(1, 1)),
-                                      T, F)
-      if (correlations_in_model) {
-        message("Removing correlations from the model")
-        glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
-                                                 correlate_sdt_params = correlate_sdt_params,
-                                                 remove_correlations = T)
-      } else {
-        # Remove random terms from the model
-
-
-      }
-
-    } else convergence <- T
-
-  }
-  fit_obj <- fit_tmp
-  # Continue with nAGQ = 1
-  #fit_obj <- lme4::glmer(glmer_formula,
-  #                       data = data,
-  #                       family = binomial(link = "probit"),
-  #                       # this is only for testing speed -> changed for actual use
-  #                       nAGQ = 1)
-
-  # Ensure convergence: increase iterations until the model converges
-  #count = 1;
-  #while (TRUE) {
-  #  if (count > (max_iter / 1e4)) {
-  #    stop("Final Model did not converge in the given maximal number of iterations.
-  #         Please increase max_iter and try again.")
-  #    break;
-  #  }
-  #  if (length(model_base_fin@optinfo$conv$lme4) == 0) break;
-
-  #  print(count);
-  #  pars = getME(model_base_fin, c("theta","fixef"))
-  #  fit_obj <- update(fit_obj,
-  #                           start = pars,
-  #                           control = glmerControl(optCtrl = list(maxfun = 1e4)))
-  #  print(model_base_fin@optinfo$conv$lme4)
-
-  #  count = count + 1
-  #}
-  # TODO: decide whether to do the thing with adding the correlations again.
+  fit_obj <- fit_glmm(glmer_formula, data, mm)
 
   # Post-Processing the lme4 output
   # backend = ifelse(options("backend") == "", "lme4", options("backend"))

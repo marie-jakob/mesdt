@@ -14,7 +14,7 @@ fit_glmm <- function(glmer_formula,
   # only applies to lme4, defaults to 0 at the moment
   # -> might be changed later to a function argument
   nAGQ = ifelse(is.null(options("nAGQ")$nAGQ), 0, options("nAGQ"))
-  print(nAGQ)
+  #print(nAGQ)
 
   # Fit a GLM if there are no random effects
   if (is.null(lme4::findbars(glmer_formula))) {
@@ -23,14 +23,14 @@ fit_glmm <- function(glmer_formula,
                           data = data,
                           family = binomial(link = "probit"))
   } else if ((options("mlsdt.backend") == "lme4")) {
-    print("fitting with lme4")
+    #print("fitting with lme4")
     fit_obj <- lme4::glmer(glmer_formula,
                            data = data,
                            family = binomial(link = "probit"),
                            # this is only for testing speed -> changed for actual use
                            nAGQ = nAGQ)
   } else if ((options("mlsdt.backend") == "glmmTMB")) {
-    print("fitting with glmmTMB")
+    #print("fitting with glmmTMB")
     # mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = data)
     fit_obj <- glmmTMB::glmmTMB(glmer_formula,
                                 data = data,

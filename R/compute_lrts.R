@@ -1,5 +1,5 @@
 fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F,
-                          rem_ran_ef = F) {
+                          rem_ran_ef = F, correlate_sdt_params = T) {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
 
@@ -48,10 +48,10 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
         name_tmp <- names(range_lambda)[i]
         to_remove <- list()
         to_remove[[name_tmp]] <- as.numeric(which(attr(mm[[name_tmp]], "assign") == x))
-        print(to_remove)
+        #print(to_remove)
         if (length(to_remove[[name_tmp]]) == dim(mm[[name_tmp]])[2]) to_remove[[name_tmp]] = Inf
         return(construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                      to_remove = to_remove))
+                                      to_remove = to_remove, correlate_sdt_params = correlate_sdt_params))
       })
       reduced_formulas_lambda <- append(reduced_formulas_lambda, forms_tmp)
     }
@@ -63,7 +63,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
         to_remove[[name_tmp]] <- as.numeric(which(attr(mm[[name_tmp]], "assign") == x))
         if (length(to_remove[[name_tmp]]) == dim(mm[[name_tmp]])[2]) to_remove[[name_tmp]] = Inf
         return(construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                       to_remove = to_remove))
+                                       to_remove = to_remove, correlate_sdt_params = correlate_sdt_params))
       })
       reduced_formulas_mu <- append(reduced_formulas_mu, forms_tmp)
     }
@@ -89,7 +89,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
         to_remove[["lambda"]] <- as.numeric(which(c(0, orders[assigns]) > x))
         if (length(to_remove[["lambda"]]) == dim(mm[["lambda"]])[2]) to_remove[["lambda"]] <- Inf
         construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                to_remove = to_remove)
+                                to_remove = to_remove, correlate_sdt_params = correlate_sdt_params)
       })
     }
     # reduced_formulas are constructed for all predictors in the model for both mu and lambda
@@ -101,7 +101,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       to_remove[["lambda"]] <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
       if (length(to_remove[["lambda"]]) == dim(mm[["lambda"]])[2]) to_remove[["lambda"]] <- Inf
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                              to_remove = to_remove)
+                              to_remove = to_remove, correlate_sdt_params = correlate_sdt_params)
     })
 
     assigns <- attr(mm[["mu"]], "assign")
@@ -117,7 +117,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
         to_remove[["mu"]] <- as.numeric(which(c(0, orders[assigns]) > x))
         if (length(to_remove[["mu"]]) == dim(mm[["mu"]])[2]) to_remove[["mu"]] <- Inf
         construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                                to_remove = to_remove)
+                                to_remove = to_remove, correlate_sdt_params = correlate_sdt_params)
       })
     }
 
@@ -128,7 +128,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       to_remove[["mu"]] <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
       if (length(to_remove[["mu"]]) == dim(mm[["mu"]])[2]) to_remove[["mu"]] <- Inf
       construct_glmer_formula(formula_mu, formula_lambda, dv = dv, mm = mm,
-                              to_remove = to_remove)
+                              to_remove = to_remove, correlate_sdt_params = correlate_sdt_params)
     })
   }
 
@@ -152,24 +152,24 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   }
 
   if (type == 2) {
-    print("Fitting full models")
+    #print("Fitting full models")
     full_fits_lambda <- lapply(full_formulas_lambda, function(formula_tmp) {
-      print(paste("Fitting ", formula_tmp, sep = ""))
+      #print(paste("Fitting ", formula_tmp, sep = ""))
       return(fit_glmm(formula_tmp, data, mm))
     })
     full_fits_mu <- lapply(full_formulas_mu, function(formula_tmp) {
-      print(paste("Fitting ", formula_tmp, sep = ""))
+      #print(paste("Fitting ", formula_tmp, sep = ""))
       return(fit_glmm(formula_tmp, data, mm))
     })
-    print("Fitting reduced models")
+    #print("Fitting reduced models")
     full_formulas_lambda_char <- sapply(full_formulas_lambda, function(x) {as.character(x)[3]})
     reduced_fits_lambda <- lapply(reduced_formulas_lambda, function(formula_tmp) {
       if (as.character(formula_tmp)[3] %in% full_formulas_lambda_char) {
-        print(paste("Copying ", formula_tmp, sep = ""))
+        #print(paste("Copying ", formula_tmp, sep = ""))
         which_model_equal <- which(full_formulas_lambda_char == as.character(formula_tmp)[3])
         return(full_fits_lambda[[which_model_equal]])
       } else {
-        print(paste("Fitting ", formula_tmp, sep = ""))
+        #print(paste("Fitting ", formula_tmp, sep = ""))
         return(fit_glmm(formula_tmp, data, mm))
       }
     })
@@ -177,21 +177,21 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     full_formulas_mu_char <- sapply(full_formulas_mu, function(x) {as.character(x)[3]})
     reduced_fits_mu <- lapply(reduced_formulas_mu, function(formula_tmp) {
       if (as.character(formula_tmp)[3] %in% full_formulas_mu_char) {
-        print(paste("Copying ", formula_tmp, sep = ""))
+        #print(paste("Copying ", formula_tmp, sep = ""))
         which_model_equal <- which(full_formulas_mu_char == as.character(formula_tmp)[3])
-        print(which_model_equal)
+        #print(which_model_equal)
         return(full_fits_mu[[which_model_equal]])
       } else {
-        print(paste("Fitting ", formula_tmp, sep = ""))
+        #print(paste("Fitting ", formula_tmp, sep = ""))
         return(fit_glmm(formula_tmp, data, mm))
       }
 
     })
   } else {
     # fit reduced models
-    print("Fitting reduced models")
+    #print("Fitting reduced models")
     reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), function(formula_tmp) {
-      print(paste("Fitting ", formula_tmp, sep = ""))
+      #print(paste("Fitting ", formula_tmp, sep = ""))
       return(fit_glmm(formula_tmp, data, mm))
     })
   }
@@ -205,7 +205,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
 
 compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
-                         mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F) {
+                         mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
+                         correlate_sdt_params = T) {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
   if (is.null(mm)) mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data)
@@ -213,7 +214,7 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
 
   submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts,
-                             rem_ran_ef = test_ran_ef)
+                             rem_ran_ef = test_ran_ef, correlate_sdt_params = correlate_sdt_params)
   if(is.null(submodels)) return(NULL)
   if (type == 3) {
     reduced_fits <- submodels

@@ -69,7 +69,7 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
   # Correlated random effects
   if (! remove_correlations & length(rdm_facs_lambda) == length(unique(rdm_facs_lambda)) &
       length(rdm_facs_mu) == length(unique(rdm_facs_mu))) {
-    print("correlate_sdt_params")
+    #print("correlate_sdt_params")
     for (rdm_fac in rdm_facs_lambda) {
       name_lambda_tmp <- paste("rdm_lambda_", rdm_fac, sep = "")
       name_mu_tmp <- paste("rdm_mu_", rdm_fac, sep = "")
@@ -116,7 +116,7 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
                                 paste("mm[['", name_mu_tmp, "']][, -", tbr_char[[name_mu_tmp]], "]", sep = "")
                            ))
 
-        print(mu_tmp)
+        #print(mu_tmp)
         if (mu_tmp != "") rdm_formula_parts <- append(rdm_formula_parts,
                                                            paste("(0 + ", mu_tmp, " | ", rdm_fac, ")", sep = ""))
       }
