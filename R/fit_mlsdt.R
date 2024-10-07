@@ -5,12 +5,14 @@
 #' @param dv name of the (binary) dependent variable
 #' @param trial_type_var name of the variable coding signal vs. noise trials
 #' @param data dataset
-#' @param backend package / library used to fit the model
-#'    -> only supports R lme4 (backend = "lme4" at the moment but support for Julia
-#'    MixedModels and glmmTMB is planned)
+#' @param correlate_sdt_params boolean indicating whether correlations between
+#'  SDT parameters should be modeled
 #'
 #' @return TODO
-#' @import lme4
+#' @importFrom lme4 fixef
+#' @importFrom lme4 ranef
+#' @importFrom lme4 VarCorr
+#' @importFrom stats vcov
 #' @export
 #'
 #' @examples
@@ -19,16 +21,16 @@ fit_mlsdt <- function(formula_mu,
                       dv,
                       trial_type_var = "trial_type",
                       data,
-                      correlate_sdt_params = T,
-                      max_iter = 10,
-                      fast = T,
-                      selection = NULL) {
+                      correlate_sdt_params = T) {
   mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
   glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
                                                 correlate_sdt_params = correlate_sdt_params)
+
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
   # (y, ID)
+
   fit_obj <- fit_glmm(glmer_formula, data, mm)
+  # TODO: random effects post-processing
 
   # Post-Processing the lme4 output
   # backend = ifelse(options("backend") == "", "lme4", options("backend"))
@@ -60,132 +62,4 @@ fit_mlsdt <- function(formula_mu,
     "Lambda" = coefs_lambda,
     "Mu" = coefs_mu
   ))
-}
-
-
-generate_random_terms_formula <- function(glmer_formula) {
-  rdm_terms <- paste(sapply(lme4::findbars(glmer_formula), function(x) {
-    gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2])
-  }), collapse = "+")
-  rdm_formula <- formula(paste("~", rdm_terms))
-  return(rdm_formula)
-}
-
-
-
-
-reduce_random_effects_structure <- function(glmer_formula, fit_obj) {
-  # If correlations are in the model, remove the correlations first
-  correlations_in_model <- ifelse(all(dim(attr(unclass(VarCorr(fit_obj))$ID, "correlation")) != c(1, 1)),
-                                  T, F)
-  if (correlations_in_model) {
-    print("Removing Correlations between random effects.")
-    # remove correlations between random effects
-    formula_string <- as.character(glmer_formula)
-    formula_split <- strsplit(formula_string[3], "\\|")[[1]]
-    new_formula_string <- paste(formula_string[2], formula_string[1], formula_split[1],
-                                "||", formula_split[2])
-    #print(new_formula_string)
-    new_formula <- formula(new_formula_string, env = parent.frame())
-  } else {
-    new_formula <- NULL
-  }
-  # If not, check variances of the highest-order fixed effects
-
-  # Remove the one that with the lowest variance
-
-  return(new_formula)
-}
-
-
-
-
-
-
-#' Title
-#'
-#' @param fit_obj
-#' @param data
-#'
-#' @return
-#'
-#' TODO: test this...
-#' @examples
-transform_to_sdt <- function(fit_obj, formula_lambda, formula_mu, data, level = 0.95) {
-
-  # Get Betas
-  fixef_lambda <- fixef(fit_obj)[grepl("lambda", names(fixef(fit_obj)))]
-  fixef_mu <- fixef(fit_obj)[grepl("mu", names(fixef(fit_obj)))]
-
-  # Transform response bias parameters
-  coding_lambda <- unique(stats::model.matrix(lme4::nobars(formula_lambda),
-                                              data = data))
-
-  order_lambda <- attr(terms(lme4::nobars(formula_lambda)), "order")
-  mapping_lambda <- attr(stats::model.matrix(lme4::nobars(formula_lambda),
-                                             data = data), "assign")
-
-  # + 1 because of the intercept
-  factors_lambda <- coding_lambda[, which(order_lambda[mapping_lambda] == 1) + 1]
-  est_lambda <- coding_lambda %*% fixef_lambda * (-1)
-
-  est_lambda <- data.frame(cbind(factors_lambda, est_lambda))
-  names(est_lambda) <- c(names(est_lambda)[1:ncol(est_lambda) - 1], "estimate")
-
-  # Transform sensitivity parameters
-  # ! mm_mu is different from the one in the formula function -> no
-  # interaction with "trial_type" variable
-  coding_mu <- unique(stats::model.matrix(lme4::nobars(formula_mu),
-                                   data = data), data = test_data)
-
-  order_mu <- attr(terms(lme4::nobars(formula_mu)), "order")
-  mapping_mu <- attr(stats::model.matrix(lme4::nobars(formula_mu),
-                                  data = data), "assign")
-
-  # + 1 because of the intercept
-  factors_mu <- coding_mu[, which(order_mu[mapping_mu] == 1) + 1]
-  est_mu <- coding_mu %*% fixef_mu * 2
-
-  est_mu <- data.frame(cbind(factors_mu, est_mu))
-  names(est_mu) <- c(names(est_mu)[1:ncol(est_mu) - 1], "estimate")
-
-  #----------------------------------------------------------------------------#
-  #### Compute Wald SEs and CIs ####
-
-  which_lambda <- which(grepl("lambda", names(fixef(fit_obj))))
-
-  inv_hess_lambda <- as.matrix(vcov(fit_obj))[which_lambda, which_lambda]
-
-  # SEs for parameter combinations (i.e., SDT parameters)
-  # -> sqrt() of sum of elements of the inv-Hessian corresponding to added Beta weights
-  # (i.e., non-zero cells of the parameter vector)
-
-  SEs_lambda <- apply(coding_lambda, 1, function(x) {
-    sqrt(sum(inv_hess_lambda[which(x != 0), which(x != 0)]))
-  })
-
-  est_lambda$SE <- SEs_lambda
-
-  which_mu <- which(grepl("mu", names(fixef(fit_obj))))
-  inv_hess_mu <- as.matrix(vcov(fit_obj))[which_mu, which_mu]
-
-  SEs_mu <- apply(coding_mu, 1, function(x) {
-    sqrt(sum(inv_hess_mu[which(x != 0), which(x != 0)]))
-  })
-
-  est_mu$SE <- SEs_mu
-
-  # CIs
-  print(est_lambda$estimate + qnorm((1 - level) / 2))
-  est_lambda$CI_lower <- est_lambda$estimate + qnorm((1 - level) / 2) * est_lambda$SE
-  est_lambda$CI_upper <- est_lambda$estimate + qnorm(level + ((1 - level) / 2)) * est_lambda$SE
-
-  est_mu$CI_lower <- est_mu$estimate + qnorm((1 - level) / 2) * est_mu$SE
-  est_mu$CI_upper <- est_mu$estimate + qnorm(level + ((1 - level) / 2)) * est_mu$SE
-
-  return(list(
-    "lambda_estimates" = est_lambda,
-    "mu_estimates" = est_mu
-  ))
-
 }

@@ -2,3 +2,13 @@
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^data-raw$
+feedback.md
+image.png
+model_comparison.md
+notes.md
+selection.md
+TODO.md
+tests/glmmtmb.R
+tests/sdt_anova.R
+tests/test_playground.R
+

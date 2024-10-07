@@ -11,10 +11,17 @@ fit_glmm <- function(glmer_formula,
     message("Only lme4 and glmmTMB backends are supported at the moment. Defaulting to lme4.")
     (options("mlsdt.backend" = "lme4"))
   }
+
+  if (options("mlsdt.backend") == "glmmTMB" & !requireNamespace("glmmTMB", quietly = TRUE)) {
+    message("Package \"glmmTMB\" must be installed to use it as backend. Setting backend to lme4.")
+    options("mlsdt.backend" = "lme4")
+  }
+
   # only applies to lme4, defaults to 0 at the moment
   # -> might be changed later to a function argument
   nAGQ = ifelse(is.null(options("nAGQ")$nAGQ), 0, options("nAGQ"))
   #print(nAGQ)
+
 
   # Fit a GLM if there are no random effects
   if (is.null(lme4::findbars(glmer_formula))) {
@@ -23,7 +30,6 @@ fit_glmm <- function(glmer_formula,
                           data = data,
                           family = binomial(link = "probit"))
   } else if ((options("mlsdt.backend") == "lme4")) {
-    #print("fitting with lme4")
     fit_obj <- lme4::glmer(glmer_formula,
                            data = data,
                            family = binomial(link = "probit"),

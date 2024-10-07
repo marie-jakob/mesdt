@@ -7,19 +7,7 @@
 #' @param data dataset used to construct the model data
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
 #'
-#' @return list of 4 model matrices (fixed and random for mu and lambda)
-#'
-#' @importFrom lme4 nobars
-#' @importFrom lme4 findbars
-#' @importFrom stats formula
-#' @importFrom stats model.matrix
-#'
-#' @examples
-#' construct_modelmatrices(
-#'   formula_mu = ~ x1 + (1 | ID)
-#'   formula_lambda = ~ x1 + (1 | ID)
-#'   data = data
-#' )
+#' @return list of model matrices (fixed and random for mu and lambda)
 construct_modelmatrices <- function(formula_mu,
                                     formula_lambda,
                                     dv,

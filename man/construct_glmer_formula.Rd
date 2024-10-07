@@ -10,8 +10,8 @@ construct_glmer_formula(
   dv,
   correlate_sdt_params = T,
   mm = NULL,
-  param_idc = NULL,
-  remove_from_mu = NULL
+  to_remove = NULL,
+  remove_correlations = F
 )
 }
 \arguments{
@@ -23,24 +23,16 @@ construct_glmer_formula(
 
 \item{correlate_sdt_params}{model correlations between mu and lambda random effects?}
 
-\item{mm}{model matrices (corresponding to the formulas) -> only necessary for formulas with uncorrelated random effects}
+\item{mm}{model matrices (corresponding to the formulas) -> necessary for formulas with uncorrelated
+random effects and for indices to be removed}
 
-\item{param_idc}{optional vector of parameters indices to be removed to construct a reduced formula}
+\item{to_remove}{vector of indices that should be removed from the formula}
 
-\item{remove_from_mu}{optional argument to indicate whether the to-be-removed parameter
-should be removed from mu or lambda model matrix}
+\item{remove_correlations}{boolean indicating whether correlations should be removed from the formula}
 }
 \value{
 lme4 formula
 }
 \description{
 Convert two given formulas for the two SDT parameters to a glmer() formula
-}
-\examples{
-construct_glmer_formula(
-  formula_mu = ~ x1 + (1 | ID)
-  formula_lambda = ~ x2 + (1 | ID)
-  dv = "y",
-  trial_type_var = "trial_type"
-)
 }

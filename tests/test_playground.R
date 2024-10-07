@@ -412,12 +412,30 @@ model_2 <- fit_mlsdt(formula_mu = ~ emp_gender +
                      dv = "assessment",
                      trial_type_var = "status_fac")
 
-model_2_glmer <- glmer(assessment ~ status_ef * emp_gender_ef + committee_ef * emp_gender_ef +
-                         (status_ef * emp_gender_ef + emp_gender_ef * committee_ef || id) +
-                         (status_ef * committee_ef || file_name),
-                       family = binomial(link = "probit"),
-                       data = dat_exp_2,
-                       nAGQ = 0)
+mm_test <- construct_modelmatrices(formula_mu = ~ emp_gender +
+                                     (emp_gender || id) + (committee || file_name),
+                                   formula_lambda = ~ emp_gender * committee +
+                                     (emp_gender * committee || id) + (committee || file_name),
+                                   data = dat_exp_2,
+                                   dv = "assessment",
+                                   trial_type_var = "status_fac")
+
+
+variance_comps <- data.frame(VarCorr(model_2$fit_obj))
+variance_comps$name <- sapply(strsplit(variance_comps$var1, '"'), function(x) return(x[2]))
+variance_comps$idx <- as.numeric(sapply(variance_comps$var1, function(x) return(substr(x, nchar(x) - 2, nchar(x) -1))))
+
+
+
+test_form <- ~ x1 * x2 + (x1 * x2 | id)
+
+
+# Iterate through all random model matrices
+# select the to-be-removed variance component from each
+# (smallest component that can be removed while not violating marginality)
+# select the smallest variance component among all selected
+# generate a new formula
+
 
 
 isSingular(model_2$fit_obj)
@@ -441,6 +459,9 @@ for (i in 1:length(names_tmp)) {
   if (is.null(to_remove[[names_tmp[i]]])) to_remove[[names_tmp[i]]] <- to_remove_idc[i]
   else to_remove[[names_tmp[i]]] <- c(to_remove[[names_tmp[i]]], to_remove_idc[i])
 }
+
+
+
 
 # Remove indices (filename intercept for mu and lambda)
 
@@ -466,6 +487,15 @@ model_red_1$fit_obj$fit$convergence
 
 
 which(data.frame(VarCorr(model_red_1))$sdcor == min(data.frame(VarCorr(model_red_1))$sdcor))
+
+
+
+# Algorithm maximal:
+
+# Model: maximal model without correlations
+# Repeat until convergence
+# Fit model
+# If model is not converged, remove variance component (according to the principle of marginality)
 
 
 

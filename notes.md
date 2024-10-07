@@ -230,7 +230,22 @@ Goals:
 + Parameter Recovery
 + Power + Error Rate for Two-Step Procedure &  hierarchical approach (backward selection + parsimonious strategy + one-way ANOVA evtl.?)
 	+ LRTs + Wald tests
-+ 
+
+
++ two-step approach: two different corrections for 0 and 1 cells (Hautus, 1995)
+	+ log-linear rule: add 0.5 to each cell (row and column totals + 1)
+	+ --> less biased estimates (that always underestimate population d')
+	+ 1/(2N) rule: 0 is replaced by 1 / (2N), 1 by 1 - 1/(2N)
+	+ in general, Hautus (1995) showed that the correction methods lead to biased estimates (especially for small trial numbers)
+	+ -> nice argument for the paper
+	+ hierarchical approach deals with this through shrinkage <3
+
+##### Design
+
++ Number of trials: (= number of signal trials in one cell)
+	+ Axt et al. (2020): N = 200, 16 trials; N = 160, 16 trials; N = 300, 
+	+ Detecting Bias studies: N = 250, minimum of 24 trials (32 trials when excluding the balanced condition)
+	+ 
 
 
 ##### Barr et al. (2013) Setup
@@ -295,7 +310,7 @@ Goals:
 
 ##### Boehm et al. (2018)
 
-+ Comparison of different analysis strategies for hierarchically structured data
++ Comparison of different analysis strategies for hierarchically structured (response time)data
 	+ two-step approach (my terminonology)
 	+ fitting hierarchical models and conducting t tests on the resulting parameters
 	+ fully hierarchical approach
@@ -312,7 +327,16 @@ Goals:
 + presence vs. absence of an effect
 
 + Models:
-	* two-step analysis procedure
+	+ two-step analysis procedure
+	+ maximal
+	+ parsimonious
+
+
+## Examples for the Two-Step Approach
++ Batailler et al. (2021)
++ Axt et al. (2018)
++ Nahon et al. (2024)
++ Fort & Shulman (2024)
 
 
 ## Resources

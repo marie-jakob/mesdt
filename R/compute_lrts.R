@@ -140,11 +140,11 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     names_mu <- c("Intercept")
   }
   if (! rem_ran_ef) {
-    if (length(attr(terms(nobars(formula_lambda)), "term.labels")) > 0) {
-      names_lambda <- c(names_lambda, paste(attr(terms(nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
+    if (length(attr(terms(lme4::nobars(formula_lambda)), "term.labels")) > 0) {
+      names_lambda <- c(names_lambda, paste(attr(terms(lme4::nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
     }
-    if (length(attr(terms(nobars(formula_mu)), "term.labels")) > 0) {
-      names_mu <- c(names_mu, paste(attr(terms(nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
+    if (length(attr(terms(lme4::nobars(formula_mu)), "term.labels")) > 0) {
+      names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
     }
 
     names(reduced_formulas_lambda) <- names_lambda
@@ -203,7 +203,25 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   else return(reduced_fits)
 }
 
-
+#' Compute Likelihood Ratio Tests for a fitted SDT model
+#'
+#' @param fit_obj An lme4 or glmmTMB fit object containing the full fit and
+#'  coefficients that should be tested
+#' @param formula_mu the corresponding formula for sensitivity
+#' @param formula_lambda the corresponding formula for response bias
+#' @param dv the name of the dependent variable in the data
+#' @param data a data frame
+#' @param mm model matrices (optional)
+#' @param type type of tests (only relevant for likelihood ratio tests and
+#'  parametric bootstrapping)
+#' @param test_intercepts boolean indicating if intercepts for sensitivity and
+#'  response bias should be tested
+#' @param test_ran_ef boolean indicating whether random (T) or fixed effects
+#'  should be tested (F)
+#' @param correlate_sdt_params boolean indicating if correlations between SDT
+#'  parameters should be estimated
+#'
+#' @export
 compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
                          mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
                          correlate_sdt_params = T) {
@@ -225,7 +243,7 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
       chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
       df <- stats::df.residual(fit_tmp) - stats::df.residual(fit_obj)
       if (test_ran_ef) p_value <- pchisqmix(q = chisq, df = df, lower.tail = F, mix = 0.5)
-      else p_value <- pchisq(q = chisq, df = df, lower.tail = F)
+      else p_value <- stats::pchisq(q = chisq, df = df, lower.tail = F)
       return(data.frame(
         # columns names inspired by afex
         "deviance_full" = -2 * LL_full,
@@ -264,7 +282,7 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
         LL_full <- stats::logLik(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
 
         chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
-        p_value <- pchisq(q = chisq, df = 1, lower.tail = F)
+        p_value <- stats::pchisq(q = chisq, df = 1, lower.tail = F)
         df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
         return(data.frame(
           # columns names inspired by afex
@@ -287,7 +305,7 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
         LL_reduced <- stats::logLik(fit_tmp)
         LL_full <- stats::logLik(full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]])
         chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
-        p_value <- pchisq(q = chisq, df = 1, lower.tail = F)
+        p_value <- stats::pchisq(q = chisq, df = 1, lower.tail = F)
         df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]])
         return(data.frame(
           # columns names inspired by afex
@@ -321,6 +339,6 @@ pchisqmix <- function(q, df, mix, lower.tail = TRUE) {
   mix_vec <- rep(mix, length(q))
   upper <- stats::pchisq(q = q, df = df, lower.tail = lower.tail)
   lower <- ifelse(df_vec == 1, if (lower.tail) 1 else 0,
-                  pchisq(q, df-1, lower.tail = lower.tail))
+                  stats::pchisq(q, df-1, lower.tail = lower.tail))
   return(mix_vec * lower + (1 - mix_vec) * upper)
 }

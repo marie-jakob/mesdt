@@ -6,22 +6,16 @@
 #' @param correlate_sdt_params model correlations between mu and lambda random effects?
 #' @param mm model matrices (corresponding to the formulas) -> necessary for formulas with uncorrelated
 #'    random effects and for indices to be removed
-#' @param param_idc optional vector of parameters indices to be removed to construct a reduced formula
-#' @param remove_from_mu optional argument to indicate whether the to-be-removed parameter
-#'    should be removed from mu or lambda model matrix
+#' @param to_remove vector of indices that should be removed from the formula
+#' @param remove_correlations boolean indicating whether correlations should be removed from the formula
+#'
+#' @importFrom stats as.formula
+#' @importFrom stats binomial
+#' @importFrom stats formula
+#' @importFrom stats terms
 #'
 #' @return lme4 formula
 #'
-#' @importFrom stats formula
-#' @importFrom lme4 findbars
-#'
-#' @examples
-#' construct_glmer_formula(
-#'   formula_mu = ~ x1 + (1 | ID)
-#'   formula_lambda = ~ x2 + (1 | ID)
-#'   dv = "y",
-#'   trial_type_var = "trial_type"
-#' )
 construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sdt_params = T,
                                     mm = NULL, to_remove = NULL, remove_correlations = F) {
 

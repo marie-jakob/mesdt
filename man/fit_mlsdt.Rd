@@ -10,9 +10,7 @@ fit_mlsdt(
   dv,
   trial_type_var = "trial_type",
   data,
-  correlate_sdt_params = T,
-  max_iter = 1e+06,
-  fast = T
+  correlate_sdt_params = T
 )
 }
 \arguments{
@@ -26,9 +24,8 @@ fit_mlsdt(
 
 \item{data}{dataset}
 
-\item{backend}{package / library used to fit the model
--> only supports R lme4 (backend = "lme4" at the moment but support for Julia
-MixedModels and glmmTMB is planned)}
+\item{correlate_sdt_params}{boolean indicating whether correlations between
+SDT parameters should be modeled}
 }
 \value{
 TODO

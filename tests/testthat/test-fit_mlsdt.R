@@ -170,7 +170,7 @@ test_that("fit_mlsdt() works when only mu or lambda have random effects", {
   fit <- fit_mlsdt(~ committee,
                    ~ committee + (1 | id),
                    dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
-  fit_test <- glmer(assessment ~ status_ef * committee + (1 | id), data = dat_exp_2, family = binomial("probit"),
+  fit_test <- lme4::glmer(assessment ~ status_ef * committee + (1 | id), data = dat_exp_2, family = binomial("probit"),
                     nAGQ = 0)
   expect_equal(logLik(fit), logLik(fit_test))
   expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))))
@@ -181,7 +181,7 @@ test_that("fit_mlsdt() works when only mu or lambda have random effects", {
   fit <- fit_mlsdt(~ committee + (1 | id),
                    ~ committee,
                    dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
-  fit_test <- glmer(assessment ~ status_ef * committee + (0 + status_ef | id), data = dat_exp_2, family = binomial("probit"),
+  fit_test <- lme4::glmer(assessment ~ status_ef * committee + (0 + status_ef | id), data = dat_exp_2, family = binomial("probit"),
                     nAGQ = 0)
   expect_equal(logLik(fit), logLik(fit_test))
   expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))))
