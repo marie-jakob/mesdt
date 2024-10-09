@@ -7,6 +7,8 @@
 #' @param data dataset
 #' @param correlate_sdt_params boolean indicating whether correlations between
 #'  SDT parameters should be modeled
+#' @param tests type of statistical tests that should be used ("Wald": Wald tests,
+#'  "LRT": likelihood ratio tests, "boot": parametric bootstrapping)
 #'
 #' @return TODO
 #' @importFrom lme4 fixef
@@ -21,7 +23,12 @@ fit_mlsdt <- function(formula_mu,
                       dv,
                       trial_type_var = "trial_type",
                       data,
-                      correlate_sdt_params = T) {
+                      correlate_sdt_params = T,
+                      tests = "Wald") {
+  if (! tests %in% c("Wald", "LRT", "Boot", "wald", "lrt", "boot")) {
+    stop(paste("Tests of type ", tests, " not available. Please use Wald, LRT or boot.", sep = ""))
+  }
+
   mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
   glmer_formula <- construct_glmer_formula(formula_mu, formula_lambda, dv, mm,
                                                 correlate_sdt_params = correlate_sdt_params)
@@ -32,30 +39,35 @@ fit_mlsdt <- function(formula_mu,
   fit_obj <- fit_glmm(glmer_formula, data, mm)
   # TODO: random effects post-processing
 
-  # Post-Processing the lme4 output
-  # backend = ifelse(options("backend") == "", "lme4", options("backend"))
-  if (options("mlsdt.backend") == "lme4") {
-    coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
-    coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
-  } else if (options("mlsdt.backend") == "glmmTMB") {
-    coefs_lambda <- summary(fit_obj)$coefficients$cond[grepl("lambda", rownames(summary(fit_obj)$coefficients$cond)), ]
-    coefs_mu <- summary(fit_obj)$coefficients$cond[grepl("mu", rownames(summary(fit_obj)$coefficients$cond)), ]
-  }
-  #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
-  #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
-  if (is.null(nrow(coefs_lambda))) {
-    coefs_lambda <- t(data.frame(coefs_lambda))
-  } else {
-    coefs_lambda <- data.frame(coefs_lambda)
-  }
-  rownames(coefs_lambda) <- colnames(mm[["lambda"]])
+  # Compute tests
 
-  if (is.null(nrow(coefs_mu))) {
-    coefs_mu <- t(data.frame(coefs_mu))
-  } else {
-    coefs_mu <- data.frame(coefs_mu)
+  if (tests == "Wald") {
+    # Post-Processing the lme4 output
+    # backend = ifelse(options("backend") == "", "lme4", options("backend"))
+    if (options("mlsdt.backend") == "lme4") {
+      coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
+      coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
+    } else if (options("mlsdt.backend") == "glmmTMB") {
+      coefs_lambda <- summary(fit_obj)$coefficients$cond[grepl("lambda", rownames(summary(fit_obj)$coefficients$cond)), ]
+      coefs_mu <- summary(fit_obj)$coefficients$cond[grepl("mu", rownames(summary(fit_obj)$coefficients$cond)), ]
+    }
+    #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
+    #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
+    if (is.null(nrow(coefs_lambda))) {
+      coefs_lambda <- t(data.frame(coefs_lambda))
+    } else {
+      coefs_lambda <- data.frame(coefs_lambda)
+    }
+    rownames(coefs_lambda) <- colnames(mm[["lambda"]])
+
+    if (is.null(nrow(coefs_mu))) {
+      coefs_mu <- t(data.frame(coefs_mu))
+    } else {
+      coefs_mu <- data.frame(coefs_mu)
+    }
+    rownames(coefs_mu) <- colnames(mm[["mu"]])
   }
-  rownames(coefs_mu) <- colnames(mm[["mu"]])
+
 
   return(list(
     "fit_obj" = fit_obj,

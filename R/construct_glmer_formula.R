@@ -8,6 +8,8 @@
 #'    random effects and for indices to be removed
 #' @param to_remove vector of indices that should be removed from the formula
 #' @param remove_correlations boolean indicating whether correlations should be removed from the formula
+#' @param test_params_mu which coefficients for sensitivity should be tested
+#' @param test_params_lambda which coefficients for response bias should be tested
 #'
 #' @importFrom stats as.formula
 #' @importFrom stats binomial
@@ -17,7 +19,9 @@
 #' @return lme4 formula
 #'
 construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sdt_params = T,
-                                    mm = NULL, to_remove = NULL, remove_correlations = F) {
+                                    mm = NULL, to_remove = NULL, remove_correlations = F,
+                                    test_params_mu = "all", test_params_lambda = "all"
+                                    ) {
 
   # check if all fixed effects are removed
   if (!is.null(to_remove[["lambda"]]) & !is.null(to_remove[["mu"]])) {

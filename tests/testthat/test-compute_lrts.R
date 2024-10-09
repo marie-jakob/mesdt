@@ -441,7 +441,7 @@ test_that("compute_LRTs() works for testing random effects", {
 
 
 # TODO: does the random stuff work for factors with multiple levels?
-
+# TODO: test_intercept = F for random effects
 
 test_that("compute_LRTs() works for testing crossed random effects", {
   options("mlsdt.backend" = "glmmTMB")
@@ -456,6 +456,11 @@ test_that("compute_LRTs() works for testing crossed random effects", {
   expect_equal(unlist(lrts_test$LRTs[1:3, 5]), pchisqmix(chi_squares_rdm_cross[1:3], 3, 0.5, lower.tail = F))
   expect_equal(as.numeric(lrts_test$LRTs[4, 5]), pchisqmix(chi_squares_rdm_cross[4], 1, 0.5, lower.tail = F))
 
+  # test_intercept = F
+  # TODO
+  #lrts_test <- compute_LRTs(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+  #                          mm  = mm, test_intercepts = F, test_ran_ef = T)
+
   # without correlations
   fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")$fit_obj
@@ -468,4 +473,101 @@ test_that("compute_LRTs() works for testing crossed random effects", {
   expect_equal(as.numeric(lrts_test$LRTs[4, 5]), pchisqmix(chi_squares_rdm_cross_uncor[4], 1, 0.5, lower.tail = F))
 
 })
-options("mlsdt.backend" = "lme4")
+
+
+test_that("compute_LRTs() works for testing crossed random effects without the intercept", {
+  options("mlsdt.backend" = "glmmTMB")
+  # with correlations
+  fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+                   trial_type_var = "status_fac")$fit_obj
+  mm <- construct_modelmatrices(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), data = dat_exp_2,
+                                trial_type_var = "status_fac")
+  lrts_test <- compute_LRTs(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+                            mm  = mm, test_intercepts = F, test_ran_ef = T)
+  expect_equal(unname(unlist(lrts_test$LRTs[, 4])), chi_squares_rdm_cross[2], tolerance = 1e-5)
+
+  # without correlations
+  fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
+                   trial_type_var = "status_fac")$fit_obj
+  mm <- construct_modelmatrices(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), data = dat_exp_2,
+                                trial_type_var = "status_fac")
+  lrts_test <- compute_LRTs(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
+                            mm  = mm, test_intercepts = F, test_ran_ef = T)
+  expect_equal(unname(unlist(lrts_test$LRTs[, 4])), chi_squares_rdm_cross_uncor[2], tolerance = 1e-5)
+
+})
+
+
+#------------------------------------------------------------------------------#
+#### Only test selected random effects ####
+
+test_that("compute_LRTs() works for only selected effects", {
+
+
+  options("mlsdt.backend" = "lme4")
+  # Type II, test_intercepts = T
+  fit <- fit_mlsdt(formula_lambda = ~ committee_ef * emp_gender_ef + (1 | id),
+                   formula_mu = ~ committee_ef * emp_gender_ef + (1 | id),
+                   dv = "assessment",
+                   trial_type_var = "status_fac",
+                   data = dat_exp_2)
+
+  mm <- construct_modelmatrices(~ committee * emp_gender +  (1 | id),
+                                ~ committee * emp_gender + (1 | id),
+                                dv = "assessment",
+                                trial_type_var = "status_fac",
+                                data = dat_exp_2)
+
+  LRTs <- compute_LRTs(fit$fit_obj,
+                       ~ committee * emp_gender + (1 | id),
+                       ~ committee * emp_gender + (1 | id),
+                       dv = "assessment",
+                       data = dat_exp_2,
+                       type = 2,
+                       mm,
+                       test_intercepts = T,
+                       test_params_lambda = ~ committee,
+                       test_params_mu = ~ emp_gender)
+
+  expect_equal(chisquares_two_factors_2[c(1, 2, 5, 7)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  LRTs <- compute_LRTs(fit$fit_obj,
+                       ~ committee * emp_gender + (1 | id),
+                       ~ committee * emp_gender + (1 | id),
+                       dv = "assessment",
+                       data = dat_exp_2,
+                       type = 2,
+                       mm,
+                       test_intercepts = F,
+                       test_params_lambda = ~ committee,
+                       test_params_mu = ~ emp_gender)
+  expect_equal(chisquares_two_factors_2[c(2, 7)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  LRTs <- compute_LRTs(fit$fit_obj,
+                       ~ committee * emp_gender + (1 | id),
+                       ~ committee * emp_gender + (1 | id),
+                       dv = "assessment",
+                       data = dat_exp_2,
+                       type = 3,
+                       mm,
+                       test_intercepts = T,
+                       test_params_lambda = ~ committee,
+                       test_params_mu = ~ emp_gender)
+
+  expect_equal(chisquares_two_factors_3[c(1, 2, 5, 7)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  LRTs <- compute_LRTs(fit$fit_obj,
+                       ~ committee * emp_gender + (1 | id),
+                       ~ committee * emp_gender + (1 | id),
+                       dv = "assessment",
+                       data = dat_exp_2,
+                       type = 3,
+                       mm,
+                       test_intercepts = F,
+                       test_params_lambda = ~ committee,
+                       test_params_mu = ~ emp_gender)
+  expect_equal(chisquares_two_factors_3[c(2, 7)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+})
+
+

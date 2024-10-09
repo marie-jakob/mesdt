@@ -1,4 +1,7 @@
 
+library(pbkrtest)
+library(lme4)
+library(glmmTMB)
 
 test_formula <- construct_glmer_formula(
   formula_mu = ~ 1 + x1 + (x1 || ID),
@@ -497,13 +500,19 @@ which(data.frame(VarCorr(model_red_1))$sdcor == min(data.frame(VarCorr(model_red
 # Fit model
 # If model is not converged, remove variance component (according to the principle of marginality)
 
+#------------------------------------------------------------------------------#
+#### Parametric Bootstrap ####
 
+model_full <- glmer(assessment ~ committee_ef * emp_gender_ef * status_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"),
+                    nAGQ = 0)
 
-
-
-# TODO: convergence in glmmTMB
-# TODO: write issingular() function for glmmTMB
-# https://github.com/lme4/lme4/blob/bfd7a44d0a718fff090412871504858559a0829f/R/utilities.R#L1054
-
+lambda_interaction <- glmer(assessment ~ committee_ef * status_ef + emp_gender_ef * status_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"),
+                            nAGQ = 0)
+cl =
+PBmodcomp(fm0, fm1)
 
 

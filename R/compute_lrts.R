@@ -1,45 +1,80 @@
 fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F,
-                          rem_ran_ef = F, correlate_sdt_params = T) {
+                          rem_ran_ef = F, correlate_sdt_params = T,
+                          test_params_mu = "all", test_params_lambda = "all") {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
-
-  if (test_intercepts) {
-    #if (type == 2) {
-    #  message("Cannot test intercepts for type II sums of squares (there's nothing left in the model).
-    #                        Returning NULL.")
-    #  return()
-    #}
-    #if (ncol(mm[["mu"]]) <= 1 & ncol(mm[["lambda"]]) <= 1) {
-    #  message("Can only test intercepts if there are predictors in the model. Returning NULL.")
-    #  return()
-    #}
-    if (rem_ran_ef) {
-      #range_lambda and range_mu are now list (to accommodate multiple random effects)
-      range_lambda <- list(); range_mu <- list();
-      for (i in 1:length(mm)) {
-        if (grepl("rdm_lambda", names(mm)[i])) {
+  if (rem_ran_ef) {
+    if (type == 2) {
+      message("Only type III sums of squares are available for testing random effects.
+              Setting Type = 3")
+      type = 3
+    }
+    # range_lambda and range_mu are now list (to accommodate multiple random effects)
+    range_lambda <- list(); range_mu <- list();
+    for (i in 1:length(mm)) {
+      if (grepl("rdm_lambda", names(mm)[i])) {
+        if (test_intercepts) {
           range_lambda[[names(mm)[i]]] <- 0:max(attr(mm[[names(mm)[i]]], "assign"))
-        } else if (grepl("rdm_mu", names(mm)[i])) {
+        } else {
+          if (length(attr(mm[[names(mm)[i]]], "assign")) == 1) range_lambda[[names(mm)[i]]] <- NULL
+          else range_lambda[[names(mm)[i]]] <- 1:max(attr(mm[[names(mm)[i]]], "assign"))
+        }
+
+      } else if (grepl("rdm_mu", names(mm)[i])) {
+        if (test_intercepts) {
           range_mu[[names(mm)[i]]] <- 0:max(attr(mm[[names(mm)[i]]], "assign"))
+        } else {
+          if (length(attr(mm[[names(mm)[i]]], "assign")) == 1) range_mu[[names(mm)[i]]] <- NULL
+          else range_mu[[names(mm)[i]]] <- 1:max(attr(mm[[names(mm)[i]]], "assign"))
         }
       }
-    } else {
-      range_lambda <- list(0:max(attr(mm[["lambda"]], "assign"))); names(range_lambda) <- c("lambda")
-      range_mu <- list(0:max(attr(mm[["mu"]], "assign"))); names(range_mu) <- c("mu")
-      }
+    }
+    if (length(range_lambda) == 0) range_lambda <- NULL
+    if (length(range_mu) == 0) range_mu <- NULL
   } else {
-    # If there are no predictors in the model and ! test_intercepts, throw a message
-    if (length(attr(mm[["lambda"]], "assign")) == 1) range_lambda <- c()
-    else  range_lambda <- list(1:max(attr(mm[["lambda"]], "assign")))
-    if (length(attr(mm[["mu"]], "assign")) == 1) range_mu <- c()
-    else range_mu <- list(1:max(attr(mm[["mu"]], "assign")))
-    if (length(range_lambda) > 0) names(range_lambda) <- "lambda";
-    if (length(range_mu) > 0) names(range_mu) <- "mu";
+    if (test_intercepts) {
+      range_lambda <- list(0:max(attr(mm[["lambda"]], "assign")))
+      range_mu <- list(0:max(attr(mm[["mu"]], "assign")))
+    } else {
+      if (length(attr(mm[["lambda"]], "assign")) == 1) range_lambda <- c()
+      else range_lambda <- list(1:max(attr(mm[["lambda"]], "assign")))
+      if (length(attr(mm[["mu"]], "assign")) == 1) range_mu <- c()
+      else range_mu <- list(1:max(attr(mm[["mu"]], "assign")))
+    }
+
+    # Update range of to-be-tested parameters if only some parameters are to be tested
+    if (test_params_mu != "all") {
+      labels_mu <- attr(terms.formula(lme4::nobars(formula_mu)), "term.labels")
+      test_mu_labels <- attr(terms.formula(test_params_mu), "term.labels")
+      if (! all(test_mu_labels %in% labels_mu)) stop("Only parameters that are in the model can be tested.")
+      range_mu <- ifelse(test_intercepts,
+                         list(range_mu[[1]][c(1, which(labels_mu == test_mu_labels) + 1)]),
+                         list(range_mu[[1]][which(labels_mu == test_mu_labels)]))
+      print(range_mu)
+    }
+    if (test_params_lambda != "all") {
+      labels_lambda <- attr(terms.formula(lme4::nobars(formula_lambda)), "term.labels")
+      test_lambda_labels <- attr(terms.formula(test_params_lambda), "term.labels")
+      if (! all(test_lambda_labels %in% labels_lambda)) stop("Only parameters that are in the model can be tested.")
+      range_lambda <- ifelse(test_intercepts,
+                             list(range_lambda[[1]][c(1, which(labels_lambda == test_lambda_labels, "term.labels") + 1)]),
+                             list(range_lambda[[1]][which(labels_lambda == test_lambda_labels, "term.labels")]))
+      print(range_lambda)
+
+    }
+
+    if (length(range_lambda) > 0) {
+      names(range_lambda) <- "lambda"
+    }
+    if (length(range_mu) > 0) {
+      names(range_mu) <- "mu"
+    }
     if (length(range_lambda) == 0 & length(range_mu) == 0) {
       message("Nothing to test in the model. Returning NULL.")
       return(NULL)
     }
   }
+
 
   if (type == 3) {
     reduced_formulas_lambda <- list()
@@ -59,6 +94,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     for (i in 1:length(range_mu)) {
       forms_tmp <- lapply(range_mu[[i]], function(x) {
         name_tmp <- names(range_mu)[i]
+        # print(names(mm))
         to_remove <- list()
         to_remove[[name_tmp]] <- as.numeric(which(attr(mm[[name_tmp]], "assign") == x))
         if (length(to_remove[[name_tmp]]) == dim(mm[[name_tmp]])[2]) to_remove[[name_tmp]] = Inf
@@ -68,6 +104,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       reduced_formulas_mu <- append(reduced_formulas_mu, forms_tmp)
     }
   } else if (type == 2) {
+
     # full_formulas contain as many formulas as there are levels of interaction in the model
     # (e.g., three formulas when there are main effects, two-way and three-way interactions)
     # the last formula and model is always the full model
@@ -95,6 +132,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     # reduced_formulas are constructed for all predictors in the model for both mu and lambda
     # -> in order of the order of terms in the model matrix
     reduced_formulas_lambda <- lapply(range_lambda[[1]], function(x) {
+      #print(x)
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
       to_remove <- list()
@@ -141,12 +179,15 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   }
   if (! rem_ran_ef) {
     if (length(attr(terms(lme4::nobars(formula_lambda)), "term.labels")) > 0) {
-      names_lambda <- c(names_lambda, paste(attr(terms(lme4::nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
+      if (test_params_mu != "all") names_lambda <- paste(c(names_lambda, test_lambda_labels), "lambda", sep = "_")
+      else names_lambda <- c(names_lambda, paste(attr(terms(lme4::nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
     }
     if (length(attr(terms(lme4::nobars(formula_mu)), "term.labels")) > 0) {
-      names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
+      if (test_params_mu != "all") names_mu <- paste(c(names_mu, test_mu_labels), "lambda", sep = "_")
+      else names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
     }
-
+    print(names_lambda)
+    print(names_mu)
     names(reduced_formulas_lambda) <- names_lambda
     names(reduced_formulas_mu) <- names_mu
   }
@@ -220,19 +261,24 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #'  should be tested (F)
 #' @param correlate_sdt_params boolean indicating if correlations between SDT
 #'  parameters should be estimated
+#' @param test_params_mu which coefficients on sensitivity should be tested?
+#'  (default is "all")
+#' @param test_params_lambda which coefficients on response bias should be tested?
+#'  (default is "all")
 #'
 #' @export
 compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
                          mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
-                         correlate_sdt_params = T) {
+                         correlate_sdt_params = T, test_params_mu = "all", test_params_lambda = "all") {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
   if (is.null(mm)) mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data)
 
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
 
-  submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts,
-                             rem_ran_ef = test_ran_ef, correlate_sdt_params = correlate_sdt_params)
+  submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts = test_intercepts,
+                             rem_ran_ef = test_ran_ef, correlate_sdt_params = correlate_sdt_params,
+                             test_params_mu = test_params_mu, test_params_lambda = test_params_lambda)
   if(is.null(submodels)) return(NULL)
   if (type == 3) {
     reduced_fits <- submodels
