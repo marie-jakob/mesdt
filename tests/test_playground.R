@@ -512,7 +512,15 @@ lambda_interaction <- glmer(assessment ~ committee_ef * status_ef + emp_gender_e
                             data = dat_exp_2,
                             family = binomial("probit"),
                             nAGQ = 0)
-cl =
-PBmodcomp(fm0, fm1)
+
+fit_cross_slopes <- glmer(assessment ~ status_ef + (status_ef | id),
+                            data = dat_exp_2, family = binomial("probit"),
+                          nAGQ = 0)
+
+cross_lambda_intercept <- glmer(assessment ~ status_ef + (1 | id),
+                                  data = dat_exp_2, family = binomial("probit"),
+                                nAGQ = 0)
+
+pb <- PBmodcomp(fit_cross_slopes, cross_lambda_intercept, nsim = 100)
 
 

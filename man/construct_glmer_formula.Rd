@@ -11,7 +11,9 @@ construct_glmer_formula(
   correlate_sdt_params = T,
   mm = NULL,
   to_remove = NULL,
-  remove_correlations = F
+  remove_correlations = F,
+  test_params_mu = "all",
+  test_params_lambda = "all"
 )
 }
 \arguments{
@@ -29,6 +31,10 @@ random effects and for indices to be removed}
 \item{to_remove}{vector of indices that should be removed from the formula}
 
 \item{remove_correlations}{boolean indicating whether correlations should be removed from the formula}
+
+\item{test_params_mu}{which coefficients for sensitivity should be tested}
+
+\item{test_params_lambda}{which coefficients for response bias should be tested}
 }
 \value{
 lme4 formula

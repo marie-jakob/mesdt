@@ -44,8 +44,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
     # Update range of to-be-tested parameters if only some parameters are to be tested
     if (test_params_mu != "all") {
-      labels_mu <- attr(terms.formula(lme4::nobars(formula_mu)), "term.labels")
-      test_mu_labels <- attr(terms.formula(test_params_mu), "term.labels")
+      labels_mu <- attr(stats::terms.formula(lme4::nobars(formula_mu)), "term.labels")
+      test_mu_labels <- attr(stats::terms.formula(test_params_mu), "term.labels")
       if (! all(test_mu_labels %in% labels_mu)) stop("Only parameters that are in the model can be tested.")
       range_mu <- ifelse(test_intercepts,
                          list(range_mu[[1]][c(1, which(labels_mu == test_mu_labels) + 1)]),
@@ -53,8 +53,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       print(range_mu)
     }
     if (test_params_lambda != "all") {
-      labels_lambda <- attr(terms.formula(lme4::nobars(formula_lambda)), "term.labels")
-      test_lambda_labels <- attr(terms.formula(test_params_lambda), "term.labels")
+      labels_lambda <- attr(stats::terms.formula(lme4::nobars(formula_lambda)), "term.labels")
+      test_lambda_labels <- attr(stats::terms.formula(test_params_lambda), "term.labels")
       if (! all(test_lambda_labels %in% labels_lambda)) stop("Only parameters that are in the model can be tested.")
       range_lambda <- ifelse(test_intercepts,
                              list(range_lambda[[1]][c(1, which(labels_lambda == test_lambda_labels, "term.labels") + 1)]),
@@ -244,7 +244,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   else return(reduced_fits)
 }
 
-#' Compute Likelihood Ratio Tests for a fitted SDT model
+#' Compute Likelihood Ratio Tests or tests based on parametric bootstrapping
+#' for a fitted SDT model
 #'
 #' @param fit_obj An lme4 or glmmTMB fit object containing the full fit and
 #'  coefficients that should be tested
@@ -252,6 +253,9 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #' @param formula_lambda the corresponding formula for response bias
 #' @param dv the name of the dependent variable in the data
 #' @param data a data frame
+#' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
+#' "bootstrap" = parametric bootstrap)
+#' @param nsim number of simulated datasets for bootstrapping
 #' @param mm model matrices (optional)
 #' @param type type of tests (only relevant for likelihood ratio tests and
 #'  parametric bootstrapping)
@@ -267,15 +271,19 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #'  (default is "all")
 #'
 #' @export
-compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
-                         mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
-                         correlate_sdt_params = T, test_params_mu = "all", test_params_lambda = "all") {
+compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
+                          tests = "LRT", nsim = 1000, mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
+                          correlate_sdt_params = T, test_params_mu = "all", test_params_lambda = "all") {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
   if (is.null(mm)) mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data)
 
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
-
+  if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (type = "LRT") and parametric bootstrapping(type = "bootstrap")
+                                         are implemented')
+  if (tests == "bootstrap" & !requireNamespace("pbkrtest", quietly = TRUE)) {
+    stop("Package \"pbkrtest\" must be installed to compute parametric bootstrap tests.")
+  }
   submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts = test_intercepts,
                              rem_ran_ef = test_ran_ef, correlate_sdt_params = correlate_sdt_params,
                              test_params_mu = test_params_mu, test_params_lambda = test_params_lambda)
@@ -284,12 +292,13 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
     reduced_fits <- submodels
     LL_full <- stats::logLik(fit_obj)
     LRT_results <- sapply(reduced_fits, function(fit_tmp) {
-
       LL_reduced <- stats::logLik(fit_tmp)
       chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
       df <- stats::df.residual(fit_tmp) - stats::df.residual(fit_obj)
       if (test_ran_ef) p_value <- pchisqmix(q = chisq, df = df, lower.tail = F, mix = 0.5)
       else p_value <- stats::pchisq(q = chisq, df = df, lower.tail = F)
+      if (tests == "bootstrap") {
+      }
       return(data.frame(
         # columns names inspired by afex
         "deviance_full" = -2 * LL_full,
@@ -299,11 +308,23 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
         "p.value" = p_value
       ))
     })
-
     to_return <- list(
       "reduced_fits" = reduced_fits,
       "LRTs" = t(LRT_results)
     )
+    if (tests == "bootstrap") {
+      pbkrtest_objects <- lapply(reduced_fits, function(fit_tmp) {
+        boot_tmp <- pbkrtest::PBmodcomp(fit_obj, fit_tmp, nsim = nsim)
+        return(boot_tmp)
+      })
+      boot_table <- sapply(pbkrtest_objects, function(x) { return(data.frame(x)[2, ]) })
+      to_return <- list(
+        "reduced_fits" = reduced_fits,
+        "LRTs" = t(LRT_results),
+        "pbtests" = t(boot_table),
+        "pbkrtest_objects" = pbkrtest_objects
+      )
+    }
   }
 
   else if (type == 2) {
@@ -317,7 +338,6 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
     full_fits_mu <- submodels[["full_fits_mu"]]
     full_fits_mu[[length(full_fits_mu) + 1]] <- fit_obj
     # assigns <- attr(mm[["lambda"]], "assign")
-
     # Compute Lambda LRTs if there are parameters to test
     if (length(reduced_fits_lambda) > 0) {
       orders_lambda <- attr(terms(lme4::nobars(formula_lambda)), "order")
@@ -326,7 +346,6 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
         fit_tmp <- reduced_fits_lambda[[fit_ind]]
         LL_reduced <- stats::logLik(fit_tmp)
         LL_full <- stats::logLik(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
-
         chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
         p_value <- stats::pchisq(q = chisq, df = 1, lower.tail = F)
         df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
@@ -375,7 +394,7 @@ compute_LRTs <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
       "full_fits" = full_fits
     )
   }
-  # compute LRTs
+
   return(to_return)
 }
 

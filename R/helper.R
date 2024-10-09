@@ -19,7 +19,7 @@ fit_glmm <- function(glmer_formula,
 
   # only applies to lme4, defaults to 0 at the moment
   # -> might be changed later to a function argument
-  nAGQ = ifelse(is.null(options("nAGQ")$nAGQ), 0, options("nAGQ"))
+  # nAGQ <<- ifelse(is.null(options("nAGQ")$nAGQ), 0, options("nAGQ"))
   #print(nAGQ)
 
 
@@ -34,7 +34,7 @@ fit_glmm <- function(glmer_formula,
                            data = data,
                            family = binomial(link = "probit"),
                            # this is only for testing speed -> changed for actual use
-                           nAGQ = nAGQ)
+                           nAGQ = 0)
   } else if ((options("mlsdt.backend") == "glmmTMB")) {
     #print("fitting with glmmTMB")
     # mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = data)

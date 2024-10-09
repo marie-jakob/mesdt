@@ -10,7 +10,8 @@ fit_mlsdt(
   dv,
   trial_type_var = "trial_type",
   data,
-  correlate_sdt_params = T
+  correlate_sdt_params = T,
+  tests = "Wald"
 )
 }
 \arguments{
@@ -26,6 +27,9 @@ fit_mlsdt(
 
 \item{correlate_sdt_params}{boolean indicating whether correlations between
 SDT parameters should be modeled}
+
+\item{tests}{type of statistical tests that should be used ("Wald": Wald tests,
+"LRT": likelihood ratio tests, "boot": parametric bootstrapping)}
 }
 \value{
 TODO

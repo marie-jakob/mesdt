@@ -1,4 +1,6 @@
 
+options("mlsdt.backend" = "lme4")
+
 #------------------------------------------------------------------------------#
 #### fit_mlsdt() ####
 
@@ -55,39 +57,39 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                                 data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
-  LRTs_2_intercepts_lme <- compute_LRTs(fit_lme$fit_obj,
+  LRTs_2_intercepts_lme <- compute_tests(fit_lme$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 2,
-                                    mm,
+                                    mm = mm,
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
-  LRTs_2_lme <- compute_LRTs(fit_lme$fit_obj,
+  LRTs_2_lme <- compute_tests(fit_lme$fit_obj,
                          form_mu, form_lambda,
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm,
+                         mm = mm,
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
-  LRTs_3_intercepts_lme <- compute_LRTs(fit_lme$fit_obj,
+  LRTs_3_intercepts_lme <- compute_tests(fit_lme$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm,
+                                    mm = mm,
                                     test_intercepts = T)
 
   # Type 3 - test_intercepts = F
-  LRTs_3_lme <- compute_LRTs(fit_lme$fit_obj,
+  LRTs_3_lme <- compute_tests(fit_lme$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm,
+                                    mm = mm,
                                     test_intercepts = F)
 
   options("mlsdt.backend" = "glmmTMB")
@@ -97,39 +99,39 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                        data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
-  LRTs_2_intercepts_tmb <- compute_LRTs(fit_tmb$fit_obj,
+  LRTs_2_intercepts_tmb <- compute_tests(fit_tmb$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 2,
-                                    mm,
+                                    mm = mm,
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
-  LRTs_2_tmb <- compute_LRTs(fit_tmb$fit_obj,
+  LRTs_2_tmb <- compute_tests(fit_tmb$fit_obj,
                          form_mu, form_lambda,
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm,
+                         mm = mm,
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
-  LRTs_3_intercepts_tmb <- compute_LRTs(fit_tmb$fit_obj,
+  LRTs_3_intercepts_tmb <- compute_tests(fit_tmb$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm,
+                                    mm = mm,
                                     test_intercepts = T)
 
   # Type 3 - test_intercepts = F
-  LRTs_3_tmb <- compute_LRTs(fit_tmb$fit_obj,
+  LRTs_3_tmb <- compute_tests(fit_tmb$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm,
+                                    mm = mm,
                                     test_intercepts = F)
 
 
