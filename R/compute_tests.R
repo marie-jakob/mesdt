@@ -282,9 +282,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
   if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (type = "LRT") and parametric bootstrapping(type = "bootstrap")
                                          are implemented')
-  if (tests == "bootstrap" & !requireNamespace("pbkrtest", quietly = TRUE)) {
-    stop("Package \"pbkrtest\" must be installed to compute parametric bootstrap tests.")
-  }
+
   if (is.null(seed)) seed <- sample(1:1e6, 1)
   # TODO: test compatibility of input arguments
 
@@ -318,16 +316,16 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
       "LRTs" = t(LRT_results)
     )
     if (tests == "bootstrap") {
-      pbkrtest_objects <- lapply(reduced_fits, function(fit_tmp) {
-        boot_tmp <- pbkrtest::PBmodcomp(fit_obj, fit_tmp, nsim = nsim, seed = seed)
+      pb_objects <- lapply(reduced_fits, function(fit_tmp) {
+        boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, data = data, mm = mm, nsim = nsim, seed = seed)
         return(boot_tmp)
       })
-      boot_table <- sapply(pbkrtest_objects, function(x) { return(data.frame(x)[2, ]) })
+      boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
       to_return <- list(
         "reduced_fits" = reduced_fits,
         "LRTs" = t(LRT_results),
-        "pbtests" = t(boot_table),
-        "pbkrtest_objects" = pbkrtest_objects
+        "pb_tests" = t(boot_table),
+        "pb_objects" = pb_objects
       )
     }
   }
@@ -365,18 +363,19 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
       })
       colnames(LRTs_lambda) <- names(reduced_fits_lambda)
       if (tests == "bootstrap") {
-        pbkrtest_objects_lambda <- lapply(1:length(reduced_fits_lambda), function(fit_ind) {
+        pb_objects_lambda <- lapply(1:length(reduced_fits_lambda), function(fit_ind) {
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
           fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
-          boot_tmp <- pbkrtest::PBmodcomp(fit_full, fit_tmp, nsim = nsim)
+          boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
+                                                        mm = mm, nsim = nsim, seed = seed)
           return(boot_tmp)
         })
-        boot_table_lambda <- sapply(pbkrtest_objects_lambda, function(x) { return(data.frame(x)[2, ]) })
+        boot_table_lambda <- sapply(pb_objects_lambda, function(x) { return(data.frame(x$test)[2, ]) })
         colnames(boot_table_lambda) <- names(reduced_fits_lambda)
       }
     } else {
       LRTs_lambda <- NULL
-      if (tests == "bootstrap") boot_table_lambda <- NULL; pbkrtest_objects_lambda <- NULL;
+      if (tests == "bootstrap") boot_table_lambda <- NULL; pb_objects_lambda <- NULL;
     }
 
     # Compute Mu LRTs if there are parameters to test
@@ -401,36 +400,36 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
       })
       colnames(LRTs_mu) <- names(reduced_fits_mu)
       if (tests == "bootstrap") {
-        pbkrtest_objects_mu <- lapply(1:length(reduced_fits_mu), function(fit_ind) {
+        pb_objects_mu <- lapply(1:length(reduced_fits_mu), function(fit_ind) {
           fit_tmp <- reduced_fits_mu[[fit_ind]]
           fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
-          boot_tmp <- pbkrtest::PBmodcomp(fit_full, fit_tmp, nsim = nsim)
+          boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
+                                                        mm = mm, nsim = nsim, seed = seed)
           return(boot_tmp)
         })
-        boot_table_mu <- sapply(pbkrtest_objects_mu, function(x) { return(data.frame(x)[2, ]) })
+        boot_table_mu <- sapply(pb_objects_mu, function(x) { return(data.frame(x$test)[2, ]) })
         colnames(boot_table_mu) <- names(reduced_fits_mu)
       }
 
     } else {
       LRTs_mu <- NULL
-      if (tests == "bootstrap") boot_table_mu <- NULL; pbkrtest_objects_mu <- NULL;
+      if (tests == "bootstrap") boot_table_mu <- NULL; pb_objects_mu <- NULL;
     }
-
 
     LRT_results <- cbind(LRTs_lambda, LRTs_mu)
     reduced_fits <- c(reduced_fits_lambda, reduced_fits_mu)
     full_fits <- c(full_fits_lambda, full_fits_mu)
 
     if (tests == "bootstrap") {
-      print("Hi")
-      pbkrtest_objects <- c(pbkrtest_objects_lambda, pbkrtest_objects_mu)
+
+      pb_objects <- c(pb_objects_lambda, pb_objects_mu)
       boot_table <- cbind(boot_table_lambda, boot_table_mu)
       to_return <- list(
         "LRTs" = t(LRT_results),
         "reduced_fits" = reduced_fits,
         "full_fits" = full_fits,
-        "pbtests" = t(boot_table),
-        "pbkrtest_objects" = pbkrtest_objects
+        "pb_tests" = t(boot_table),
+        "pb_objects" = pb_objects
       )
     } else {
       to_return <- list(
@@ -443,9 +442,41 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
   return(to_return)
 }
 
+# Built after pbkrtest code
+# https://hojsgaard.github.io/pbkrtest/index.html
+# supports lme4 and glmmTMB objects
+# TODO: export?
+compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm,
+                                              nsim = 1000, cl = NULL, seed = NULL) {
+  if (is.null(seed)) seed <- sample(1:1e6, 1)
+  withr::with_seed(seed, code = {
 
-PBmodcomp_glmmTMB <- function(large_model, small_model, nsim, cl = NULL, seed) {
+    LRs_boot <- sapply(1:nsim, function(x) {
+      sim_dat_tmp <- stats::simulate(small_model)[[1]]
+      sim_fit_full <- lme4::refit(large_model, sim_dat_tmp)
+      sim_fit_red <- lme4::refit(small_model, sim_dat_tmp)
+      return(-2 * (stats::logLik(sim_fit_red) - stats::logLik(sim_fit_full)))
+    })
 
+    LR_emp <- -2 * (stats::logLik(small_model) - stats::logLik(large_model))
+    df_lrt <- stats::df.residual(small_model) - stats::df.residual(large_model)
+
+    # only use samples where the LR is positive (as in pbkrtest)
+    LRs_boot <- LRs_boot[which(LRs_boot > 0)]
+    p_boot <- (length(which(LRs_boot > LR_emp)) + 1) / (length(LRs_boot) + 1)
+
+
+    test <- data.frame("stat" = rep(LR_emp, 2),
+                       "df" = c(df_lrt, NA),
+                       "p.value" = c(stats::pchisq(LR_emp, df = df_lrt, lower.tail = F), p_boot))
+    rownames(test) <- c("LRT", "PBtest")
+    return(list("test" = test,
+                "requested_samples" = nsim,
+                "used_samples" = length(LRs_boot),
+                "ref" = LRs_boot,
+                "n.extreme" = length(which(LRs_boot > LR_emp)),
+                "seed" = seed))
+  })
 }
 
 

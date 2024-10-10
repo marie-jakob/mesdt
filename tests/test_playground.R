@@ -524,3 +524,48 @@ cross_lambda_intercept <- glmer(assessment ~ status_ef + (1 | id),
 pb <- PBmodcomp(fit_cross_slopes, cross_lambda_intercept, nsim = 100)
 
 
+# bootstrap with glmmTMB
+model_full <- glmmTMB(assessment ~ status_ef + committee_ef + (status_ef | id),
+                    data = dat_exp_2,
+                    family = binomial("probit"))
+
+model_red <- glmmTMB(assessment ~ status_ef + (status_ef | id),
+                            data = dat_exp_2,
+                            family = binomial("probit"))
+
+boot_glmmTMB <- compute_parametric_bootstrap_test(model_full, model_red, nsim = 1)
+
+
+# apply version
+
+LRs_boot <- sapply(1:nsim, function(x) {
+  print(x)
+  sim_dat_tmp <- stats::simulate(model_red)[[1]]
+  sim_fit_full <- refit(model_full, sim_dat_tmp)
+  sim_fit_red <- refit(model_red, sim_dat_tmp)
+  return(-2 * (logLik(sim_fit_red) - logLik(sim_fit_full)))
+})
+
+
+LR_emp <- -2 * (logLik(model_red) - logLik(model_full))
+# according to Halekoh & Hojsgaard (2014)
+p_boot <- (length(which(LRs_boot > LR_emp)) + 1) / (nsim + 1)
+
+nsim <- 500
+set.seed(3405)
+start_man <- Sys.time()
+boot_man <- PBmodcomp_glmmTMB(model_full, model_red, nsim = nsim)
+end_man <- Sys.time()
+
+start_pack <- Sys.time()
+boot_pack <- PBmodcomp(model_full, model_red, nsim = nsim, seed = 1)
+end_pack <- Sys.time()
+
+# Time is very similar, package is probably not needed
+
+
+b_full <- lme4::bootMer(model_full, FUN=function(x) -2 * logLik(x), nsim = 20, .progress="txt", type = "parametric")
+b_red <- lme4::bootMer(model_red, FUN=function(x) -2 * logLik(x), nsim = 20, .progress="txt", type = "parametric")
+
+
+

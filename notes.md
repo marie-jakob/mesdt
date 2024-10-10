@@ -6,9 +6,6 @@
 + Remove correlations for all random effects grouping factors at once or sequentially or depending on there being correlations = 1 or = -1? 
 + Crossed random effects: do two separate selections and combine (and then do another selection)?
 + ANOVA stuff
-+ genaues Setup Simulation
-
-
 
 
 ### Input Syntax
@@ -211,10 +208,16 @@ __glmmADMB__ package:
 
 ##### Parametric Bootstrapping
 
+Procedure:
++ fit the full and reduced model
++ simulate data from the reduced model and fit both the full and the reduced model to the simulated datasets
++ difference in -2LL between the full and reduced model on the simulated datasets provides a reference distribution for distribution for likelihood ratio values under H0
++ p value: percentage of simulated likelihood ratio values that are larger than the observed likelihood ratio value
+
 + afex does this using pbkrtest (Halekoh \& Hoojsgaard, 2014)
 	+ built on lme4
 	+ implements pb for glmm as well (but focus on LMM)
-+ 
++ manual implementation for glmmTMB
 
 
 ### Prediction & Simulation
@@ -337,6 +340,7 @@ Goals:
 + Axt et al. (2018)
 + Nahon et al. (2024)
 + Fort & Shulman (2024)
+
 
 
 ## Resources
