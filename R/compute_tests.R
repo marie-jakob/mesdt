@@ -256,6 +256,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
 #' "bootstrap" = parametric bootstrap)
 #' @param nsim number of simulated datasets for bootstrapping
+#' @param seed random seed for bootstrap tests
 #' @param mm model matrices (optional)
 #' @param type type of tests (only relevant for likelihood ratio tests and
 #'  parametric bootstrapping)
@@ -272,7 +273,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #'
 #' @export
 compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
-                          tests = "LRT", nsim = 1000, mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
+                          tests = "LRT", nsim = 1000, seed = NULL, mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
                           correlate_sdt_params = T, test_params_mu = "all", test_params_lambda = "all") {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
@@ -284,6 +285,10 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
   if (tests == "bootstrap" & !requireNamespace("pbkrtest", quietly = TRUE)) {
     stop("Package \"pbkrtest\" must be installed to compute parametric bootstrap tests.")
   }
+  if (is.null(seed)) seed <- sample(1:1e6, 1)
+  # TODO: test compatibility of input arguments
+
+
   submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts = test_intercepts,
                              rem_ran_ef = test_ran_ef, correlate_sdt_params = correlate_sdt_params,
                              test_params_mu = test_params_mu, test_params_lambda = test_params_lambda)
@@ -314,7 +319,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
     )
     if (tests == "bootstrap") {
       pbkrtest_objects <- lapply(reduced_fits, function(fit_tmp) {
-        boot_tmp <- pbkrtest::PBmodcomp(fit_obj, fit_tmp, nsim = nsim)
+        boot_tmp <- pbkrtest::PBmodcomp(fit_obj, fit_tmp, nsim = nsim, seed = seed)
         return(boot_tmp)
       })
       boot_table <- sapply(pbkrtest_objects, function(x) { return(data.frame(x)[2, ]) })
@@ -359,7 +364,20 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
         ))
       })
       colnames(LRTs_lambda) <- names(reduced_fits_lambda)
-    } else LRTs_lambda <- NULL
+      if (tests == "bootstrap") {
+        pbkrtest_objects_lambda <- lapply(1:length(reduced_fits_lambda), function(fit_ind) {
+          fit_tmp <- reduced_fits_lambda[[fit_ind]]
+          fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
+          boot_tmp <- pbkrtest::PBmodcomp(fit_full, fit_tmp, nsim = nsim)
+          return(boot_tmp)
+        })
+        boot_table_lambda <- sapply(pbkrtest_objects_lambda, function(x) { return(data.frame(x)[2, ]) })
+        colnames(boot_table_lambda) <- names(reduced_fits_lambda)
+      }
+    } else {
+      LRTs_lambda <- NULL
+      if (tests == "bootstrap") boot_table_lambda <- NULL; pbkrtest_objects_lambda <- NULL;
+    }
 
     # Compute Mu LRTs if there are parameters to test
     if (length(reduced_fits_mu) > 0) {
@@ -382,20 +400,52 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
         ))
       })
       colnames(LRTs_mu) <- names(reduced_fits_mu)
-    } else LRTs_mu <- NULL
+      if (tests == "bootstrap") {
+        pbkrtest_objects_mu <- lapply(1:length(reduced_fits_mu), function(fit_ind) {
+          fit_tmp <- reduced_fits_mu[[fit_ind]]
+          fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
+          boot_tmp <- pbkrtest::PBmodcomp(fit_full, fit_tmp, nsim = nsim)
+          return(boot_tmp)
+        })
+        boot_table_mu <- sapply(pbkrtest_objects_mu, function(x) { return(data.frame(x)[2, ]) })
+        colnames(boot_table_mu) <- names(reduced_fits_mu)
+      }
+
+    } else {
+      LRTs_mu <- NULL
+      if (tests == "bootstrap") boot_table_mu <- NULL; pbkrtest_objects_mu <- NULL;
+    }
+
 
     LRT_results <- cbind(LRTs_lambda, LRTs_mu)
     reduced_fits <- c(reduced_fits_lambda, reduced_fits_mu)
     full_fits <- c(full_fits_lambda, full_fits_mu)
 
-    to_return <- list(
-      "LRTs" = t(LRT_results),
-      "reduced_fits" = reduced_fits,
-      "full_fits" = full_fits
-    )
+    if (tests == "bootstrap") {
+      print("Hi")
+      pbkrtest_objects <- c(pbkrtest_objects_lambda, pbkrtest_objects_mu)
+      boot_table <- cbind(boot_table_lambda, boot_table_mu)
+      to_return <- list(
+        "LRTs" = t(LRT_results),
+        "reduced_fits" = reduced_fits,
+        "full_fits" = full_fits,
+        "pbtests" = t(boot_table),
+        "pbkrtest_objects" = pbkrtest_objects
+      )
+    } else {
+      to_return <- list(
+        "LRTs" = t(LRT_results),
+        "reduced_fits" = reduced_fits,
+        "full_fits" = full_fits
+      )
+    }
   }
-
   return(to_return)
+}
+
+
+PBmodcomp_glmmTMB <- function(large_model, small_model, nsim, cl = NULL, seed) {
+
 }
 
 

@@ -201,8 +201,8 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
 
 test_that("compute_tests() works with a standard two-factorial design", {
   # Type II, test_intercepts = T
-  fit <- fit_mlsdt(formula_lambda = ~ committee_ef * emp_gender_ef + (1 | id),
-                   formula_mu = ~ committee_ef * emp_gender_ef + (1 | id),
+  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+                   formula_mu = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
