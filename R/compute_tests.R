@@ -4,11 +4,6 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
   if (rem_ran_ef) {
-    if (type == 2) {
-      message("Only type III sums of squares are available for testing random effects.
-              Setting Type = 3")
-      type = 3
-    }
     # range_lambda and range_mu are now list (to accommodate multiple random effects)
     range_lambda <- list(); range_mu <- list();
     for (i in 1:length(mm)) {
@@ -253,6 +248,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #' @param formula_lambda the corresponding formula for response bias
 #' @param dv the name of the dependent variable in the data
 #' @param data a data frame
+#' @param trial_type_var variable in the dataframe coding the type of trial (signal vs. noise)
 #' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
 #' "bootstrap" = parametric bootstrap)
 #' @param nsim number of simulated datasets for bootstrapping
@@ -272,12 +268,17 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #'  (default is "all")
 #'
 #' @export
-compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
+compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, trial_type_var,
                           tests = "LRT", nsim = 1000, seed = NULL, mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
                           correlate_sdt_params = T, test_params_mu = "all", test_params_lambda = "all") {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
-  if (is.null(mm)) mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data)
+  if (is.null(mm)) {
+    mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var = trial_type_var)
+  }
+  if (test_ran_ef & type != 3) {
+    stop("Only type III sums of squares are available for testing random effects.")
+  }
 
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
   if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (type = "LRT") and parametric bootstrapping(type = "bootstrap")
@@ -317,7 +318,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
     )
     if (tests == "bootstrap") {
       pb_objects <- lapply(reduced_fits, function(fit_tmp) {
-        boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, data = data, mm = mm, nsim = nsim, seed = seed)
+        boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data, mm = mm, nsim = nsim, seed = seed)
         return(boot_tmp)
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
@@ -367,7 +368,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
           fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, nsim = nsim, seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, seed = seed)
           return(boot_tmp)
         })
         boot_table_lambda <- sapply(pb_objects_lambda, function(x) { return(data.frame(x$test)[2, ]) })
@@ -404,7 +405,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
           fit_tmp <- reduced_fits_mu[[fit_ind]]
           fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, nsim = nsim, seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, seed = seed)
           return(boot_tmp)
         })
         boot_table_mu <- sapply(pb_objects_mu, function(x) { return(data.frame(x$test)[2, ]) })
@@ -446,15 +447,18 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data,
 # https://hojsgaard.github.io/pbkrtest/index.html
 # supports lme4 and glmmTMB objects
 # TODO: export?
-compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm,
+compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm, dv,
                                               nsim = 1000, cl = NULL, seed = NULL) {
   if (is.null(seed)) seed <- sample(1:1e6, 1)
   withr::with_seed(seed, code = {
 
     LRs_boot <- sapply(1:nsim, function(x) {
+      dat_tmp <- data
       sim_dat_tmp <- stats::simulate(small_model)[[1]]
-      sim_fit_full <- lme4::refit(large_model, sim_dat_tmp)
-      sim_fit_red <- lme4::refit(small_model, sim_dat_tmp)
+      # Do refitting manually
+      dat_tmp[[dv]] <- sim_dat_tmp
+      sim_fit_full <- fit_glmm(formula(large_model), dat_tmp, mm)
+      sim_fit_red <- fit_glmm(formula(small_model), dat_tmp, mm)
       return(-2 * (stats::logLik(sim_fit_red) - stats::logLik(sim_fit_full)))
     })
 
@@ -464,7 +468,6 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
     # only use samples where the LR is positive (as in pbkrtest)
     LRs_boot <- LRs_boot[which(LRs_boot > 0)]
     p_boot <- (length(which(LRs_boot > LR_emp)) + 1) / (length(LRs_boot) + 1)
-
 
     test <- data.frame("stat" = rep(LR_emp, 2),
                        "df" = c(df_lrt, NA),

@@ -567,5 +567,41 @@ end_pack <- Sys.time()
 b_full <- lme4::bootMer(model_full, FUN=function(x) -2 * logLik(x), nsim = 20, .progress="txt", type = "parametric")
 b_red <- lme4::bootMer(model_red, FUN=function(x) -2 * logLik(x), nsim = 20, .progress="txt", type = "parametric")
 
+#------------------------------------------------------------------------------#
+#### PB manual ####
 
+options("mlsdt.backend" = "lme4")
+model_full <- glmmTMB(assessment ~ status_ef + committee_ef + (status_ef | id),
+                      data = dat_exp_2,
+                      family = binomial("probit"))
+
+model_red <- glmmTMB(assessment ~ status_ef + (status_ef | id),
+                     data = dat_exp_2,
+                     family = binomial("probit"))
+
+fit <- fit_mlsdt(~ committee_ef + (1 | id), ~ committee_ef + (1 | id),
+                 data = dat_exp_2,
+                 trial_type_var = "status_fac",
+                 dv = "assessment")
+fit_red <- fit_mlsdt(~ 1 + (1 | id), ~ committee_ef + (1 | id),
+                 data = dat_exp_2,
+                 trial_type_var = "status_fac",
+                 dv = "assessment")
+
+
+nsim <- 500
+seed <- 251433
+start_pack <- Sys.time()
+boot_pack <- PBmodcomp(fit$fit_obj, fit_red$fit_obj, nsim = nsim, seed = seed)
+end_pack <- Sys.time()
+
+
+
+start_man <- Sys.time()
+boot_man <- compute_parametric_bootstrap_test(fit$fit_obj, fit_red$fit_obj, nsim = nsim, seed = seed,
+                                              mm = construct_model_matrices(~ committee_ef + (1 | id), ~ committee_ef + (1 | id),
+                                                                            trial_type_var = "status_fac", dv = "assessment"),
+                                              dv = "assessment",
+                                              data = dat_exp_2)
+end_man <- Sys.time()
 

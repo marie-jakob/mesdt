@@ -42,6 +42,7 @@ test_that("fit_mlsdt() estimates the correct model with glmmTMB", {
 
 
 test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (crossed random effects)", {
+  options("mlsdt.backend" = "glmmTMB")
   form_mu <- ~ committee_ef + (1 | id) + (1 | file_name)
   form_lambda <- ~ committee_ef + (committee_ef | id)
 
@@ -51,18 +52,13 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(form_mu, form_lambda,
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   # Type 2 - test_intercepts = T
   LRTs_2_intercepts_lme <- compute_tests(fit_lme$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 2,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
@@ -71,7 +67,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
@@ -80,7 +76,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
 
   # Type 3 - test_intercepts = F
@@ -89,7 +85,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = F)
 
   options("mlsdt.backend" = "glmmTMB")
@@ -104,7 +100,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 2,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
@@ -113,7 +109,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
@@ -122,7 +118,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
 
   # Type 3 - test_intercepts = F
@@ -131,7 +127,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = F)
 
 

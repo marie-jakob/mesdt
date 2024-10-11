@@ -6,9 +6,8 @@ options("mlsdt.backend" = "lme4")
 
 test_that("compute_tests() computes the correct Chisq value for correlated random effects.", {
   fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)$fit_obj
-  mm <- construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_sdt_data)
   lrts_test <- compute_tests(fit, ~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
-                            mm  = mm, test_intercepts = T)
+                             trial_type_var = "trial_type", test_intercepts = T)
 
   # Chisq values
   # low tolerance because the package function fits with nAGQ = 0 (afex with nAGQ = 1)
@@ -20,9 +19,8 @@ test_that("compute_tests() computes the correct Chisq value for correlated rando
 test_that("compute_tests() computes the correct Chisq value for uncorrelated random effects.", {
   # Same for the uncorrelated model
   fit <- fit_mlsdt(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
-  mm <- construct_modelmatrices(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), data = internal_sdt_data)
   lrts_test <- compute_tests(fit, ~ x1 + (x1 || ID), ~ x1 + (x1 || ID), dv = "y", data = internal_sdt_data,
-                            mm  = mm, test_intercepts = T)
+                            trial_type_var = "trial_type", test_intercepts = T)
 
   # Chisq values
   # low tolerance because the package function fits with nAGQ = 0 (afex with nAGQ = 1)
@@ -34,12 +32,8 @@ test_that("compute_tests() computes the correct Chisq value for uncorrelated ran
 test_that("compute_tests() throws a message when there is nothing to test in the model.", {
   # Case 1: no predictors & test_intercepts = F
   fit <- fit_mlsdt(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data)$fit_obj
-  mm <- construct_modelmatrices(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), data = internal_sdt_data)
   expect_message(compute_tests(fit, ~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data,
-                              mm  = mm, test_intercepts = F))
-  #expect_equal(compute_tests(fit, ~ 1 + (x1 || ID), ~ 0 + (x1 || ID), dv = "y", data = internal_sdt_data,
-  #                          mm  = mm, test_intercepts = T),
-  #             NULL)
+                               trial_type_var = "trial_type", test_intercepts = F))
 
 })
 
@@ -57,24 +51,19 @@ test_that("compute_tests() works only with intercepts", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(form_mu, form_lambda,
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   LRTs_2 <- compute_tests(fit$fit_obj,
                          form_mu, form_lambda,
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = T)
   LRTs_3 <- compute_tests(fit$fit_obj,
                          form_mu, form_lambda,
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 3,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = T)
   # Should be equal to each other
   expect_equal(unlist(LRTs_3$LRTs[, 4]), unlist(LRTs_2$LRTs[, 4]), tolerance = 1e-4)
@@ -93,18 +82,13 @@ test_that("compute_tests() Type II works with one predictor on mu", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(form_mu, form_lambda,
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   # Type 2 - test_intercepts = T
   LRTs_2_intercepts <- compute_tests(fit$fit_obj,
                                     form_mu, form_lambda,
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 2,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = T)
   expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chi_squares_one_pred_mu_2, tolerance = 1e-4)
 
@@ -114,7 +98,7 @@ test_that("compute_tests() Type II works with one predictor on mu", {
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = F)
   expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chi_squares_one_pred_mu_2[3], tolerance = 1e-4)
 
@@ -124,7 +108,7 @@ test_that("compute_tests() Type II works with one predictor on mu", {
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chi_squares_one_pred_mu_3, tolerance = 1e-4)
 
@@ -134,7 +118,7 @@ test_that("compute_tests() Type II works with one predictor on mu", {
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = F)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chi_squares_one_pred_mu_3[3], tolerance = 1e-4)
 
@@ -151,18 +135,13 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(form_mu, form_lambda,
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   # Type 2 - test_intercepts = T
   LRTs_2_intercepts <- compute_tests(fit$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 2,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
   expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chisquares_one_factor_2, tolerance = 1e-4)
 
@@ -172,7 +151,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = F)
   expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chisquares_one_factor_2[c(2, 4)], tolerance = 1e-4)
 
@@ -182,7 +161,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_one_factor_3, tolerance = 1e-4)
 
@@ -192,7 +171,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = F)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_one_factor_3[c(2, 4)], tolerance = 1e-4)
 
@@ -207,19 +186,13 @@ test_that("compute_tests() works with a standard two-factorial design", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(~ committee * emp_gender +  (1 | id),
-                                ~ committee * emp_gender + (1 | id),
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   LRTs <- compute_tests(fit$fit_obj,
                        ~ committee * emp_gender + (1 | id),
                        ~ committee * emp_gender + (1 | id),
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 2,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = T)
   expect_equal(chisquares_two_factors_2, as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
   # check dfs
@@ -239,7 +212,7 @@ test_that("compute_tests() works with a standard two-factorial design", {
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 2,
-                       mm = mm)
+                       trial_type_var = "status_fac")
   expect_equal(chisquares_two_factors_2[-c(1, 5)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
 
   expect_equal(stats::df.residual(LRTs$reduced_fits[[1]]), stats::df.residual(fit$fit_obj) + 2)
@@ -257,7 +230,7 @@ test_that("compute_tests() works with a standard two-factorial design", {
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 3,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = T)
   expect_equal(chisquares_two_factors_3, as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-3)
   expect_equal(stats::df.residual(LRTs$reduced_fits[[1]]), stats::df.residual(fit$fit_obj) + 1)
@@ -276,7 +249,7 @@ test_that("compute_tests() works with a standard two-factorial design", {
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 3,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = F)
   expect_equal(chisquares_two_factors_3[-c(1, 5)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-3)
   expect_equal(stats::df.residual(LRTs$reduced_fits[[1]]), stats::df.residual(fit$fit_obj) + 1)
@@ -302,18 +275,13 @@ test_that("compute_tests() works for factors with > 2 levels", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(form_mu, form_lambda,
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   # Type 2 - test_intercepts = T
   LRTs_2_intercepts <- compute_tests(fit$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 2,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
   expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chisquares_contingencies_2, tolerance = 1e-4)
 
@@ -323,7 +291,7 @@ test_that("compute_tests() works for factors with > 2 levels", {
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = F)
   expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chisquares_contingencies_2[c(2, 4)], tolerance = 1e-4)
 
@@ -333,7 +301,7 @@ test_that("compute_tests() works for factors with > 2 levels", {
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_contingencies_3, tolerance = 1e-4)
 
@@ -343,7 +311,7 @@ test_that("compute_tests() works for factors with > 2 levels", {
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = F)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_contingencies_3[c(2, 4)], tolerance = 1e-4)
 
@@ -363,18 +331,13 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(form_mu, form_lambda,
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   # Type 2 - test_intercepts = T
   LRTs_2_intercepts <- compute_tests(fit$fit_obj,
                                     form_mu, form_lambda,
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 2,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
   expect_equal(as.numeric(LRTs_2_intercepts$LRTs[, 4]), chisquares_cross_2, tolerance = 1e-3)
 
@@ -384,7 +347,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
                          dv = "assessment",
                          data = dat_exp_2,
                          type = 2,
-                         mm = mm,
+                         trial_type_var = "status_fac",
                          test_intercepts = F)
   expect_equal(as.numeric(LRTs_2$LRTs[, 4]), chisquares_cross_2[c(2, 4)], tolerance = 1e-3)
 
@@ -394,7 +357,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_cross_3, tolerance = 1e-3)
 
@@ -404,7 +367,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
                                     dv = "assessment",
                                     data = dat_exp_2,
                                     type = 3,
-                                    mm = mm,
+                                    trial_type_var = "status_fac",
                                     test_intercepts = F)
   expect_equal(as.numeric(LRTs_3_intercepts$LRTs[, 4]), chisquares_cross_3[c(2, 4)], tolerance = 1e-3)
 
@@ -420,11 +383,9 @@ test_that("compute_tests() works for testing random effects", {
   # with correlations
   fit <- fit_mlsdt(~ committee + (1 | id), ~ committee + (1 | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")$fit_obj
-  mm <- construct_modelmatrices(~ committee + (1 | id), ~ committee + (1 | id), data = dat_exp_2,
-                                trial_type_var = "status_fac")
 
   lrts_test <- compute_tests(fit, ~ committee + (1 | id), ~ committee + (1 | id), dv = "assessment", data = dat_exp_2,
-                            mm  = mm, test_intercepts = T, test_ran_ef = T)
+                             trial_type_var = "status_fac", test_intercepts = T, test_ran_ef = T)
   expect_equal(unlist(lrts_test$LRTs[, 4]), chi_squares_rdm_intercepts)
   expect_equal(unlist(lrts_test$LRTs[, 5]), pchisqmix(chi_squares_rdm_intercepts, 2, 0.5, lower.tail = F))
 
@@ -432,43 +393,32 @@ test_that("compute_tests() works for testing random effects", {
   fit <- fit_mlsdt(~ committee + (1 | id), ~ committee + (1 | id), dv = "assessment", data = dat_exp_2,
                    correlate_sdt_params = F,
                    trial_type_var = "status_fac")$fit_obj
-  mm <- construct_modelmatrices(~ committee + (1 | id), ~ committee + (1 | id), data = dat_exp_2,
-                                trial_type_var = "status_fac")
+
   lrts_test <- compute_tests(fit, ~ committee + (1 | id), ~ committee + (1 | id), dv = "assessment", data = dat_exp_2,
-                            mm  = mm, test_intercepts = T, test_ran_ef = T)
+                             trial_type_var = "status_fac", test_intercepts = T, test_ran_ef = T)
   expect_equal(unlist(lrts_test$LRTs[, 4]), chi_squares_rdm_intercepts_uncor)
   expect_equal(unlist(lrts_test$LRTs[, 5]), pchisqmix(chi_squares_rdm_intercepts_uncor, 1, 0.5, lower.tail = F))
 })
 
 
 # TODO: does the random stuff work for factors with multiple levels?
-# TODO: test_intercept = F for random effects
 
 test_that("compute_tests() works for testing crossed random effects", {
   options("mlsdt.backend" = "glmmTMB")
   # with correlations
   fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")$fit_obj
-  mm <- construct_modelmatrices(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), data = dat_exp_2,
-                                trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
-                            mm  = mm, test_intercepts = T, test_ran_ef = T)
+                             trial_type_var = "status_fac", test_intercepts = T, test_ran_ef = T)
   expect_equal(unlist(lrts_test$LRTs[, 4]), chi_squares_rdm_cross, tolerance = 1e-5)
   expect_equal(unlist(lrts_test$LRTs[1:3, 5]), pchisqmix(chi_squares_rdm_cross[1:3], 3, 0.5, lower.tail = F))
   expect_equal(as.numeric(lrts_test$LRTs[4, 5]), pchisqmix(chi_squares_rdm_cross[4], 1, 0.5, lower.tail = F))
 
-  # test_intercept = F
-  # TODO
-  #lrts_test <- compute_tests(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
-  #                          mm  = mm, test_intercepts = F, test_ran_ef = T)
-
   # without correlations
   fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")$fit_obj
-  mm <- construct_modelmatrices(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), data = dat_exp_2,
-                                trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
-                            mm  = mm, test_intercepts = T, test_ran_ef = T)
+                             trial_type_var = "status_fac", test_intercepts = T, test_ran_ef = T)
   expect_equal(unlist(lrts_test$LRTs[, 4]), chi_squares_rdm_cross_uncor, tolerance = 1e-5)
   expect_equal(unlist(lrts_test$LRTs[1:3, 5]), pchisqmix(chi_squares_rdm_cross_uncor[1:3], 1, 0.5, lower.tail = F))
   expect_equal(as.numeric(lrts_test$LRTs[4, 5]), pchisqmix(chi_squares_rdm_cross_uncor[4], 1, 0.5, lower.tail = F))
@@ -481,19 +431,15 @@ test_that("compute_tests() works for testing crossed random effects without the 
   # with correlations
   fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")$fit_obj
-  mm <- construct_modelmatrices(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), data = dat_exp_2,
-                                trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
-                            mm  = mm, test_intercepts = F, test_ran_ef = T)
+                             trial_type_var = "status_fac",test_intercepts = F, test_ran_ef = T)
   expect_equal(unname(unlist(lrts_test$LRTs[, 4])), chi_squares_rdm_cross[2], tolerance = 1e-5)
 
   # without correlations
   fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")$fit_obj
-  mm <- construct_modelmatrices(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), data = dat_exp_2,
-                                trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, ~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
-                            mm  = mm, test_intercepts = F, test_ran_ef = T)
+                             trial_type_var = "status_fac", test_intercepts = F, test_ran_ef = T)
   expect_equal(unname(unlist(lrts_test$LRTs[, 4])), chi_squares_rdm_cross_uncor[2], tolerance = 1e-5)
 
 })
@@ -513,19 +459,13 @@ test_that("compute_tests() works for only selected effects", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
 
-  mm <- construct_modelmatrices(~ committee * emp_gender +  (1 | id),
-                                ~ committee * emp_gender + (1 | id),
-                                dv = "assessment",
-                                trial_type_var = "status_fac",
-                                data = dat_exp_2)
-
   LRTs <- compute_tests(fit$fit_obj,
                        ~ committee * emp_gender + (1 | id),
                        ~ committee * emp_gender + (1 | id),
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 2,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = T,
                        test_params_lambda = ~ committee,
                        test_params_mu = ~ emp_gender)
@@ -538,7 +478,7 @@ test_that("compute_tests() works for only selected effects", {
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 2,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = F,
                        test_params_lambda = ~ committee,
                        test_params_mu = ~ emp_gender)
@@ -550,7 +490,7 @@ test_that("compute_tests() works for only selected effects", {
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 3,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = T,
                        test_params_lambda = ~ committee,
                        test_params_mu = ~ emp_gender)
@@ -563,7 +503,7 @@ test_that("compute_tests() works for only selected effects", {
                        dv = "assessment",
                        data = dat_exp_2,
                        type = 3,
-                       mm = mm,
+                       trial_type_var = "status_fac",
                        test_intercepts = F,
                        test_params_lambda = ~ committee,
                        test_params_mu = ~ emp_gender)
