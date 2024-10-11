@@ -605,3 +605,24 @@ boot_man <- compute_parametric_bootstrap_test(fit$fit_obj, fit_red$fit_obj, nsim
                                               data = dat_exp_2)
 end_man <- Sys.time()
 
+
+#------------------------------------------------------------------------------#
+#### Parallelization ####
+
+library(parallel)
+library(afex)
+
+detectCores()
+nc <- 8
+cls <- makeCluster(nc, type = "SOCK")
+clusterEvalQ(cls, {
+  library(lme4); library(afex)
+}
+
+
+mixed(assessment ~ status_ef * committee_ef * emp_gender_ef + (status_ef | id),
+      data = dat_exp_2,
+      family = binomial("probit"),
+      args_test = list(cl = cls),
+      test_intercept = T,
+      method = "LRT")

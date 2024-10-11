@@ -252,7 +252,6 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
 #' "bootstrap" = parametric bootstrap)
 #' @param nsim number of simulated datasets for bootstrapping
-#' @param seed random seed for bootstrap tests
 #' @param mm model matrices (optional)
 #' @param type type of tests (only relevant for likelihood ratio tests and
 #'  parametric bootstrapping)
@@ -268,8 +267,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #'  (default is "all")
 #'
 #' @export
-compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, trial_type_var,
-                          tests = "LRT", nsim = 1000, seed = NULL, mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
+compute_tests <- function(fit_obj, formula_mu, formula_lambda, dv, data, trial_type_var, cl = NULL,
+                          tests = "LRT", nsim = 1000, mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
                           correlate_sdt_params = T, test_params_mu = "all", test_params_lambda = "all") {
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
@@ -284,7 +283,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, 
   if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (type = "LRT") and parametric bootstrapping(type = "bootstrap")
                                          are implemented')
 
-  if (is.null(seed)) seed <- sample(1:1e6, 1)
+  #if (is.null(seed)) seed <- sample(1:1e6, 1)
   # TODO: test compatibility of input arguments
 
 
@@ -301,8 +300,6 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, 
       df <- stats::df.residual(fit_tmp) - stats::df.residual(fit_obj)
       if (test_ran_ef) p_value <- pchisqmix(q = chisq, df = df, lower.tail = F, mix = 0.5)
       else p_value <- stats::pchisq(q = chisq, df = df, lower.tail = F)
-      if (tests == "bootstrap") {
-      }
       return(data.frame(
         # columns names inspired by afex
         "deviance_full" = -2 * LL_full,
@@ -318,7 +315,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, 
     )
     if (tests == "bootstrap") {
       pb_objects <- lapply(reduced_fits, function(fit_tmp) {
-        boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data, mm = mm, nsim = nsim, seed = seed)
+        boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data, mm = mm, nsim = nsim, cl = cl)
         return(boot_tmp)
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
@@ -368,7 +365,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, 
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
           fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, dv = dv, nsim = nsim, seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl)
           return(boot_tmp)
         })
         boot_table_lambda <- sapply(pb_objects_lambda, function(x) { return(data.frame(x$test)[2, ]) })
@@ -405,7 +402,7 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, 
           fit_tmp <- reduced_fits_mu[[fit_ind]]
           fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, dv = dv, nsim = nsim, seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl)
           return(boot_tmp)
         })
         boot_table_mu <- sapply(pb_objects_mu, function(x) { return(data.frame(x$test)[2, ]) })
@@ -448,38 +445,49 @@ compute_tests <- function(fit_obj = NULL, formula_mu, formula_lambda, dv, data, 
 # supports lme4 and glmmTMB objects
 # TODO: export?
 compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm, dv,
-                                              nsim = 1000, cl = NULL, seed = NULL) {
-  if (is.null(seed)) seed <- sample(1:1e6, 1)
-  withr::with_seed(seed, code = {
+                                              nsim = 1000, cl = NULL) {
+  #if (is.null(seed)) seed <- sample(1:1e6, 1)
 
-    LRs_boot <- sapply(1:nsim, function(x) {
-      dat_tmp <- data
-      sim_dat_tmp <- stats::simulate(small_model)[[1]]
-      # Do refitting manually
-      dat_tmp[[dv]] <- sim_dat_tmp
-      sim_fit_full <- fit_glmm(formula(large_model), dat_tmp, mm)
-      sim_fit_red <- fit_glmm(formula(small_model), dat_tmp, mm)
-      return(-2 * (stats::logLik(sim_fit_red) - stats::logLik(sim_fit_full)))
-    })
+  do_pb <- function(x) {
+    dat_tmp <- data
+    sim_dat_tmp <- stats::simulate(small_model)[[1]]
+    # Do refitting manually
+    dat_tmp[[dv]] <- sim_dat_tmp
+    sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm)
+    sim_fit_red <- fit_glmm(stats::formula(small_model), dat_tmp, mm)
+    return(-2 * (stats::logLik(sim_fit_red) - stats::logLik(sim_fit_full)))
+  }
 
-    LR_emp <- -2 * (stats::logLik(small_model) - stats::logLik(large_model))
-    df_lrt <- stats::df.residual(small_model) - stats::df.residual(large_model)
+  if (is.null(cl)) {
+    parallel <- F
+    LRs_boot <- sapply(1:nsim, do_pb)
+  } else {
+    parallel <- T
+    # load variables on cluster
+    throwaway <- parallel::clusterExport(cl = cl,
+                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model"),
+                            env = environment())
+    if (options("mlsdt.backend") == "glmmTMB") throwaway <- parallel::clusterCall(cl = cl, "require", package = "glmmTMB", character.only = T)
+    # set seed on cluster
+    LRs_boot <- unlist(parallel::clusterApplyLB(cl, 1:nsim, do_pb))
+  }
+  LR_emp <- -2 * (stats::logLik(small_model) - stats::logLik(large_model))
+  df_lrt <- stats::df.residual(small_model) - stats::df.residual(large_model)
 
-    # only use samples where the LR is positive (as in pbkrtest)
-    LRs_boot <- LRs_boot[which(LRs_boot > 0)]
-    p_boot <- (length(which(LRs_boot > LR_emp)) + 1) / (length(LRs_boot) + 1)
+  # only use samples where the LR is positive (as in pbkrtest)
+  LRs_boot <- LRs_boot[which(LRs_boot > 0)]
+  p_boot <- (length(which(LRs_boot > LR_emp)) + 1) / (length(LRs_boot) + 1)
 
-    test <- data.frame("stat" = rep(LR_emp, 2),
-                       "df" = c(df_lrt, NA),
-                       "p.value" = c(stats::pchisq(LR_emp, df = df_lrt, lower.tail = F), p_boot))
-    rownames(test) <- c("LRT", "PBtest")
-    return(list("test" = test,
-                "requested_samples" = nsim,
-                "used_samples" = length(LRs_boot),
-                "ref" = LRs_boot,
-                "n.extreme" = length(which(LRs_boot > LR_emp)),
-                "seed" = seed))
-  })
+  test <- data.frame("stat" = rep(LR_emp, 2),
+                     "df" = c(df_lrt, NA),
+                     "p.value" = c(stats::pchisq(LR_emp, df = df_lrt, lower.tail = F), p_boot))
+  rownames(test) <- c("LRT", "PBtest")
+  return(list("test" = test,
+              "requested_samples" = nsim,
+              "used_samples" = length(LRs_boot),
+              "ref" = LRs_boot,
+              "n.extreme" = length(which(LRs_boot > LR_emp)),
+              "parallel" = parallel))
 }
 
 

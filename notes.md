@@ -1,5 +1,53 @@
 # Notes 
 
+### TODOs
+
+Definitely: 
++ support for mix of correlated and uncorrelated random effects
++ parallelization
++ pretty output
++ documentation
++ examples
++ Check user input
++ Tests for customized SDT user output
++ test only a subset of random effects
++ check LRT results (submodels have a higher likelihood than full model)
++ random seed for bootstrapping
+
+Probably:
++ emmeans-like estimates + SEs
++ Plots
+
+Maybe: 
++ optionally test parameters instead of whole factors
+
+
+Probably not: 
++ reduced random-effects structure
+  + strategy 1: "keep it maximal"
+  + strategy 2: Matuschek et al. 
+
+Done: 
++ Model translation
++ Fitting
++ support for "||" notation
++ crossed random effects
++ LRTs: type 3 and 2
++ parametric bootstrap (lme4 & glmmTMB)
++ test random effects for significance (type 3)
++ test only a selected subset of fixed effects
++ optional other backends:
+  + glmmTMB
+
+
+
+### Open Questions
+
++ How to credit Henrik Singmann (a lot of things are similar to afex)
++ How to handle contrast coding? Automatically use sum contrasts and notify the user? 
++ How to handle overparametrized models (when lme4 drops columns)? (fixed-effect model matrix is rank deficient so dropping XX columns / coefficients)
++ How to handle reverse-coded trial_type variable? 
+
 
 ### Open Questions - Raphi & Constantin
 
@@ -180,6 +228,13 @@ __glmmADMB__ package:
 
 + Type II-like SS for this case: adhere to marginality _within_ sensitivity and response bias, respectively
 	+ i.e., a submodel testing predictors for response bias still includes everything related to sensitivity, but includes only same- or lower-order effects of the predictor in question on the response bias
+	+ Models to fit: 
+ 	+ For every order in the model:
+    	+ Fit model with all effects with <= order (i.e., a model with all main effects, a model with all main effects + two-way interactions etc.)
+    	+ Reference model for the respective order
+    	+ For every effect of that order:
+      	+ Fit a model with all effects with <= order _without_ the to-be-tested effect
+      	+ Compare that model with the reference model
 
 + TODO: balanced vs. strict null stuff -> I don't think this "strict null" stuff makes a lot of sense -> Instead there will be the possibility to test for variability in the fixed effect separately
 
