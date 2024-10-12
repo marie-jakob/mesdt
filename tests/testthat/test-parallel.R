@@ -17,7 +17,7 @@ test_that("compute_tests() works with bootstraps on multiple cores", {
                         test_intercepts = T,
                         nsim = 4,
                         cl = cl)
-  stopCluster(cl)
+  parallel::stopCluster(cl)
   expect_equal(boots$pb_objects[[1]]$parallel, T)
 })
 
@@ -43,7 +43,7 @@ test_that("compute_tests() works with LRTs type 3 on multiple cores", {
                          test_intercepts = T,
                          nsim = 4,
                          cl = cl)
-  stopCluster(cl)
+  parallel::stopCluster(cl)
 
   expect_equal(boots$pb_objects[[1]]$parallel, T)
 })
@@ -57,6 +57,7 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
   cl <- parallel::makeCluster(6, "SOCK")
+  parallel::clusterEvalQ(cl = cl, {options("mlsdt.backend" = "lme4")})
   LRTs_par <- compute_tests(fit$fit_obj,
                          ~ committee * emp_gender + (1  | id),
                          ~ committee * emp_gender + (1 | id),
@@ -67,7 +68,8 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
                          trial_type_var = "status_fac",
                          test_intercepts = T,
                          cl = cl)
-  stopCluster(cl)
+  parallel::stopCluster(cl)
+  options("mlsdt.backend" = "lme4")
   LRTs_seq <- compute_tests(fit$fit_obj,
                             ~ committee * emp_gender + (1 | id),
                             ~ committee * emp_gender + (1 | id),
