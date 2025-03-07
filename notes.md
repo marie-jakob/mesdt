@@ -4,7 +4,6 @@
 
 Definitely: 
 + support for mix of correlated and uncorrelated random effects
-+ parallelization
 + pretty output
 + documentation
 + examples
@@ -38,12 +37,13 @@ Done:
 + test only a selected subset of fixed effects
 + optional other backends:
   + glmmTMB
-
++ parallelization
 
 
 ### Open Questions
 
 + How to credit Henrik Singmann (a lot of things are similar to afex)
+	+ ask if he wants to join the project
 + How to handle contrast coding? Automatically use sum contrasts and notify the user? 
 + How to handle overparametrized models (when lme4 drops columns)? (fixed-effect model matrix is rank deficient so dropping XX columns / coefficients)
 + How to handle reverse-coded trial_type variable? 
@@ -388,6 +388,15 @@ Goals:
 	+ two-step analysis procedure
 	+ maximal
 	+ parsimonious
+
+
+### Simulation Study 2 - Crossed Random Effects
+
++ don't manipulate effects on mu and lambda separately anymore 
++ 
+
+
+### Simulation Study 3 - unequal cell sizes and missing data
 
 
 ## Examples for the Two-Step Approach

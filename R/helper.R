@@ -6,6 +6,7 @@ fit_glmm <- function(glmer_formula,
                      mm) {
   # mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
   # get global options
+  message(paste("mlsdt backend was set to "), options("mlsdt.backend"), ".")
 
   if (! (options("mlsdt.backend") %in% c("lme4", "glmmTMB"))) {
     message("Only lme4 and glmmTMB backends are supported at the moment. Defaulting to lme4.")

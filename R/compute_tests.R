@@ -286,9 +286,18 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #'  (default is "all")
 #'
 #' @export
-compute_tests <- function(fit_obj, formula_mu, formula_lambda, dv, data, trial_type_var, cl = NULL,
-                          tests = "LRT", nsim = 1000, mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
-                          correlate_sdt_params = T, test_params_mu = "all", test_params_lambda = "all") {
+compute_tests <- function(mlsdt_fit, data,
+                          cl = NULL, tests = "LRT", nsim = 1000,
+                          mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
+                          correlate_sdt_params = T, test_params_mu = "all",
+                          test_params_lambda = "all") {
+
+  fit_obj <- mlsdt_fit$fit_obj
+  formula_mu <- mlsdt_fit$formula_mu
+  formula_lambda <- mlsdt_fit$formula_lambda
+  dv <- mlsdt_fit$dv
+  trial_type_var <- mlsdt_fit$trial_type_var
+
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
   if (is.null(mm)) {

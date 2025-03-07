@@ -6,14 +6,10 @@ test_that("compute_tests() works with bootstraps on multiple cores", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
   cl <- parallel::makeCluster(4, "SOCK")
-  boots <- compute_tests(fit$fit_obj,
-                        ~ committee * emp_gender + (1 | id),
-                        ~ committee * emp_gender + (1 | id),
-                        dv = "assessment",
+  boots <- compute_tests(fit,
                         data = dat_exp_2,
                         type = 3,
                         tests = "bootstrap",
-                        trial_type_var = "status_fac",
                         test_intercepts = T,
                         nsim = 4,
                         cl = cl)
@@ -32,14 +28,10 @@ test_that("compute_tests() works with LRTs type 3 on multiple cores", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
   cl <- parallel::makeCluster(4, "SOCK")
-  boots <- compute_tests(fit$fit_obj,
-                         ~ committee * emp_gender + (1 | id),
-                         ~ committee * emp_gender + (1 | id),
-                         dv = "assessment",
+  boots <- compute_tests(fit,
                          data = dat_exp_2,
                          type = 3,
                          tests = "bootstrap",
-                         trial_type_var = "status_fac",
                          test_intercepts = T,
                          nsim = 4,
                          cl = cl)
@@ -58,26 +50,18 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
                    data = dat_exp_2)
   cl <- parallel::makeCluster(6, "SOCK")
   parallel::clusterEvalQ(cl = cl, {options("mlsdt.backend" = "lme4")})
-  LRTs_par <- compute_tests(fit$fit_obj,
-                         ~ committee * emp_gender + (1  | id),
-                         ~ committee * emp_gender + (1 | id),
-                         dv = "assessment",
+  LRTs_par <- compute_tests(fit,
                          data = dat_exp_2,
                          type = 2,
                          tests = "LRT",
-                         trial_type_var = "status_fac",
                          test_intercepts = T,
                          cl = cl)
   parallel::stopCluster(cl)
   options("mlsdt.backend" = "lme4")
-  LRTs_seq <- compute_tests(fit$fit_obj,
-                            ~ committee * emp_gender + (1 | id),
-                            ~ committee * emp_gender + (1 | id),
-                            dv = "assessment",
+  LRTs_seq <- compute_tests(fit,
                             data = dat_exp_2,
                             type = 2,
                             tests = "LRT",
-                            trial_type_var = "status_fac",
                             test_intercepts = T)
   expect_equal(LRTs_par$LRTs[, 4], LRTs_seq$LRTs[, 4])
 })

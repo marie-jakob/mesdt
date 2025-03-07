@@ -53,40 +53,28 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                    data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
-  LRTs_2_intercepts_lme <- compute_tests(fit_lme$fit_obj,
-                                    form_mu, form_lambda,
-                                    dv = "assessment",
+  LRTs_2_intercepts_lme <- compute_tests(fit_lme,
                                     data = dat_exp_2,
                                     type = 2,
-                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
-  LRTs_2_lme <- compute_tests(fit_lme$fit_obj,
-                         form_mu, form_lambda,
-                         dv = "assessment",
+  LRTs_2_lme <- compute_tests(fit_lme,
                          data = dat_exp_2,
                          type = 2,
-                         trial_type_var = "status_fac",
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
-  LRTs_3_intercepts_lme <- compute_tests(fit_lme$fit_obj,
-                                    form_mu, form_lambda,
-                                    dv = "assessment",
+  LRTs_3_intercepts_lme <- compute_tests(fit_lme,
                                     data = dat_exp_2,
                                     type = 3,
-                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
 
   # Type 3 - test_intercepts = F
-  LRTs_3_lme <- compute_tests(fit_lme$fit_obj,
-                                    form_mu, form_lambda,
-                                    dv = "assessment",
-                                    data = dat_exp_2,
-                                    type = 3,
-                                    trial_type_var = "status_fac",
-                                    test_intercepts = F)
+  LRTs_3_lme <- compute_tests(fit_lme,
+                              data = dat_exp_2,
+                              type = 3,
+                              test_intercepts = F)
 
   options("mlsdt.backend" = "glmmTMB")
   fit_tmb <- fit_mlsdt(form_mu, form_lambda,
@@ -95,40 +83,28 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
                        data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
-  LRTs_2_intercepts_tmb <- compute_tests(fit_tmb$fit_obj,
-                                    form_mu, form_lambda,
-                                    dv = "assessment",
+  LRTs_2_intercepts_tmb <- compute_tests(fit_tmb,
                                     data = dat_exp_2,
                                     type = 2,
-                                    trial_type_var = "status_fac",
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
-  LRTs_2_tmb <- compute_tests(fit_tmb$fit_obj,
-                         form_mu, form_lambda,
-                         dv = "assessment",
+  LRTs_2_tmb <- compute_tests(fit_tmb,
                          data = dat_exp_2,
                          type = 2,
-                         trial_type_var = "status_fac",
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
-  LRTs_3_intercepts_tmb <- compute_tests(fit_tmb$fit_obj,
-                                    form_mu, form_lambda,
-                                    dv = "assessment",
-                                    data = dat_exp_2,
-                                    type = 3,
-                                    trial_type_var = "status_fac",
-                                    test_intercepts = T)
+  LRTs_3_intercepts_tmb <- compute_tests(fit_tmb,
+                                         data = dat_exp_2,
+                                         type = 3,
+                                         test_intercepts = T)
 
   # Type 3 - test_intercepts = F
-  LRTs_3_tmb <- compute_tests(fit_tmb$fit_obj,
-                                    form_mu, form_lambda,
-                                    dv = "assessment",
-                                    data = dat_exp_2,
-                                    type = 3,
-                                    trial_type_var = "status_fac",
-                                    test_intercepts = F)
+  LRTs_3_tmb <- compute_tests(fit_tmb,
+                              data = dat_exp_2,
+                              type = 3,
+                              test_intercepts = F)
 
 
   expect_equal(fixef(fit_tmb$fit_obj)[[1]], fixef(fit_lme$fit_obj), tolerance = 1e-1)

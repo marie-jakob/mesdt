@@ -25,6 +25,7 @@ fit_mlsdt <- function(formula_mu,
                       data,
                       correlate_sdt_params = T,
                       tests = "Wald") {
+
   if (! tests %in% c("Wald", "LRT", "Boot", "wald", "lrt", "boot")) {
     stop(paste("Tests of type ", tests, " not available. Please use Wald, LRT or boot.", sep = ""))
   }
@@ -72,6 +73,10 @@ fit_mlsdt <- function(formula_mu,
   return(list(
     "fit_obj" = fit_obj,
     "Lambda" = coefs_lambda,
-    "Mu" = coefs_mu
+    "Mu" = coefs_mu,
+    "formula_mu" = formula_mu,
+    "formula_lambda" = formula_lambda,
+    "dv" = dv,
+    "trial_type_var" = trial_type_var
   ))
 }
