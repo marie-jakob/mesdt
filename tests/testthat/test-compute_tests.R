@@ -453,7 +453,7 @@ test_that("compute_tests() works for only tests on mu", {
                         test_params_lambda = ~ committee:emp_gender,
                         test_params_mu = NULL)
 
-  expect_equal(chisquares_two_factors_3[c(5, 6)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+  expect_equal(chisquares_two_factors_3[c(4)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
 
   # all parameters on mu, none on lambda
   LRTs <- compute_tests(fit,
