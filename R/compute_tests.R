@@ -27,6 +27,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     if (length(range_lambda) == 0) range_lambda <- NULL
     if (length(range_mu) == 0) range_mu <- NULL
   } else {
+
+
     if (test_intercepts) {
       range_lambda <- list(0:max(attr(mm[["lambda"]], "assign")))
       range_mu <- list(0:max(attr(mm[["mu"]], "assign")))
@@ -37,8 +39,11 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       else range_mu <- list(1:max(attr(mm[["mu"]], "assign")))
     }
 
+
     # Update range of to-be-tested parameters if only some parameters are to be tested
-    if (test_params_mu != "all") {
+    if (is.null(test_params_mu)) {
+      labels_mu <- NULL; test_mu_labels <- NULL; range_mu <- NULL;
+    } else if (test_params_mu != "all") {
       labels_mu <- attr(stats::terms.formula(lme4::nobars(formula_mu)), "term.labels")
       test_mu_labels <- attr(stats::terms.formula(test_params_mu), "term.labels")
       if (! all(test_mu_labels %in% labels_mu)) stop("Only parameters that are in the model can be tested.")
@@ -46,7 +51,9 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
                          list(range_mu[[1]][c(1, which(labels_mu == test_mu_labels) + 1)]),
                          list(range_mu[[1]][which(labels_mu == test_mu_labels)]))
     }
-    if (test_params_lambda != "all") {
+    if (is.null(test_params_lambda)) {
+      labels_lambda <- NULL; test_lambda_labels <- NULL; range_lambda <- NULL;
+    } else if (test_params_lambda != "all") {
       labels_lambda <- attr(stats::terms.formula(lme4::nobars(formula_lambda)), "term.labels")
       test_lambda_labels <- attr(stats::terms.formula(test_params_lambda), "term.labels")
       if (! all(test_lambda_labels %in% labels_lambda)) stop("Only parameters that are in the model can be tested.")
@@ -103,6 +110,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     assigns <- attr(mm[["lambda"]], "assign")
     orders <- attr(terms(lme4::nobars(formula_lambda)), "order")
 
+    if (is.null(test_params_lambda)) full_formulas_lambda <- NULL
     if ((max(c(0, orders)) + as.numeric(test_intercepts)) < 2) full_formulas_lambda <- NULL
     else {
       if (test_intercepts) n_orders_lambda <- 0:(max(orders) - 1)
@@ -132,6 +140,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     assigns <- attr(mm[["mu"]], "assign")
     orders <- attr(terms(lme4::nobars(formula_mu)), "order")
 
+    if (is.null(test_params_mu)) full_formulas_mu <- NULL
     if ((max(c(0, orders)) + as.numeric(test_intercepts)) < 2) full_formulas_mu <- NULL
     else {
       if (test_intercepts) n_orders_mu <- 0:(max(orders) - 1)
@@ -166,22 +175,26 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
   }
   if (! rem_ran_ef) {
     if (length(attr(terms(lme4::nobars(formula_lambda)), "term.labels")) > 0) {
-      if (test_params_mu != "all") names_lambda <- paste(c(names_lambda, test_lambda_labels), "lambda", sep = "_")
-      else names_lambda <- c(names_lambda, paste(attr(terms(lme4::nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
+      if (! is.null(test_params_lambda)) {
+        if (test_params_lambda != "all") names_lambda <- paste(c(names_lambda, test_lambda_labels), "lambda", sep = "_")
+        else names_lambda <- c(names_lambda, paste(attr(terms(lme4::nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
+      }
     }
-    if (length(attr(terms(lme4::nobars(formula_mu)), "term.labels")) > 0) {
-      if (test_params_mu != "all") names_mu <- paste(c(names_mu, test_mu_labels), "lambda", sep = "_")
-      else names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
+
+    if (! is.null(test_params_mu)) {
+      if (length(attr(terms(lme4::nobars(formula_mu)), "term.labels")) > 0) {
+        if (test_params_mu != "all") names_mu <- paste(c(names_mu, test_mu_labels), "lambda", sep = "_")
+        else names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
+      }
     }
-    #print(names_lambda)
-    #print(names_mu)
-    names(reduced_formulas_lambda) <- names_lambda
-    names(reduced_formulas_mu) <- names_mu
+    if (length(reduced_formulas_lambda) != 0) names(reduced_formulas_lambda) <- names_lambda
+    if (length(reduced_formulas_mu) != 0) names(reduced_formulas_mu) <- names_mu
   }
 
   if (type == 2) {
     if (is.null(cl)) {
       print("No cluster")
+
       full_fits <- lapply(c(full_formulas_lambda, full_formulas_mu),
                           fit_glmm, data = data, mm = mm)
       # for reduced fits: check if the fit is already in the full_fits
