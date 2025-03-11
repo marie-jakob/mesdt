@@ -1,6 +1,7 @@
 fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, test_intercepts = F,
                           rem_ran_ef = F, correlate_sdt_params = T, cl = NULL,
-                          test_params_mu = "all", test_params_lambda = "all") {
+                          test_params_mu = "all", test_params_lambda = "all",
+                          control = NULL) {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
   if (rem_ran_ef) {
@@ -32,6 +33,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     if (test_intercepts) {
       range_lambda <- list(0:max(attr(mm[["lambda"]], "assign")))
       range_mu <- list(0:max(attr(mm[["mu"]], "assign")))
+      print(range_lambda)
+      print(range_mu)
     } else {
       if (length(attr(mm[["lambda"]], "assign")) == 1) range_lambda <- c()
       else range_lambda <- list(1:max(attr(mm[["lambda"]], "assign")))
@@ -46,21 +49,27 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     } else if (test_params_mu != "all") {
       labels_mu <- attr(stats::terms.formula(lme4::nobars(formula_mu)), "term.labels")
       test_mu_labels <- attr(stats::terms.formula(test_params_mu), "term.labels")
-      if (! all(test_mu_labels %in% labels_mu)) stop("Only parameters that are in the model can be tested.")
+      if (! all_terms_in(test_mu_labels, labels_mu)) stop("Only parameters that are in the model can be tested.")
       range_mu <- ifelse(test_intercepts,
-                         list(range_mu[[1]][c(1, which(labels_mu == test_mu_labels) + 1)]),
-                         list(range_mu[[1]][which(labels_mu == test_mu_labels)]))
+                         list(range_mu[[1]][c(1, which_terms_in(reference_terms = labels_mu,
+                                                                terms_to_check = test_mu_labels) + 1)]),
+                         list(range_mu[[1]][which_terms_in(reference_terms = labels_mu,
+                                                           terms_to_check = test_mu_labels)]))
     }
     if (is.null(test_params_lambda)) {
       labels_lambda <- NULL; test_lambda_labels <- NULL; range_lambda <- NULL;
     } else if (test_params_lambda != "all") {
       labels_lambda <- attr(stats::terms.formula(lme4::nobars(formula_lambda)), "term.labels")
       test_lambda_labels <- attr(stats::terms.formula(test_params_lambda), "term.labels")
-      if (! all(test_lambda_labels %in% labels_lambda)) stop("Only parameters that are in the model can be tested.")
+      if (! all_terms_in(test_lambda_labels, labels_lambda)) stop("Only parameters that are in the model can be tested.")
       range_lambda <- ifelse(test_intercepts,
-                             list(range_lambda[[1]][c(1, which(labels_lambda == test_lambda_labels, "term.labels") + 1)]),
-                             list(range_lambda[[1]][which(labels_lambda == test_lambda_labels, "term.labels")]))
+                             list(range_lambda[[1]][c(1, which_terms_in(reference_terms = labels_lambda,
+                                                                        terms_to_check = test_lambda_labels) + 1)]),
+                             list(range_lambda[[1]][which_terms_in(reference_terms = labels_lambda,
+                                                                   terms_to_check = test_lambda_labels)]))
     }
+    print(range_lambda)
+    print(range_mu)
 
     if (length(range_lambda) > 0) {
       names(range_lambda) <- "lambda"
@@ -154,7 +163,6 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
                                 to_remove = to_remove, correlate_sdt_params = correlate_sdt_params)
       })
     }
-
     reduced_formulas_mu <- lapply(range_mu[[1]], function(x) {
       if (x == 0) order_of_x <- 0
       else order_of_x <- orders[assigns][x]
@@ -183,7 +191,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 
     if (! is.null(test_params_mu)) {
       if (length(attr(terms(lme4::nobars(formula_mu)), "term.labels")) > 0) {
-        if (test_params_mu != "all") names_mu <- paste(c(names_mu, test_mu_labels), "lambda", sep = "_")
+        if (test_params_mu != "all") names_mu <- paste(c(names_mu, test_mu_labels), "mu", sep = "_")
         else names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
       }
     }
@@ -196,7 +204,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       print("No cluster")
 
       full_fits <- lapply(c(full_formulas_lambda, full_formulas_mu),
-                          fit_glmm, data = data, mm = mm)
+                          fit_glmm, data = data, mm = mm, control = control)
       # for reduced fits: check if the fit is already in the full_fits
 
       full_formulas_char <- sapply(c(full_formulas_lambda, full_formulas_mu), function(x) {as.character(x)[3]})
@@ -207,7 +215,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
           which_model_equal <- which(full_formulas_char == as.character(formula_tmp)[3])
           #print(which_model_equal)
           return(full_fits[[which_model_equal]])
-        } else return(fit_glmm(formula_tmp, data, mm))
+        } else return(fit_glmm(formula_tmp, data, mm, control))
       })
       all_fits <- c(full_fits, reduced_fits)
     } else {
@@ -221,7 +229,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
                                                     reduced_formulas_lambda,
                                                     reduced_formulas_mu),
                                                     fit_glmm,
-                                                    data = data, mm = mm))
+                                                    data = data, mm = mm, control = control))
       names(all_fits) <- names(c(full_formulas_lambda,
                                  full_formulas_mu,
                                  reduced_formulas_lambda,
@@ -254,17 +262,17 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
     if (is.null(cl)) {
       print("No cluster")
       reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), fit_glmm,
-                             data = data, mm = mm)
+                             data = data, mm = mm, control = control)
       print("reduced_fits done")
     } else {
       print("cluster")
       throwaway <- parallel::clusterExport(cl = cl,
-                                           varlist = c("data", "mm", "fit_glmm"),
+                                           varlist = c("data", "mm", "fit_glmm", "control"),
                                            env = environment())
       reduced_fits <- unlist(parallel::clusterApplyLB(cl,
                                                       c(reduced_formulas_lambda, reduced_formulas_mu),
                                                       fit_glmm,
-                                                      data = data, mm = mm))
+                                                      data = data, mm = mm, control = control))
       names(reduced_fits) <- names(c(reduced_formulas_lambda, reduced_formulas_mu))
     }
     return(reduced_fits)
@@ -303,7 +311,8 @@ compute_tests <- function(mlsdt_fit, data,
                           cl = NULL, tests = "LRT", nsim = 1000,
                           mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
                           correlate_sdt_params = T, test_params_mu = "all",
-                          test_params_lambda = "all") {
+                          test_params_lambda = "all",
+                          control = NULL) {
 
   fit_obj <- mlsdt_fit$fit_obj
   formula_mu <- mlsdt_fit$formula_mu
@@ -329,7 +338,7 @@ compute_tests <- function(mlsdt_fit, data,
 
   submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts = test_intercepts,
                              rem_ran_ef = test_ran_ef, correlate_sdt_params = correlate_sdt_params,
-                             cl = cl,
+                             cl = cl, control = control,
                              test_params_mu = test_params_mu, test_params_lambda = test_params_lambda)
   if(is.null(submodels)) return(NULL)
   if (type == 3) {
@@ -338,7 +347,8 @@ compute_tests <- function(mlsdt_fit, data,
 
     if (tests == "bootstrap") {
       pb_objects <- lapply(reduced_fits, function(fit_tmp) {
-        boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data, mm = mm, nsim = nsim, cl = cl)
+        boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data,
+                                                      mm = mm, nsim = nsim, cl = cl, control = control)
         return(boot_tmp)
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
@@ -395,7 +405,7 @@ compute_tests <- function(mlsdt_fit, data,
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
           fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)
           return(boot_tmp)
         })
         boot_table_lambda <- sapply(pb_objects_lambda, function(x) { return(data.frame(x$test)[2, ]) })
@@ -432,7 +442,7 @@ compute_tests <- function(mlsdt_fit, data,
           fit_tmp <- reduced_fits_mu[[fit_ind]]
           fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)
           return(boot_tmp)
         })
         boot_table_mu <- sapply(pb_objects_mu, function(x) { return(data.frame(x$test)[2, ]) })
@@ -496,7 +506,7 @@ compute_lrt <- function(fit_red, fit_full, test_ran_ef) {
 # supports lme4 and glmmTMB objects
 # TODO: export?
 compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm, dv,
-                                              nsim = 1000, cl = NULL) {
+                                              nsim = 1000, cl = NULL, control = NULL) {
   #if (is.null(seed)) seed <- sample(1:1e6, 1)
 
   do_pb <- function(x) {
@@ -504,8 +514,8 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
     sim_dat_tmp <- stats::simulate(small_model)[[1]]
     # Do refitting manually
     dat_tmp[[dv]] <- sim_dat_tmp
-    sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm)
-    sim_fit_red <- fit_glmm(stats::formula(small_model), dat_tmp, mm)
+    sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm, control)
+    sim_fit_red <- fit_glmm(stats::formula(small_model), dat_tmp, mm, control)
     return(-2 * (stats::logLik(sim_fit_red) - stats::logLik(sim_fit_full)))
   }
 
@@ -516,7 +526,7 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
     parallel <- T
     # load variables on cluster
     throwaway <- parallel::clusterExport(cl = cl,
-                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model"),
+                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control"),
                             env = environment())
     if (options("mlsdt.backend") == "glmmTMB") throwaway <- parallel::clusterCall(cl = cl, "require", package = "glmmTMB", character.only = T)
     # set seed on cluster

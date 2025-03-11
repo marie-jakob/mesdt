@@ -24,7 +24,8 @@ fit_mlsdt <- function(formula_mu,
                       trial_type_var = "trial_type",
                       data,
                       correlate_sdt_params = T,
-                      tests = "Wald") {
+                      tests = "Wald",
+                      control = NULL) {
 
   if (! tests %in% c("Wald", "LRT", "Boot", "wald", "lrt", "boot")) {
     stop(paste("Tests of type ", tests, " not available. Please use Wald, LRT or boot.", sep = ""))
@@ -37,7 +38,7 @@ fit_mlsdt <- function(formula_mu,
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
   # (y, ID)
 
-  fit_obj <- fit_glmm(glmer_formula, data, mm)
+  fit_obj <- fit_glmm(glmer_formula, data, mm, control)
   # TODO: random effects post-processing
 
   # Compute tests

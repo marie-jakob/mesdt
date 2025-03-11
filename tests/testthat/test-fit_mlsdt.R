@@ -204,3 +204,35 @@ test_that("fit_mlsdt() works without any random effects", {
   expect_equal(sort(abs(as.numeric(coefficients(fit)))), sort(abs(as.numeric(coefficients(fit_test)))))
 }
 )
+
+
+#------------------------------------------------------------------------------#
+#### Test control argument ####
+
+
+test_that("Setting control arguments in fit_mlsdt() works", {
+  options("mlsdt.backend" = "lme4")
+  expect_message(fit_mlsdt(~ committee + (1 | id),
+                           ~ emp_gender,
+                           dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                           control = glmmTMB::glmmTMBControl(list(iter.max=5000, eval.max=5000))))
+  fit <- fit_mlsdt(~ committee + (1 | id),
+                   ~ emp_gender,
+                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                   control = lme4::glmerControl(optCtrl=list(maxfun=450)))
+  expect_equal(fit$fit_obj@optinfo$control$maxfun, 450)
+
+
+  # Same for glmmTMB
+  options("mlsdt.backend" = "glmmTMB")
+  expect_message(fit_mlsdt(~ committee + (1 | id),
+                           ~ emp_gender,
+                           dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                           control = lme4::glmerControl(optCtrl = list(maxfun = 500))))
+  fit <- fit_mlsdt(~ committee + (1 | id),
+                   ~ emp_gender,
+                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                   control = glmmTMB::glmmTMBControl(list(iter.max=5000)))
+  expect_true("control" %in% as.character(fit$fit_obj$call))
+}
+)

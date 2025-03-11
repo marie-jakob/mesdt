@@ -1,3 +1,5 @@
+library(parallel)
+
 test_that("compute_tests() works with bootstraps on multiple cores", {
   # Type II, test_intercepts = T
   fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
@@ -65,3 +67,4 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
                             test_intercepts = T)
   expect_equal(LRTs_par$LRTs[, 4], LRTs_seq$LRTs[, 4])
 })
+

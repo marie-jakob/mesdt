@@ -371,8 +371,6 @@ test_that("compute_tests() works for testing crossed random effects without the 
 #### Only test selected random effects ####
 
 test_that("compute_tests() works for only selected effects", {
-
-
   options("mlsdt.backend" = "lme4")
   # Type II, test_intercepts = T
   fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
@@ -503,5 +501,117 @@ test_that("compute_tests() works for only tests on lambda", {
 })
 
 
+#------------------------------------------------------------------------------#
+#### compute_tests() works multiple parameters (but not all) ####
+
+test_that("compute_tests() works on multiple parameters", {
+  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+                   formula_mu = ~ committee * emp_gender + (1 | id),
+                   dv = "assessment",
+                   trial_type_var = "status_fac",
+                   data = dat_exp_2)
+
+  expect_warning(LRTs <- compute_tests(fit,
+                               data = dat_exp_2,
+                               type = 2,
+                               test_intercepts = T,
+                               test_params_mu = ~ committee + emp_gender + committee:emp_gender,
+                               test_params_lambda = ~ committee + emp_gender + committee:emp_gender), regexp = NA)
+
+  expect_warning(LRTs <- compute_tests(fit,
+                                       data = dat_exp_2,
+                                       type = 2,
+                                       test_intercepts = T,
+                                       test_params_lambda = NULL,
+                                       test_params_mu = ~ committee + emp_gender), regexp = NA)
+  # Type III
+  LRTs <- compute_tests(fit,
+                        data = dat_exp_2,
+                        type = 3,
+                        test_intercepts = T,
+                        test_params_mu = ~ committee,
+                        test_params_lambda = NULL)
+
+  expect_equal(chisquares_two_factors_3[c(5, 6)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  # No intercept
+  LRTs <- compute_tests(fit,
+                        data = dat_exp_2,
+                        test_intercepts = F,
+                        test_params_lambda = ~ committee:emp_gender,
+                        test_params_mu = NULL)
+
+  expect_equal(chisquares_two_factors_3[c(4)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  # all parameters on mu, none on lambda
+  LRTs <- compute_tests(fit,
+                        data = dat_exp_2,
+                        type = 2,
+                        test_intercepts = T,
+                        test_params_lambda = NULL)
+
+  expect_equal(chisquares_two_factors_2[5:8], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+})
+
+#------------------------------------------------------------------------------#
+#### Only tests on lambda or mu ####
+
+test_that("compute_tests() works for only tests on lambda", {
+  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+                   formula_mu = ~ committee * emp_gender + (1 | id),
+                   dv = "assessment",
+                   trial_type_var = "status_fac",
+                   data = dat_exp_2)
+
+  LRTs <- compute_tests(fit,
+                        data = dat_exp_2,
+                        type = 2,
+                        test_intercepts = T,
+                        test_params_lambda = ~ committee,
+                        test_params_mu = NULL)
+
+  expect_equal(chisquares_two_factors_2[c(1, 2)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  # Type III
+  LRTs <- compute_tests(fit,
+                        data = dat_exp_2,
+                        type = 3,
+                        test_intercepts = T,
+                        test_params_lambda = ~ committee,
+                        test_params_mu = NULL)
+
+  expect_equal(chisquares_two_factors_3[c(1, 2)], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+
+  # all parameters on mu, none on lambda
+  LRTs <- compute_tests(fit,
+                        data = dat_exp_2,
+                        type = 2,
+                        test_intercepts = T,
+                        test_params_mu = NULL)
+
+  expect_equal(chisquares_two_factors_2[1:4], as.numeric(LRTs$LRTs[, 4]), tolerance = 1e-4)
+})
 
 
+
+#------------------------------------------------------------------------------#
+#### Control Arguments on compute_tests() ####
+
+test_that("compute_tests() computes the correct Chisq value for correlated random effects.", {
+  options("mlsdt.backend" = "lme4")
+  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                   control = lme4::glmerControl(optCtrl = list(maxfun = 1234)))
+  lrts_test <- compute_tests(fit, data = internal_sdt_data, test_intercepts = T,
+                             control = lme4::glmerControl(optCtrl = list(maxfun = 1234)))
+  expect_equal(lrts_test$reduced_fits$Intercept@optinfo$control$maxfun, 1234)
+
+  options("mlsdt.backend" = "glmmTMB")
+  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                   control = glmmTMB::glmmTMBControl(list(iter.max=12334, eval.max=12334)))
+  lrts_test <- compute_tests(fit, data = internal_sdt_data, test_intercepts = T,
+                             control = glmmTMB::glmmTMBControl(list(iter.max=12334, eval.max=12334)))
+  expect_true("control" %in% as.character(lrts_test$reduced_fits$Intercept$call))
+
+})
+
+options("mlsdt.backend" = "lme4")
