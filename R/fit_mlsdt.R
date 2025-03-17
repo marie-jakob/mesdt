@@ -70,6 +70,15 @@ fit_mlsdt <- function(formula_mu,
     rownames(coefs_mu) <- colnames(mm[["mu"]])
   }
 
+  # Check backend stuff
+  if (! is.null(summary(fit_obj)$objClass[1])) {
+    print("lme4 was used to fit the model.")
+    backend <- "lme4"
+  } else {
+    print("glmmTMB was used to fit the model.")
+    backend <- "glmmTMB"
+ }
+
 
   return(list(
     "fit_obj" = fit_obj,
@@ -78,6 +87,7 @@ fit_mlsdt <- function(formula_mu,
     "formula_mu" = formula_mu,
     "formula_lambda" = formula_lambda,
     "dv" = dv,
-    "trial_type_var" = trial_type_var
+    "trial_type_var" = trial_type_var,
+    "backend" = backend
   ))
 }

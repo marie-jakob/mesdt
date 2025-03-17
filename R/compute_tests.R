@@ -223,18 +223,18 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       throwaway <- parallel::clusterExport(cl = cl,
                                            varlist = c("data", "mm", "fit_glmm"),
                                            env = environment())
-      all_fits <- unlist(parallel::clusterApplyLB(cl,
-                                                  c(full_formulas_lambda,
-                                                    full_formulas_mu,
-                                                    reduced_formulas_lambda,
-                                                    reduced_formulas_mu),
-                                                    fit_glmm,
-                                                    data = data, mm = mm, control = control))
+      all_fits <- parallel::clusterApplyLB(cl,
+                                           c(full_formulas_lambda,
+                                             full_formulas_mu,
+                                             reduced_formulas_lambda,
+                                             reduced_formulas_mu),
+                                           fit_glmm,
+                                           data = data, mm = mm, control = control)
+      if (options("mlsdt.backend") == "lme4") all_fits <- unlist(all_fits)
       names(all_fits) <- names(c(full_formulas_lambda,
                                  full_formulas_mu,
                                  reduced_formulas_lambda,
                                  reduced_formulas_mu))
-
     }
     if (!length(full_formulas_lambda) == 0) {
       full_fits_lambda <- all_fits[1:length(full_formulas_lambda)]
@@ -269,10 +269,11 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
       throwaway <- parallel::clusterExport(cl = cl,
                                            varlist = c("data", "mm", "fit_glmm", "control"),
                                            env = environment())
-      reduced_fits <- unlist(parallel::clusterApplyLB(cl,
-                                                      c(reduced_formulas_lambda, reduced_formulas_mu),
-                                                      fit_glmm,
-                                                      data = data, mm = mm, control = control))
+      reduced_fits <- parallel::clusterApplyLB(cl,
+                                               c(reduced_formulas_lambda, reduced_formulas_mu),
+                                               fit_glmm,
+                                               data = data, mm = mm, control = control)
+      if (options("mlsdt.backend") == "lme4") reduced_fits <- unlist(reduced_fits)
       names(reduced_fits) <- names(c(reduced_formulas_lambda, reduced_formulas_mu))
     }
     return(reduced_fits)
@@ -333,6 +334,37 @@ compute_tests <- function(mlsdt_fit, data,
   if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (type = "LRT") and parametric bootstrapping(type = "bootstrap")
                                          are implemented')
 
+  # check if backend is the same as for the fitted model
+  print(paste("backend:", mlsdt_fit$backend))
+  if (is.null(cl)) {
+    # if not, set the correct backend and notify the user
+    if (options("mlsdt.backend") != mlsdt_fit$backend) {
+      message(paste("Model was fitted using", mlsdt_fit$backend, "but the current
+                  backend is ", options("mlsdt.backend"), ". Setting msldt.backend
+                  to ", mlsdt_fit$backend))
+      options("mlsdt.backend" = mlsdt_fit$backend)
+    }
+    # same when a cluster is used
+  } else {
+    backend_cl <- unname(unlist(clusterEvalQ(cl, options("mlsdt.backend"))))[1]
+    if (is.null(backend_cl)) {
+      message(paste("No backend was set for the cluster. Setting mlsdt.backend on
+                    the cluster and locally to",
+                    mlsdt_fit$backend, "which was used to fit the supplied model."))
+      throwaway <- clusterCall(cl, function() { options("mlsdt.backend" = mlsdt_fit$backend) } )
+      options("mlsdt.backend" = mlsdt_fit$backend)
+    } else {
+      if (backend_cl != mlsdt_fit$backend) {
+        message(paste("Model was fitted using", mlsdt_fit$backend, "but the current
+                  backend on the supplied cluster is ", backend_cl,
+                  ". Setting msldt.backend on the cluster and locally to ", mlsdt_fit$backend))
+        throwaway <- clusterCall(cl, function() { options("mlsdt.backend" = mlsdt_fit$backend) } )
+        options("mlsdt.backend" = mlsdt_fit$backend)
+      }
+    }
+
+  }
+
   #if (is.null(seed)) seed <- sample(1:1e6, 1)
   # TODO: test compatibility of input arguments
 
@@ -384,6 +416,7 @@ compute_tests <- function(mlsdt_fit, data,
       orders_lambda <- attr(terms(lme4::nobars(formula_lambda)), "order")
       if (test_intercepts) orders_lambda <- c(0, orders_lambda)
       LRTs_lambda <- sapply(1:length(reduced_fits_lambda), function(fit_ind) {
+
         fit_tmp <- reduced_fits_lambda[[fit_ind]]
         LL_reduced <- stats::logLik(fit_tmp)
         LL_full <- stats::logLik(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
@@ -530,7 +563,8 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
                             env = environment())
     if (options("mlsdt.backend") == "glmmTMB") throwaway <- parallel::clusterCall(cl = cl, "require", package = "glmmTMB", character.only = T)
     # set seed on cluster
-    LRs_boot <- unlist(parallel::clusterApplyLB(cl, 1:nsim, do_pb))
+    LRs_boot <- parallel::clusterApplyLB(cl, 1:nsim, do_pb)
+    if (options("mlsdt.backend") == "lme4") LRs_boot <- unlist(LRs_boot)
   }
   LR_emp <- -2 * (stats::logLik(small_model) - stats::logLik(large_model))
   df_lrt <- stats::df.residual(small_model) - stats::df.residual(large_model)
