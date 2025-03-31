@@ -1,5 +1,5 @@
-# mlsdt
+# mesdt
 
-Fit Multi-level Signal Detection Theory Models Using Maximum Likelihood Estimation.
+Fit Mixed-Effects Signal Detection Theory Models Using Maximum Likelihood Estimation.
 
 WIP

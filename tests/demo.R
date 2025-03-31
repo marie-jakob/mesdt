@@ -5,6 +5,7 @@
 ## ------------------------------------------------------------
 
 library(tidyverse)
+library(mlsdt)
 
 dat_exp_1 <- readRDS("tests/test-dat/data_prep.rds") %>%
   dplyr::mutate(committee = factor(committee_ef),
@@ -42,30 +43,31 @@ fit_sdt_glmmTMB <- fit_mlsdt(formula_mu = ~ emp_gender * participant_gender + (1
                      trial_type_var = "status_fac")
 
 
-LRTs <- compute_LRTs(fit_obj = fit_sdt_glmmTMB$fit_obj,
-                     mm = construct_modelmatrices(
-                       formula_mu = ~ emp_gender * participant_gender + (1 | id),
-                       formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
-                       data = dat_exp_1,
-                       trial_type_var = "status_fac",
-                     ),
-                     formula_mu = ~ emp_gender * participant_gender + (1 | id),
-                     formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
-                     data = dat_exp_1,
-                     # choose between type II and type III sums of squares
-                     type = 3,
-                     dv = "response",
-                     # optionally test intercepts for sensitivity and response bias
-                     test_intercepts = T)
+LRTs <- compute_tests(fit_sdt_glmmTMB,
+                      data = dat_exp_1,
+                      type = 3,
+                      test_intercepts = T,
+                      test_params_mu = "all",
+                      test_params_lambda = ~ committee,
+                      test_ran_ef = F)
 
 LRTs$LRTs
 
-# Test random effects (done, but not yet committed)
 
-# Automatically reduced random-effects structure (two strategies: maximal & parsimonious)
+# Test random effects
+LRTs_ranef <- compute_tests(fit_sdt_glmmTMB,
+                            data = dat_exp_1,
+                            type = 3,
+                            test_intercepts = T,
+                            test_ran_ef = F)
 
 # Significance tests based on parametric bootstrapping
-
-# User-friendly helper functions
+boot_tests <- compute_tests(fit_sdt_glmmTMB,
+                      data = dat_exp_1,
+                      tests = "bootstrap",
+                      nsim = 100,
+                      type = 3,
+                      test_intercepts = T,
+                      test_ran_ef = F)
 
 

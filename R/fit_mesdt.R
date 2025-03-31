@@ -18,7 +18,7 @@
 #' @export
 #'
 #' @examples
-fit_mlsdt <- function(formula_mu,
+fit_mesdt <- function(formula_mu,
                       formula_lambda,
                       dv,
                       trial_type_var = "trial_type",
@@ -39,36 +39,37 @@ fit_mlsdt <- function(formula_mu,
   # (y, ID)
 
   fit_obj <- fit_glmm(glmer_formula, data, mm, control)
-  # TODO: random effects post-processing
+  # TODO: random effects post-processing -> for the summary method
 
   # Compute tests
+  # TODO: do I want this
 
-  if (tests == "Wald") {
-    # Post-Processing the lme4 output
-    # backend = ifelse(options("backend") == "", "lme4", options("backend"))
-    if (options("mlsdt.backend") == "lme4") {
-      coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
-      coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
-    } else if (options("mlsdt.backend") == "glmmTMB") {
-      coefs_lambda <- summary(fit_obj)$coefficients$cond[grepl("lambda", rownames(summary(fit_obj)$coefficients$cond)), ]
-      coefs_mu <- summary(fit_obj)$coefficients$cond[grepl("mu", rownames(summary(fit_obj)$coefficients$cond)), ]
-    }
-    #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
-    #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
-    if (is.null(nrow(coefs_lambda))) {
-      coefs_lambda <- t(data.frame(coefs_lambda))
-    } else {
-      coefs_lambda <- data.frame(coefs_lambda)
-    }
-    rownames(coefs_lambda) <- colnames(mm[["lambda"]])
-
-    if (is.null(nrow(coefs_mu))) {
-      coefs_mu <- t(data.frame(coefs_mu))
-    } else {
-      coefs_mu <- data.frame(coefs_mu)
-    }
-    rownames(coefs_mu) <- colnames(mm[["mu"]])
-  }
+  #if (tests == "Wald") {
+  #  # Post-Processing the lme4 output
+  #  # backend = ifelse(options("backend") == "", "lme4", options("backend"))
+  #  if (options("mlsdt.backend") == "lme4") {
+  #    coefs_lambda <- summary(fit_obj)$coefficients[grepl("lambda", rownames(summary(fit_obj)$coefficients)), ]
+  #    coefs_mu <- summary(fit_obj)$coefficients[grepl("mu", rownames(summary(fit_obj)$coefficients)), ]
+  #  } else if (options("mlsdt.backend") == "glmmTMB") {
+  #    coefs_lambda <- summary(fit_obj)$coefficients$cond[grepl("lambda", rownames(summary(fit_obj)$coefficients$cond)), ]
+  #    coefs_mu <- summary(fit_obj)$coefficients$cond[grepl("mu", rownames(summary(fit_obj)$coefficients$cond)), ]
+  #  }
+  #  #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
+  #  #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
+  #  if (is.null(nrow(coefs_lambda))) {
+  #    coefs_lambda <- t(data.frame(coefs_lambda))
+  #  } else {
+  #    coefs_lambda <- data.frame(coefs_lambda)
+  #  }
+  #  rownames(coefs_lambda) <- colnames(mm[["lambda"]])
+#
+  #  if (is.null(nrow(coefs_mu))) {
+  #    coefs_mu <- t(data.frame(coefs_mu))
+  #  } else {
+  #    coefs_mu <- data.frame(coefs_mu)
+  #  }
+  #  rownames(coefs_mu) <- colnames(mm[["mu"]])
+  #}
 
   # Check backend stuff
   if (! is.null(summary(fit_obj)$objClass[1])) {
@@ -77,17 +78,20 @@ fit_mlsdt <- function(formula_mu,
   } else {
     print("glmmTMB was used to fit the model.")
     backend <- "glmmTMB"
- }
+  }
 
 
-  return(list(
+  obj <- new_mesdt_fit(list(
     "fit_obj" = fit_obj,
-    "Lambda" = coefs_lambda,
-    "Mu" = coefs_mu,
+    #"Lambda" = coefs_lambda,
+    #"Mu" = coefs_mu,
     "formula_mu" = formula_mu,
     "formula_lambda" = formula_lambda,
     "dv" = dv,
     "trial_type_var" = trial_type_var,
-    "backend" = backend
+    "backend" = backend,
+    "correlate_sdt_params" = correlate_sdt_params
   ))
+
+  return(obj)
 }

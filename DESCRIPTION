@@ -13,10 +13,11 @@ BugReports: https://github.com/marie-jakob/mlsdt/issues
 Imports: 
     lme4,
     withr,
-    stats
+    stats,
+    parallel,
+    emmeans
 Suggests: 
     glmmTMB,
-    parallel,
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 

@@ -230,7 +230,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
                                              reduced_formulas_mu),
                                            fit_glmm,
                                            data = data, mm = mm, control = control)
-      if (options("mlsdt.backend") == "lme4") all_fits <- unlist(all_fits)
+      if (options("mesdt.backend") == "lme4") all_fits <- unlist(all_fits)
       names(all_fits) <- names(c(full_formulas_lambda,
                                  full_formulas_mu,
                                  reduced_formulas_lambda,
@@ -273,7 +273,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
                                                c(reduced_formulas_lambda, reduced_formulas_mu),
                                                fit_glmm,
                                                data = data, mm = mm, control = control)
-      if (options("mlsdt.backend") == "lme4") reduced_fits <- unlist(reduced_fits)
+      if (options("mesdt.backend") == "lme4") reduced_fits <- unlist(reduced_fits)
       names(reduced_fits) <- names(c(reduced_formulas_lambda, reduced_formulas_mu))
     }
     return(reduced_fits)
@@ -283,43 +283,39 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, te
 #' Compute Likelihood Ratio Tests or tests based on parametric bootstrapping
 #' for a fitted SDT model
 #'
-#' @param fit_obj An lme4 or glmmTMB fit object containing the full fit and
+#' @param fit_obj An mesdt fit object containing the full fit and
 #'  coefficients that should be tested
-#' @param formula_mu the corresponding formula for sensitivity
-#' @param formula_lambda the corresponding formula for response bias
-#' @param dv the name of the dependent variable in the data
 #' @param data a data frame
-#' @param trial_type_var variable in the dataframe coding the type of trial (signal vs. noise)
 #' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
 #' "bootstrap" = parametric bootstrap)
 #' @param nsim number of simulated datasets for bootstrapping
 #' @param mm model matrices (optional)
-#' @param type type of tests (only relevant for likelihood ratio tests and
+#' @param type type of tests (2 or 3, only relevant for likelihood ratio tests and
 #'  parametric bootstrapping)
 #' @param test_intercepts boolean indicating if intercepts for sensitivity and
 #'  response bias should be tested
 #' @param test_ran_ef boolean indicating whether random (T) or fixed effects
 #'  should be tested (F)
-#' @param correlate_sdt_params boolean indicating if correlations between SDT
-#'  parameters should be estimated
 #' @param test_params_mu which coefficients on sensitivity should be tested?
 #'  (default is "all")
 #' @param test_params_lambda which coefficients on response bias should be tested?
 #'  (default is "all")
 #'
 #' @export
-compute_tests <- function(mlsdt_fit, data,
+compute_tests <- function(mesdt_fit, data,
                           cl = NULL, tests = "LRT", nsim = 1000,
                           mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
-                          correlate_sdt_params = T, test_params_mu = "all",
+                          test_params_mu = "all",
                           test_params_lambda = "all",
-                          control = NULL) {
+                          control = NULL,
+                          seed = NULL) {
 
-  fit_obj <- mlsdt_fit$fit_obj
-  formula_mu <- mlsdt_fit$formula_mu
-  formula_lambda <- mlsdt_fit$formula_lambda
-  dv <- mlsdt_fit$dv
-  trial_type_var <- mlsdt_fit$trial_type_var
+  fit_obj <- mesdt_fit$fit_obj
+  formula_mu <- mesdt_fit$formula_mu
+  formula_lambda <- mesdt_fit$formula_lambda
+  dv <- mesdt_fit$dv
+  trial_type_var <- mesdt_fit$trial_type_var
+  correlate_sdt_params <- mesdt_fit$correlate_sdt_params
 
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
@@ -331,41 +327,40 @@ compute_tests <- function(mlsdt_fit, data,
   }
 
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
-  if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (type = "LRT") and parametric bootstrapping(type = "bootstrap")
-                                         are implemented')
+  if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (tests = "LRT") and parametric bootstrapping(tests = "bootstrap") are implemented')
 
   # check if backend is the same as for the fitted model
-  print(paste("backend:", mlsdt_fit$backend))
+  print(paste("backend:", mesdt_fit$backend))
   if (is.null(cl)) {
     # if not, set the correct backend and notify the user
-    if (options("mlsdt.backend") != mlsdt_fit$backend) {
-      message(paste("Model was fitted using", mlsdt_fit$backend, "but the current
-                  backend is ", options("mlsdt.backend"), ". Setting msldt.backend
-                  to ", mlsdt_fit$backend))
-      options("mlsdt.backend" = mlsdt_fit$backend)
+    if (options("mesdt.backend") != mesdt_fit$backend) {
+      message(paste("Model was fitted using", mesdt_fit$backend, "but the current
+                  backend is ", options("mesdt.backend"), ". Setting msldt.backend
+                  to ", mesdt_fit$backend))
+      options("mesdt.backend" = mesdt_fit$backend)
     }
     # same when a cluster is used
   } else {
-    backend_cl <- unname(unlist(clusterEvalQ(cl, options("mlsdt.backend"))))[1]
+    backend_cl <- unname(unlist(clusterEvalQ(cl, options("mesdt.backend"))))[1]
     if (is.null(backend_cl)) {
-      message(paste("No backend was set for the cluster. Setting mlsdt.backend on
+      message(paste("No backend was set for the cluster. Setting mesdt.backend on
                     the cluster and locally to",
-                    mlsdt_fit$backend, "which was used to fit the supplied model."))
-      throwaway <- clusterCall(cl, function() { options("mlsdt.backend" = mlsdt_fit$backend) } )
-      options("mlsdt.backend" = mlsdt_fit$backend)
+                    mesdt_fit$backend, "which was used to fit the supplied model."))
+      throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$backend) } )
+      options("mesdt.backend" = mesdt_fit$backend)
     } else {
-      if (backend_cl != mlsdt_fit$backend) {
-        message(paste("Model was fitted using", mlsdt_fit$backend, "but the current
+      if (backend_cl != mesdt_fit$backend) {
+        message(paste("Model was fitted using", mesdt_fit$backend, "but the current
                   backend on the supplied cluster is ", backend_cl,
-                  ". Setting msldt.backend on the cluster and locally to ", mlsdt_fit$backend))
-        throwaway <- clusterCall(cl, function() { options("mlsdt.backend" = mlsdt_fit$backend) } )
-        options("mlsdt.backend" = mlsdt_fit$backend)
+                  ". Setting msldt.backend on the cluster and locally to ", mesdt_fit$backend))
+        throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$backend) } )
+        options("mesdt.backend" = mesdt_fit$backend)
       }
     }
 
   }
 
-  #if (is.null(seed)) seed <- sample(1:1e6, 1)
+  if (is.null(seed)) seed <- sample(1:1e8, 1)
   # TODO: test compatibility of input arguments
 
   submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts = test_intercepts,
@@ -380,7 +375,7 @@ compute_tests <- function(mlsdt_fit, data,
     if (tests == "bootstrap") {
       pb_objects <- lapply(reduced_fits, function(fit_tmp) {
         boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data,
-                                                      mm = mm, nsim = nsim, cl = cl, control = control)
+                                                      mm = mm, nsim = nsim, cl = cl, control = control, seed = seed)
         return(boot_tmp)
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
@@ -388,7 +383,8 @@ compute_tests <- function(mlsdt_fit, data,
         "reduced_fits" = reduced_fits,
         "LRTs" = t(LRT_results),
         "pb_tests" = t(boot_table),
-        "pb_objects" = pb_objects
+        "pb_objects" = pb_objects,
+        "seed" = seed
       )
     } else {
       to_return <- list(
@@ -438,7 +434,8 @@ compute_tests <- function(mlsdt_fit, data,
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
           fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
+                                                        seed = seed)
           return(boot_tmp)
         })
         boot_table_lambda <- sapply(pb_objects_lambda, function(x) { return(data.frame(x$test)[2, ]) })
@@ -451,6 +448,8 @@ compute_tests <- function(mlsdt_fit, data,
 
     # Compute Mu LRTs if there are parameters to test
     if (length(reduced_fits_mu) > 0) {
+
+
       orders_mu <- attr(terms(lme4::nobars(formula_mu)), "order")
       if (test_intercepts) orders_mu <- c(0, orders_mu)
       LRTs_mu <- sapply(1:length(reduced_fits_mu), function(fit_ind) {
@@ -475,7 +474,8 @@ compute_tests <- function(mlsdt_fit, data,
           fit_tmp <- reduced_fits_mu[[fit_ind]]
           fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
+                                                        seed = seed)
           return(boot_tmp)
         })
         boot_table_mu <- sapply(pb_objects_mu, function(x) { return(data.frame(x$test)[2, ]) })
@@ -500,7 +500,8 @@ compute_tests <- function(mlsdt_fit, data,
         "reduced_fits" = reduced_fits,
         "full_fits" = full_fits,
         "pb_tests" = t(boot_table),
-        "pb_objects" = pb_objects
+        "pb_objects" = pb_objects,
+        "seed" = seed
       )
     } else {
       to_return <- list(
@@ -539,12 +540,13 @@ compute_lrt <- function(fit_red, fit_full, test_ran_ef) {
 # supports lme4 and glmmTMB objects
 # TODO: export?
 compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm, dv,
-                                              nsim = 1000, cl = NULL, control = NULL) {
-  #if (is.null(seed)) seed <- sample(1:1e6, 1)
+                                              nsim = 1000, cl = NULL, control = NULL,
+                                              seed = NULL) {
+  if (is.null(seed)) seed <- sample(1:1e6, 1)
 
   do_pb <- function(x) {
     dat_tmp <- data
-    sim_dat_tmp <- stats::simulate(small_model)[[1]]
+    sim_dat_tmp <- stats::simulate(small_model, seed = seed)[[1]]
     # Do refitting manually
     dat_tmp[[dv]] <- sim_dat_tmp
     sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm, control)
@@ -559,12 +561,12 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
     parallel <- T
     # load variables on cluster
     throwaway <- parallel::clusterExport(cl = cl,
-                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control"),
+                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control", "seed"),
                             env = environment())
-    if (options("mlsdt.backend") == "glmmTMB") throwaway <- parallel::clusterCall(cl = cl, "require", package = "glmmTMB", character.only = T)
+    if (options("mesdt.backend") == "glmmTMB") throwaway <- parallel::clusterCall(cl = cl, "require", package = "glmmTMB", character.only = T)
     # set seed on cluster
     LRs_boot <- parallel::clusterApplyLB(cl, 1:nsim, do_pb)
-    if (options("mlsdt.backend") == "lme4") LRs_boot <- unlist(LRs_boot)
+    if (options("mesdt.backend") == "lme4") LRs_boot <- unlist(LRs_boot)
   }
   LR_emp <- -2 * (stats::logLik(small_model) - stats::logLik(large_model))
   df_lrt <- stats::df.residual(small_model) - stats::df.residual(large_model)

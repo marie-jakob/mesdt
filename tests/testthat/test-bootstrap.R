@@ -1,12 +1,14 @@
 #------------------------------------------------------------------------------#
-#### fit_mlsdt() ####
+#### fit_mesdt() ####
+
+library(parallel)
 
 for (backend in c("glmmTMB", "lme4")) {
-  options("mlsdt.backend" = backend)
+  options("mesdt.backend" = backend)
 
   test_that("compute_tests() compares the correct models for bootstrap tests of fixed effects", {
 
-    fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+    fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
                      formula_mu = ~ committee * emp_gender_ef + (1 | id),
                      dv = "assessment",
                      trial_type_var = "status_fac",
@@ -30,7 +32,7 @@ for (backend in c("glmmTMB", "lme4")) {
     form_mu <- ~ contingencies + (1 | id)
     form_lambda <- ~ contingencies + (1 | id)
     # Same for the uncorrelated model
-    fit <- fit_mlsdt(form_mu, form_lambda,
+    fit <- fit_mesdt(form_mu, form_lambda,
                      dv = "assessment",
                      trial_type_var = "status_fac",
                      data = dat_exp_2)
@@ -51,7 +53,7 @@ for (backend in c("glmmTMB", "lme4")) {
 
 
   test_that("compute_tests() compares the correct models for bootstrap tests of random effects", {
-    fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+    fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                      trial_type_var = "status_fac")
     for (inter_tmp in c(T, F)) {
       print(inter_tmp)
@@ -66,7 +68,7 @@ for (backend in c("glmmTMB", "lme4")) {
   })
 
   test_that("compute_tests() uses a given cluster for bootstrap tests", {
-    fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+    fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                      trial_type_var = "status_fac")
     cl <- makeCluster(8, type = "SOCK")
     suppressWarnings(boot <- compute_tests(fit, data = dat_exp_2,
@@ -83,4 +85,37 @@ for (backend in c("glmmTMB", "lme4")) {
 }
 
 
-options("mlsdt.backend" = "lme4")
+options("mesdt.backend" = "lme4")
+
+
+#------------------------------------------------------------------------------#
+#### Section ####
+
+test_that("compute_tests() uses the correct seed for bootstrapping", {
+  fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+                   trial_type_var = "status_fac")
+  cl <- makeCluster(8, type = "SOCK")
+  suppressWarnings(boot_1 <- compute_tests(fit, data = dat_exp_2,
+                                         test_intercepts = T,
+                                         test_ran_ef = T,
+                                         type = 3,
+                                         tests = "bootstrap",
+                                         nsim = 8,
+                                         cl = cl,
+                                         seed = 123))
+  suppressWarnings(boot_2 <- compute_tests(fit, data = dat_exp_2,
+                                           test_intercepts = T,
+                                           test_ran_ef = T,
+                                           type = 3,
+                                           tests = "bootstrap",
+                                           nsim = 8,
+                                           cl = cl,
+                                           seed = 12))
+
+  expect_equal(unlist(boot_1$pb_tests[1:4, 1]), unlist(boot_2$pb_tests[1:4, 1]))
+  expect_equal(unlist(boot_1$pb_tests[1:4, 3]), unlist(boot_2$pb_tests[1:4, 3]))
+  expect_equal(boot_1$seed, boot_2$seed)
+
+  stopCluster(cl)
+})
+

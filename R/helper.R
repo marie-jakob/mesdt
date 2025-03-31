@@ -1,5 +1,7 @@
 .onLoad <- function(libname, pkgname) {
-  options(mlsdt.backend = "lme4")
+  # TODO: user message about backend
+  # TODO: check if package loaded / installed
+  options(mesdt.backend = "lme4")
 }
 fit_glmm <- function(glmer_formula,
                      data,
@@ -7,14 +9,14 @@ fit_glmm <- function(glmer_formula,
                      control = NULL) {
   # mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
   # get global options
-  if (! (options("mlsdt.backend") %in% c("lme4", "glmmTMB"))) {
+  if (! (options("mesdt.backend") %in% c("lme4", "glmmTMB"))) {
     message("Only lme4 and glmmTMB backends are supported at the moment. Defaulting to lme4.")
-    (options("mlsdt.backend" = "lme4"))
+    (options("mesdt.backend" = "lme4"))
   }
 
-  if (options("mlsdt.backend") == "glmmTMB" & !requireNamespace("glmmTMB", quietly = TRUE)) {
-    message("Package \"glmmTMB\" must be installed to use it as backend. Setting backend to lme4.")
-    options("mlsdt.backend" = "lme4")
+  if (options("mesdt.backend") == "glmmTMB" & !requireNamespace("glmmTMB", quietly = TRUE)) {
+    message("Package \"glmmTMB\" must be installed and loaded to use it as backend. Setting backend to lme4.")
+    options("mesdt.backend" = "lme4")
   }
 
   # only applies to lme4, defaults to 0 at the moment
@@ -29,7 +31,7 @@ fit_glmm <- function(glmer_formula,
     fit_obj <- stats::glm(glmer_formula,
                           data = data,
                           family = binomial(link = "probit"))
-  } else if ((options("mlsdt.backend") == "lme4")) {
+  } else if ((options("mesdt.backend") == "lme4")) {
     if (is.null(control) |
         ! "glmerControl" %in% attr(control, "class")) {
       if (! is.null(control)) message("Invalid control argument for lme4. Using the default settings.")
@@ -47,7 +49,7 @@ fit_glmm <- function(glmer_formula,
                              control = control)
     }
 
-  } else if ((options("mlsdt.backend") == "glmmTMB")) {
+  } else if ((options("mesdt.backend") == "glmmTMB")) {
     #print("fitting with glmmTMB")
     if (is.null(control) |
         "glmerControl" %in% attr(control, "class")) {

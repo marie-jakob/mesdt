@@ -3,19 +3,31 @@
 ### TODOs
 
 Definitely: 
++ create an mesdt class
++ emmeans-like estimates + SEs
++ Plots
++ -> To do that: change formula structure from model matrices (only used for LRTs) to just using separate variables for the sensitivity parameters
++ apa_print_mlsdt() method
 + support for mix of correlated and uncorrelated random effects
+  + That should also be easier when the translation of the input syntax is changed
 + pretty output
+  + summary() (+ print.summary()) method
+  + print() method
++ change mu / lambda to c / d'
 + documentation
 + examples
-+ Check user input
++ Check user input (Raphi: Check everything that users give you!)
 + Tests for customized SDT user output
 + test only a subset of random effects
 + check LRT results (submodels have a higher likelihood than full model)
-+ random seed for bootstrapping
++ change all names to mesdt
++ simulate() method
++ predict() method
+
+
 
 Probably:
-+ emmeans-like estimates + SEs
-+ Plots
+
 
 Maybe: 
 + optionally test parameters instead of whole factors

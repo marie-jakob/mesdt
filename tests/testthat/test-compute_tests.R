@@ -1,11 +1,11 @@
 
-options("mlsdt.backend" = "lme4")
+options("mesdt.backend" = "lme4")
 
 #------------------------------------------------------------------------------#
 #### compute_tests() ####
 
 test_that("compute_tests() computes the correct Chisq value for correlated random effects.", {
-  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)
+  fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data)
   lrts_test <- compute_tests(fit, data = internal_sdt_data, test_intercepts = T)
 
   # Chisq values
@@ -17,7 +17,7 @@ test_that("compute_tests() computes the correct Chisq value for correlated rando
 
 test_that("compute_tests() computes the correct Chisq value for uncorrelated random effects.", {
   # Same for the uncorrelated model
-  fit <- fit_mlsdt(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), dv = "y", data = internal_sdt_data)
+  fit <- fit_mesdt(~ x1 + (x1 || ID), ~ x1 + (x1 || ID), dv = "y", data = internal_sdt_data)
   lrts_test <- compute_tests(fit, data = internal_sdt_data, test_intercepts = T)
 
   # Chisq values
@@ -29,7 +29,7 @@ test_that("compute_tests() computes the correct Chisq value for uncorrelated ran
 
 test_that("compute_tests() throws a message when there is nothing to test in the model.", {
   # Case 1: no predictors & test_intercepts = F
-  fit <- fit_mlsdt(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data)
+  fit <- fit_mesdt(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y", data = internal_sdt_data)
   expect_message(compute_tests(fit, data = internal_sdt_data, test_intercepts = F))
 
 })
@@ -43,7 +43,7 @@ test_that("compute_tests() works only with intercepts", {
 
   form_mu <- ~ 1 + (1 | id)
   form_lambda <- ~ 1 + (1 | id)
-  fit <- fit_mlsdt(form_lambda, form_mu,
+  fit <- fit_mesdt(form_lambda, form_mu,
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -68,7 +68,7 @@ test_that("compute_tests() Type II works with one predictor on mu", {
   form_mu <- ~ committee_ef + (1 | id)
   form_lambda <- ~ 1 + (1 | id)
   # Same for the uncorrelated model
-  fit <- fit_mlsdt(form_mu, form_lambda,
+  fit <- fit_mesdt(form_mu, form_lambda,
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -109,7 +109,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
   form_mu <- ~ committee_ef + (1 | id)
   form_lambda <- ~ committee_ef + (1 | id)
   # Same for the uncorrelated model
-  fit <- fit_mlsdt(form_mu, form_lambda,
+  fit <- fit_mesdt(form_mu, form_lambda,
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -147,7 +147,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
 
 test_that("compute_tests() works with a standard two-factorial design", {
   # Type II, test_intercepts = T
-  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
                    formula_mu = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
@@ -221,7 +221,7 @@ test_that("compute_tests() works for factors with > 2 levels", {
   form_mu <- ~ contingencies + (1 | id)
   form_lambda <- ~ contingencies + (1 | id)
   # Same for the uncorrelated model
-  fit <- fit_mlsdt(form_mu, form_lambda,
+  fit <- fit_mesdt(form_mu, form_lambda,
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -263,7 +263,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
   form_mu <- ~ committee_ef + (1 | id) + (1 | file_name)
   form_lambda <- ~ committee_ef + (committee_ef | id)
   # Same for the uncorrelated model
-  fit <- fit_mlsdt(form_mu, form_lambda,
+  fit <- fit_mesdt(form_mu, form_lambda,
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -303,9 +303,9 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
 #### Random Effects ####
 
 test_that("compute_tests() works for testing random effects", {
-  options("mlsdt.backend" = "glmmTMB")
+  options("mesdt.backend" = "glmmTMB")
   # with correlations
-  fit <- fit_mlsdt(~ committee + (1 | id), ~ committee + (1 | id), dv = "assessment", data = dat_exp_2,
+  fit <- fit_mesdt(~ committee + (1 | id), ~ committee + (1 | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")
 
   lrts_test <- compute_tests(fit, data = dat_exp_2,test_intercepts = T, test_ran_ef = T)
@@ -314,7 +314,7 @@ test_that("compute_tests() works for testing random effects", {
   expect_equal(unlist(lrts_test$LRTs[, 5]), pchisqmix(chi_squares_rdm_intercepts, 2, 0.5, lower.tail = F))
 
   # without correlations
-  fit <- fit_mlsdt(~ committee + (1 | id),
+  fit <- fit_mesdt(~ committee + (1 | id),
                    ~ committee + (1 | id),
                    dv = "assessment",
                    data = dat_exp_2,
@@ -330,9 +330,9 @@ test_that("compute_tests() works for testing random effects", {
 # TODO: does the random stuff work for factors with multiple levels?
 
 test_that("compute_tests() works for testing crossed random effects", {
-  options("mlsdt.backend" = "glmmTMB")
+  options("mesdt.backend" = "glmmTMB")
   # with correlations
-  fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+  fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, data = dat_exp_2, test_intercepts = T, test_ran_ef = T)
   expect_equal(unlist(lrts_test$LRTs[, 4]), chi_squares_rdm_cross, tolerance = 1e-5)
@@ -340,7 +340,7 @@ test_that("compute_tests() works for testing crossed random effects", {
   expect_equal(as.numeric(lrts_test$LRTs[4, 5]), pchisqmix(chi_squares_rdm_cross[4], 1, 0.5, lower.tail = F))
 
   # without correlations
-  fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
+  fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, data = dat_exp_2, test_intercepts = T, test_ran_ef = T)
   expect_equal(unlist(lrts_test$LRTs[, 4]), chi_squares_rdm_cross_uncor, tolerance = 1e-5)
@@ -351,15 +351,15 @@ test_that("compute_tests() works for testing crossed random effects", {
 
 
 test_that("compute_tests() works for testing crossed random effects without the intercept", {
-  options("mlsdt.backend" = "glmmTMB")
+  options("mesdt.backend" = "glmmTMB")
   # with correlations
-  fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
+  fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, data = dat_exp_2, test_intercepts = F, test_ran_ef = T)
   expect_equal(unname(unlist(lrts_test$LRTs[, 4])), chi_squares_rdm_cross[2], tolerance = 1e-5)
 
   # without correlations
-  fit <- fit_mlsdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
+  fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee || id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")
   lrts_test <- compute_tests(fit, data = dat_exp_2, test_intercepts = F, test_ran_ef = T)
   expect_equal(unname(unlist(lrts_test$LRTs[, 4])), chi_squares_rdm_cross_uncor[2], tolerance = 1e-5)
@@ -371,9 +371,9 @@ test_that("compute_tests() works for testing crossed random effects without the 
 #### Only test selected random effects ####
 
 test_that("compute_tests() works for only selected effects", {
-  options("mlsdt.backend" = "lme4")
+  options("mesdt.backend" = "lme4")
   # Type II, test_intercepts = T
-  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
                    formula_mu = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
@@ -419,7 +419,7 @@ test_that("compute_tests() works for only selected effects", {
 #### compute_tests() works only for mu and lambda ####
 
 test_that("compute_tests() works for only tests on mu", {
-  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
                    formula_mu = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
@@ -465,7 +465,7 @@ test_that("compute_tests() works for only tests on mu", {
 
 
 test_that("compute_tests() works for only tests on lambda", {
-  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
                    formula_mu = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
@@ -505,7 +505,7 @@ test_that("compute_tests() works for only tests on lambda", {
 #### compute_tests() works multiple parameters (but not all) ####
 
 test_that("compute_tests() works on multiple parameters", {
-  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
                    formula_mu = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
@@ -557,7 +557,7 @@ test_that("compute_tests() works on multiple parameters", {
 #### Only tests on lambda or mu ####
 
 test_that("compute_tests() works for only tests on lambda", {
-  fit <- fit_mlsdt(formula_lambda = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
                    formula_mu = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
@@ -598,15 +598,15 @@ test_that("compute_tests() works for only tests on lambda", {
 #### Control Arguments on compute_tests() ####
 
 test_that("compute_tests() computes the correct Chisq value for correlated random effects.", {
-  options("mlsdt.backend" = "lme4")
-  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+  options("mesdt.backend" = "lme4")
+  fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
                    control = lme4::glmerControl(optCtrl = list(maxfun = 1234)))
   lrts_test <- compute_tests(fit, data = internal_sdt_data, test_intercepts = T,
                              control = lme4::glmerControl(optCtrl = list(maxfun = 1234)))
   expect_equal(lrts_test$reduced_fits$Intercept@optinfo$control$maxfun, 1234)
 
-  options("mlsdt.backend" = "glmmTMB")
-  fit <- fit_mlsdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+  options("mesdt.backend" = "glmmTMB")
+  fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
                    control = glmmTMB::glmmTMBControl(list(iter.max=12334, eval.max=12334)))
   lrts_test <- compute_tests(fit, data = internal_sdt_data, test_intercepts = T,
                              control = glmmTMB::glmmTMBControl(list(iter.max=12334, eval.max=12334)))
@@ -614,4 +614,4 @@ test_that("compute_tests() computes the correct Chisq value for correlated rando
 
 })
 
-options("mlsdt.backend" = "lme4")
+options("mesdt.backend" = "lme4")

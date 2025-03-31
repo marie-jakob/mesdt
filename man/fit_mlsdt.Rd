@@ -11,7 +11,8 @@ fit_mlsdt(
   trial_type_var = "trial_type",
   data,
   correlate_sdt_params = T,
-  tests = "Wald"
+  tests = "Wald",
+  control = NULL
 )
 }
 \arguments{
