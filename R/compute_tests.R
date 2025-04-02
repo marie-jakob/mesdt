@@ -371,6 +371,12 @@ compute_tests <- function(mesdt_fit, data,
   if (type == 3) {
     reduced_fits <- submodels
     LRT_results <- sapply(reduced_fits, compute_lrt, fit_full = fit_obj, test_ran_ef = test_ran_ef)
+    # Check if results are valid
+    if (any(LRT_results[4, ] < 0)) {
+      which_tests_weird <- colnames(LRT_results)[which(LRT_results[4, ] < 0)]
+      message(paste("Reduced model has a higher log likelihood for: ", paste(which_tests_weird, collapse = ", "), ". Results cannot be trusted! Try fitting the full model with a different optimizer or reducing the random-effects structure.",
+                    sep = ""))
+    }
 
     if (tests == "bootstrap") {
       pb_objects <- lapply(reduced_fits, function(fit_tmp) {
@@ -488,6 +494,13 @@ compute_tests <- function(mesdt_fit, data,
     }
 
     LRT_results <- cbind(LRTs_lambda, LRTs_mu)
+    # Check if results are valid
+    if (any(LRT_results[4, ] < 0)) {
+      which_tests_weird <- colnames(LRT_results)[which(LRT_results[4, ] < 0)]
+      message(paste("Reduced model has a higher log likelihood for: ", paste(which_tests_weird, collapse = ", "), ". Results cannot be trusted! Try fitting the full model with a different optimizer or reducing the random-effects structure.",
+                    sep = ""))
+    }
+
     reduced_fits <- c(reduced_fits_lambda, reduced_fits_mu)
     full_fits <- c(full_fits_lambda, full_fits_mu)
 

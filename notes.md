@@ -3,7 +3,7 @@
 ### TODOs
 
 Definitely: 
-+ create an mesdt class
++ structure of mesdt objects (nested list with input, fit object, separate slots for tests)
 + emmeans-like estimates + SEs
 + Plots
 + -> To do that: change formula structure from model matrices (only used for LRTs) to just using separate variables for the sensitivity parameters
@@ -19,8 +19,6 @@ Definitely:
 + Check user input (Raphi: Check everything that users give you!)
 + Tests for customized SDT user output
 + test only a subset of random effects
-+ check LRT results (submodels have a higher likelihood than full model)
-+ change all names to mesdt
 + simulate() method
 + predict() method
 
@@ -50,6 +48,9 @@ Done:
 + optional other backends:
   + glmmTMB
 + parallelization
++ mesdt model class
++ renaming stuff
++ 
 
 
 ### Open Questions

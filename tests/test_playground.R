@@ -2,6 +2,7 @@
 library(pbkrtest)
 library(lme4)
 library(glmmTMB)
+library(emmeans)
 
 test_formula <- construct_glmer_formula(
   formula_mu = ~ 1 + x1 + (x1 || ID),
@@ -614,10 +615,10 @@ library(afex)
 
 detectCores()
 nc <- 8
-cls <- makeCluster(nc, type = "SOCK")
-clusterEvalQ(cls, {
-  library(lme4); library(afex)
-}
+#cls <- makeCluster(nc, type = "SOCK")
+#clusterEvalQ(cls, {
+#  library(lme4); library(afex)
+#}
 
 
 mixed(assessment ~ status_ef * committee_ef * emp_gender_ef + (status_ef | id),
@@ -626,3 +627,90 @@ mixed(assessment ~ status_ef * committee_ef * emp_gender_ef + (status_ef | id),
       args_test = list(cl = cls),
       test_intercept = T,
       method = "LRT")
+
+#------------------------------------------------------------------------------#
+#### Prepare for emmeans and plots ####
+
+dat_test <- dat_exp_2
+dat_test
+dat_test$committee_s <- as.numeric(as.character(dat_test$committee)) * as.numeric(as.character(dat_test$status_fac))
+
+mod_old <- glmmTMB(assessment ~ status_fac * committee + (status_fac | id),
+                      data = dat_exp_2,
+                      family = binomial("probit"))
+
+mod_new <- glmmTMB(assessment ~ status_fac + committee + committee_s + (status_fac | id),
+                   data = dat_test,
+                   family = binomial("probit"))
+logLik(mod_old)
+logLik(mod_new)
+fixef(mod_old)
+fixef(mod_new)
+summary(mod_old)
+summary(mod_new)
+# same models
+
+# emmeans for committee on sensitivity
+contrast(emmeans(mod_old, ~ status_fac * committee),
+          list("denied" = c(-1, 1, 0, 0),
+               "granted" = c(0, 0, -1, 1)))
+
+data.frame(emmeans(mod_new,  ~ committee_s))[, 2] + fixef(mod_new)$cond[2]
+
+emmeans(mod_old, ~ status_fac * committee)
+emmeans(mod_new, ~ status_fac + committee_s + committee)
+contrast(emmeans(mod_new, ~ status_fac + committee_s + committee),
+         list("denied" = c(1, -1, 0, 0),
+              "granted" = c(0, 0, 1, -1)))
+
+
+
+
+
+
+#------------------------------------------------------------------------------#
+#### Try the same with mesdt ####
+
+
+options("mesdt.backend" = "glmmTMB")
+mod_mesdt <- fit_mesdt(~ committee + (1 | id),
+                       ~ committee + (1 | id),
+                       dv = "assessment",
+                       trial_type_var = "status_fac",
+                       data = dat_test)
+
+summary(mod_mesdt$fit_obj)
+
+emmeans(mod_mesdt$fit_obj, ~ 1)
+
+
+
+#------------------------------------------------------------------------------#
+#### simulate() / predict() ####
+
+
+test <- simulate(mod_mesdt$fit_obj)
+test <- predict(mod_mesdt$fit_obj)
+
+predict(mod_old)
+
+
+# TODO: test if this works
+simulate.mesdt <- function(mesdt_obj, ...) {
+  # get method for correct backend
+  if (mesdt_obj.backend = "lme4") pred <- lme4::simulate(mesdt_obj$fit_obj, ...)
+  else if (mesdt_obj.backend = "glmmTMB") pred <- glmmTMB::simulate(mesdt_obj$fit_obj, ...)
+
+  return(pred)
+}
+
+
+predict.mesdt <- function(mesdt_obj, ...) {
+  # get method for correct backend
+  if (mesdt_obj.backend = "lme4") pred <- lme4::predict(mesdt_obj$fit_obj, ...)
+  else if (mesdt_obj.backend = "glmmTMB") pred <- glmmTMB::predict(mesdt_obj$fit_obj, ...)
+
+  return(pred)
+}
+
+
