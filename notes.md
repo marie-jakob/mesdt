@@ -13,14 +13,12 @@ Definitely:
 + pretty output
   + summary() (+ print.summary()) method
   + print() method
-+ change mu / lambda to c / d'
++ change mu / lambda to c / d' -> or just use "sensitivty" and "response bias"
 + documentation
 + examples
 + Check user input (Raphi: Check everything that users give you!)
 + Tests for customized SDT user output
 + test only a subset of random effects
-+ simulate() method
-+ predict() method
 
 
 
@@ -50,7 +48,7 @@ Done:
 + parallelization
 + mesdt model class
 + renaming stuff
-+ 
++ simulate() method
 
 
 ### Open Questions

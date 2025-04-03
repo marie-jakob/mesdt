@@ -71,3 +71,30 @@ boot_tests <- compute_tests(fit_sdt_glmmTMB,
                       test_ran_ef = F)
 
 
+
+#------------------------------------------------------------------------------#
+#### Intended Workflow ####
+
+# 1. Fit the model
+fit_sdt <- fit_mlsdt(formula_mu = ~ emp_gender * participant_gender + (1 | id),
+                     formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
+                     data = dat_exp_1,
+                     dv = "response",
+                     trial_type_var = "status_fac")
+
+# Model object now contains every information from the fitted model (including Wald tests)
+# Summary method prints coefficients and Wald tests for the parameters
+
+# 2. Compute tests
+
+# fit_sdt <- compute_tests(fit_sdt, ...)
+
+# -> Method returns the modified fit object with the added tests
+# Summary method prints coefficients and all tests that are stored in the model
+
+
+# Optionally: compute tests for random effects, bootstrap tests etc.
+
+
+
+# Compute emmeans

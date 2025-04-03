@@ -311,11 +311,11 @@ compute_tests <- function(mesdt_fit, data,
                           seed = NULL) {
 
   fit_obj <- mesdt_fit$fit_obj
-  formula_mu <- mesdt_fit$formula_mu
-  formula_lambda <- mesdt_fit$formula_lambda
-  dv <- mesdt_fit$dv
-  trial_type_var <- mesdt_fit$trial_type_var
-  correlate_sdt_params <- mesdt_fit$correlate_sdt_params
+  formula_mu <- mesdt_fit$user_input$formula_mu
+  formula_lambda <- mesdt_fit$user_input$formula_lambda
+  dv <- mesdt_fit$user_input$dv
+  trial_type_var <- mesdt_fit$user_input$trial_type_var
+  correlate_sdt_params <- mesdt_fit$user_input$correlate_sdt_params
 
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
@@ -330,14 +330,14 @@ compute_tests <- function(mesdt_fit, data,
   if (! tests %in% c("LRT", "bootstrap")) stop('Only likelihood ratio tests (tests = "LRT") and parametric bootstrapping(tests = "bootstrap") are implemented')
 
   # check if backend is the same as for the fitted model
-  print(paste("backend:", mesdt_fit$backend))
+  print(paste("backend:", mesdt_fit$user_input$backend))
   if (is.null(cl)) {
     # if not, set the correct backend and notify the user
-    if (options("mesdt.backend") != mesdt_fit$backend) {
-      message(paste("Model was fitted using", mesdt_fit$backend, "but the current
+    if (options("mesdt.backend") != mesdt_fit$user_input$backend) {
+      message(paste("Model was fitted using", mesdt_fit$user_input$backend, "but the current
                   backend is ", options("mesdt.backend"), ". Setting msldt.backend
-                  to ", mesdt_fit$backend))
-      options("mesdt.backend" = mesdt_fit$backend)
+                  to ", mesdt_fit$user_input$backend))
+      options("mesdt.backend" = mesdt_fit$user_input$backend)
     }
     # same when a cluster is used
   } else {
@@ -345,16 +345,16 @@ compute_tests <- function(mesdt_fit, data,
     if (is.null(backend_cl)) {
       message(paste("No backend was set for the cluster. Setting mesdt.backend on
                     the cluster and locally to",
-                    mesdt_fit$backend, "which was used to fit the supplied model."))
-      throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$backend) } )
-      options("mesdt.backend" = mesdt_fit$backend)
+                    mesdt_fit$user_input$backend, "which was used to fit the supplied model."))
+      throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
+      options("mesdt.backend" = mesdt_fit$user_input$backend)
     } else {
-      if (backend_cl != mesdt_fit$backend) {
-        message(paste("Model was fitted using", mesdt_fit$backend, "but the current
+      if (backend_cl != mesdt_fit$user_input$backend) {
+        message(paste("Model was fitted using", mesdt_fit$user_input$backend, "but the current
                   backend on the supplied cluster is ", backend_cl,
-                  ". Setting msldt.backend on the cluster and locally to ", mesdt_fit$backend))
-        throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$backend) } )
-        options("mesdt.backend" = mesdt_fit$backend)
+                  ". Setting msldt.backend on the cluster and locally to ", mesdt_fit$user_input$backend))
+        throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
+        options("mesdt.backend" = mesdt_fit$user_input$backend)
       }
     }
 
@@ -385,17 +385,25 @@ compute_tests <- function(mesdt_fit, data,
         return(boot_tmp)
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
-      to_return <- list(
+
+      # Return a new mesdt_fit object that also includes the LRTs and PB tests
+      to_return <- mesdt_fit
+      to_return$LRTs <- list(
         "reduced_fits" = reduced_fits,
-        "LRTs" = t(LRT_results),
-        "pb_tests" = t(boot_table),
+        "LRT_results" = t(LRT_results)
+      )
+
+      to_return$PB_tests <- list(
+        "pb_test_results" = t(boot_table),
         "pb_objects" = pb_objects,
         "seed" = seed
       )
+
     } else {
-      to_return <- list(
+      to_return <- mesdt_fit
+      to_return$LRTs <- list(
         "reduced_fits" = reduced_fits,
-        "LRTs" = t(LRT_results)
+        "LRT_results" = t(LRT_results)
       )
     }
   }
@@ -508,19 +516,26 @@ compute_tests <- function(mesdt_fit, data,
 
       pb_objects <- c(pb_objects_lambda, pb_objects_mu)
       boot_table <- cbind(boot_table_lambda, boot_table_mu)
-      to_return <- list(
-        "LRTs" = t(LRT_results),
+
+      # Return a new mesdt_fit object that also includes the LRTs and PB tests
+      to_return <- mesdt_fit
+      to_return$LRTs <- list(
         "reduced_fits" = reduced_fits,
-        "full_fits" = full_fits,
-        "pb_tests" = t(boot_table),
+        "LRT_results" = t(LRT_results)
+      )
+
+      to_return$PB_tests <- list(
+        "pb_test_results" = t(boot_table),
         "pb_objects" = pb_objects,
         "seed" = seed
       )
+
     } else {
-      to_return <- list(
-        "LRTs" = t(LRT_results),
+      # Return a new mesdt_fit object that also includes the LRTs and PB tests
+      to_return <- mesdt_fit
+      to_return$LRTs <- list(
         "reduced_fits" = reduced_fits,
-        "full_fits" = full_fits
+        "LRT_results" = t(LRT_results)
       )
     }
   }

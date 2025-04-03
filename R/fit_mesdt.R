@@ -81,27 +81,16 @@ fit_mesdt <- function(formula_mu,
   }
 
 
-  #obj <- new_mesdt_fit(list(
-  #  "fit_obj" = fit_obj,
-    #"Lambda" = coefs_lambda,
-    #"Mu" = coefs_mu,
-  #  "formula_mu" = formula_mu,
-  #  "formula_lambda" = formula_lambda,
-  #  "dv" = dv,
-  #  "trial_type_var" = trial_type_var,
-  #  "backend" = backend,
-  #  "correlate_sdt_params" = correlate_sdt_params
-  #))
-
-  obj <- list(
+  obj <- new_mesdt_fit(list(
     "fit_obj" = fit_obj,
-    "formula_mu" = formula_mu,
-    "formula_lambda" = formula_lambda,
-    "dv" = dv,
-    "trial_type_var" = trial_type_var,
-    "backend" = backend,
-    "correlate_sdt_params" = correlate_sdt_params
+    "user_input" = list(
+      "formula_mu" = formula_mu,
+      "formula_lambda" = formula_lambda,
+      "dv" = dv,
+      "trial_type_var" = trial_type_var,
+      "backend" = backend,
+      "correlate_sdt_params" = correlate_sdt_params
     )
-
+    ))
   return(obj)
 }
