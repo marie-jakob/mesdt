@@ -35,6 +35,7 @@ fit_mesdt <- function(discriminability,
   if (typeof(dv) != "character") stop("'dv' must be of type 'character'.")
   if (is.null(data[[dv]])) stop(paste("Given dependent variable", dv, "not in data."))
   if (length(unique(data[[dv]])) != 2) stop("dv must be a binary variable.")
+  if (all(sort(unique(data[[dv]])) != c(0, 1))) stop("dv must be coded as 0 ('noise' response) and 1 ('signal' response)")
 
   if (typeof(trial_type_var) != "character") stop("'trial_type_var' must be of type 'character'.")
   if (is.null(data[[trial_type_var]])) stop(paste("Given trialtype variable", trial_type_var, "not in data."))
@@ -52,17 +53,23 @@ fit_mesdt <- function(discriminability,
   if (is.null(distribution)) stop("Distribution must be gaussian, logistic, or gumbel-min.")
 
   #### Prep & fit model
+  if (distribution == "gumbel-min") {
+    glmer_formula <- construct_glmer_formula(discriminability, bias, "dv_rev", mm,
+                                             correlate_sdt_params = correlate_sdt_params)
+  } else {
+    glmer_formula <- construct_glmer_formula(discriminability, bias, dv, mm,
+                                             correlate_sdt_params = correlate_sdt_params)
+  }
 
-  mm_all <- construct_modelmatrices(discriminability, bias, dv, data, trial_type_var)
+  mm_all <- construct_modelmatrices(discriminability, bias, data, trial_type_var, distribution)
   m_frames <- mm_all[["m_frames"]]
   mm <- mm_all[["mm"]]
-  glmer_formula <- construct_glmer_formula(discriminability, bias, dv, mm,
-                                                correlate_sdt_params = correlate_sdt_params)
+
 
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
   # (y, ID)
 
-  fit_obj <- fit_glmm(glmer_formula, data, mm, distribution, control)
+  fit_obj <- fit_glmm(glmer_formula, data, mm, distribution, dv, control)
   # TODO: random effects post-processing -> for the summary method
 
   # Check backend stuff
@@ -97,5 +104,9 @@ fit_mesdt <- function(discriminability,
       "backend" = backend
     )
     ))
+
+  # Give a warning if mean sensitivity is < 0
+  check_sensitivity(obj)
+
   return(obj)
 }

@@ -5,7 +5,7 @@
 Functionality / Technical stuff:
 + different distributions: gumbel-min link function (gumbel max?)
   + -> adapt to do the correct link stuff (reverse-coding response variable or something
-  + -> see DeCarlo 1998 paper)
+  + -> see DeCarlo 1998 paper
 + gumbel-max + tests
 + Aggregation
 + handle reverse-coded trial type variable
@@ -30,6 +30,8 @@ Documentations / Conventions / Naming / Practicality
 + skip tests if packages not installed
 + Vignette extreme value SDT
 + datasets: detecting bias project? 
++ set sum contrasts
++ center continuous predictors
 
 
 Maybe: 

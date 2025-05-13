@@ -40,12 +40,11 @@ compute_tests <- function(mesdt_fit, data,
   trial_type_var <- mesdt_fit$user_input$trial_type_var
   correlate_sdt_params <- mesdt_fit$user_input$correlate_sdt_params
   distribution <- mesdt_fit$user_input$distribution
-  print(distribution)
 
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
   if (is.null(mm)) {
-    mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var = trial_type_var)[["mm"]]
+    mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var = trial_type_var, distribution = distribution)[["mm"]]
   }
   if (test_ran_ef & type != 3) {
     stop("Only type III sums of squares are available for testing random effects.")
@@ -483,7 +482,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       # print("No cluster")
 
       full_fits <- lapply(c(full_formulas_lambda, full_formulas_mu),
-                          fit_glmm, data = data, mm = mm, distribution = distribution,
+                          fit_glmm, data = data, mm = mm, distribution = distribution, dv = dv,
                           control = control)
       # for reduced fits: check if the fit is already in the full_fits
 
@@ -495,7 +494,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
           which_model_equal <- which(full_formulas_char == as.character(formula_tmp)[3])
           #print(which_model_equal)
           return(full_fits[[which_model_equal]])
-        } else return(fit_glmm(formula_tmp, data, mm, distribution, control))
+        } else return(fit_glmm(formula_tmp, data, mm, distribution, dv, control))
       })
       all_fits <- c(full_fits, reduced_fits)
     } else {
@@ -509,7 +508,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
                                              reduced_formulas_lambda,
                                              reduced_formulas_mu),
                                            fit_glmm,
-                                           data = data, mm = mm, distribution = distribution,
+                                           data = data, mm = mm, distribution = distribution, dv = dv,
                                            control = control)
       if (options("mesdt.backend") == "lme4") all_fits <- unlist(all_fits)
       names(all_fits) <- names(c(full_formulas_lambda,
@@ -543,7 +542,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
     if (is.null(cl)) {
       #print("No cluster")
       reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), fit_glmm,
-                             data = data, mm = mm, distribution = distribution,
+                             data = data, mm = mm, distribution = distribution, dv = dv,
                              control = control)
       #print("reduced_fits done")
     } else {
@@ -601,8 +600,8 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
     sim_dat_tmp <- stats::simulate(small_model, seed = seed)[[1]]
     # Do refitting manually
     dat_tmp[[dv]] <- sim_dat_tmp
-    sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm, distribution, control)
-    sim_fit_red <- fit_glmm(stats::formula(small_model), dat_tmp, mm, distribution, control)
+    sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm, distribution, dv, control)
+    sim_fit_red <- fit_glmm(stats::formula(small_model), dat_tmp, mm, distribution, dv, control)
     return(-2 * (stats::logLik(sim_fit_red) - stats::logLik(sim_fit_full)))
   }
 

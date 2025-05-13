@@ -2,7 +2,9 @@ fit_glmm <- function(glmer_formula,
                      data,
                      mm,
                      distribution,
+                     dv = NULL,
                      control = NULL) {
+  print(glmer_formula)
   # mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
   # get global options
   if (! (options("mesdt.backend") %in% c("lme4", "glmmTMB"))) {
@@ -24,7 +26,15 @@ fit_glmm <- function(glmer_formula,
                     ifelse(distribution == "logistic", "logit",
                            ifelse(distribution == "gumbel-min", "cloglog")))
 
+  # reverse-code dv for gumbel-min distribution
+  if (distribution == "gumbel-min") {
+    print("reversing dv")
+    data[["dv_rev"]] <- ifelse(data[[dv]] == 0, 1, 0)
+    #data[[dv]] <- ifelse(data[[dv]] == 0, 1, 0)
+  }
+
   # Fit a GLM if there are no random effects
+  #print(glmer_formula)
   if (is.null(lme4::findbars(glmer_formula))) {
     message("Formula does not contain any random terms. Fitting a single-level model.")
     fit_obj <- stats::glm(glmer_formula,
@@ -63,5 +73,6 @@ fit_glmm <- function(glmer_formula,
                                   control = control)
     }
   }
+
   return(fit_obj)
 }

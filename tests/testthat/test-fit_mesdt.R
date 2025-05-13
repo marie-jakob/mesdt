@@ -68,7 +68,9 @@ test_that("fit_mesdt() works for uncorrelated mu and lambda effects", {
 
 
 test_that("fit_mesdt() works for uncorrelated random effects (|| notation)", {
-  fit <- fit_mesdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y", data = internal_sdt_data,
+  fit <- fit_mesdt(~ 1 + x1 + (1 + x1 || ID),
+                   ~ 1 + x1 + (1 + x1 || ID), dv = "y",
+                   data = internal_sdt_data,
                    trial_type_var = "trial_type_fac")$fit_obj
 
   # Number of estimated fixed effects parameters
@@ -237,4 +239,18 @@ test_that("Setting control arguments in fit_mesdt() works", {
                    control = glmmTMB::glmmTMBControl(list(iter.max=5000)))
   expect_true("control" %in% as.character(fit$fit_obj$call))
 }
+)
+
+
+#------------------------------------------------------------------------------#
+#### Test check_sensitivity ####
+
+test_that("mesdt throws a message when sensitivity < 0", {
+  options("mesdt.backend" = "glmmTMB")
+  dat_exp_2$status_rev <- ifelse(dat_exp_2$status_fac == 1, -1, 1)
+  expect_warning(fit_mesdt(~ committee + (1 | id),
+                         ~ emp_gender,
+                         dv = "assessment", data = dat_exp_2, trial_type_var = "status_rev",
+                         ))
+  }
 )

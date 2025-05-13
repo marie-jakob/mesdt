@@ -95,11 +95,12 @@ standardize_tests_input <- function(x) {
 }
 
 
-gumbel_max_lnk <- function(x) {
-  return(-log(-log(x)))
-}
 
-gumbel_min_lnk <- function(x) {
-  return(log(log(x)))
+check_sensitivity <- function(fit_obj) {
+  summ_mesdt <- summary(fit_obj)
+  mu_mean <- summ_mesdt$d_coef[rownames(summ_mesdt$d_coef) == "(Intercept)", 1]
+  if (length(mu_mean) > 0) {
+    if (mu_mean < 0) warning("Mean Population Sensitivity is < 0, indicating that the trial_type variable might be coded reversly.")
+  }
 }
 

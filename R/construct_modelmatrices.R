@@ -3,16 +3,15 @@
 #'
 #' @param formula_mu formula for sensitivity (mu)
 #' @param formula_lambda formula for response bias (lambda)
-#' @param dv name of dependent variable
 #' @param data dataset used to construct the model data
 #' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
 #'
 #' @return list of model matrices (fixed and random for mu and lambda)
 construct_modelmatrices <- function(formula_mu,
                                     formula_lambda,
-                                    dv,
                                     data,
-                                    trial_type_var = "trial_type") {
+                                    trial_type_var = "trial_type",
+                                    distribution = "gaussian") {
   # So far: only tested for categorical predictors
 
 
@@ -34,6 +33,8 @@ construct_modelmatrices <- function(formula_mu,
   # coded with 0.5 and -0.5 such that intercept and effects can be interpreted
   # directly as increases in sensitivity
   trial_type_ef <- stats::model.matrix(~ trial_type, data = data)[, 2] * 0.5
+  if (distribution == "gumbel-min") trial_type_ef <- trial_type_ef * (-1)
+
   mm_mu_raw <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
 
   mm_mu <- mm_mu_raw * trial_type_ef

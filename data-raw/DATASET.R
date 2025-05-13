@@ -174,7 +174,8 @@ dat_exp_2 %>%
                                     "stim-4", "stim-5", "stim-6",
                                     "stim-7", "stim-8", "stim-9", "stim-10"),
                                   nrow(dat_exp_2),
-                                  replace = T)) -> dat_exp_2
+                                  replace = T),
+                assessment = ifelse(assessment == "fair", 0, 1)) -> dat_exp_2
 
 # contrasts(dat_exp_2$status_fac) <- contr.sum(2)
 contrasts(dat_exp_2$committee) <- contr.sum(2)
