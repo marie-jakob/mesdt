@@ -1,13 +1,9 @@
 
 
-
-
 # Constructor
 new_mesdt_fit <- function(input_list) {
   structure(input_list, class = "mesdt_fit")
 }
-
-
 
 #' print method
 #' TODO
@@ -28,27 +24,43 @@ print.mesdt_fit <- function(obj) {
 summary.mesdt_fit <- function(obj) {
 
 
-  if (obj$user_input$backend == "lme4") {
+  if (obj$user_input$backend == "lme4" | obj$user_input$backend == "glm") {
 
     # Get coefficients
     summ_lme4 <- summary(obj$fit_obj)
-    d_coef <- summ_lme4$coefficients[grepl("lambda", rownames(summ_lme4$coefficients)), ]
-    c_coef <- summ_lme4$coefficients[grepl("mu", rownames(summ_lme4$coefficients)), ]
+    d_coef <- summ_lme4$coefficients[grepl("mu", rownames(summ_lme4$coefficients)), ]
+    c_coef <- summ_lme4$coefficients[grepl("lambda", rownames(summ_lme4$coefficients)), ]
 
     # Get optimizer info
-    opt_info <- list(
-      "nAGQ" = obj$fit_obj@devcomp$dims[["nAGQ"]]
-    )
+    if (obj$user_input$backend == "lme4") {
+      opt_info <- list(
+        "nAGQ" = obj$fit_obj@devcomp$dims[["nAGQ"]]
+      )
+    }
 
   } else if (obj$user_input$backend == "glmmTMB") {
     summ_glmmtmb <- summary(obj$fit_obj)
 
-    d_coef <- summ_glmmtmb$coefficients$cond[grepl("lambda", rownames(summ_glmmtmb$coefficients$cond)), ]
-    c_coef <- summ_glmmtmb$coefficients$cond[grepl("mu", rownames(summ_glmmtmb$coefficients$cond)), ]
-    # Get optimizer info
+    d_coef <- summ_glmmtmb$coefficients$cond[grepl("mu", rownames(summ_glmmtmb$coefficients$cond)), ]
+    c_coef <- summ_glmmtmb$coefficients$cond[grepl("lambda", rownames(summ_glmmtmb$coefficients$cond)), ]
     opt_info <- NULL
   }
-
+  if (is.null(rownames(d_coef))) {
+    col_nms <- names(d_coef)
+    d_coef <- matrix(d_coef, nrow = 1)
+    colnames(d_coef) <- col_nms
+    rownames(d_coef) <- colnames(obj$internal$mm$mu)
+  } else {
+    rownames(d_coef) <- substr(rownames(d_coef), 11, nchar(rownames(d_coef)))
+  }
+  if (is.null(rownames(c_coef))) {
+    col_nms <-  names(c_coef)
+    c_coef <- matrix(c_coef, nrow = 1)
+    colnames(c_coef) <- col_nms
+    rownames(c_coef) <- colnames(obj$internal$mm$lambda)
+  } else {
+    rownames(c_coef) <- substr(rownames(c_coef), 15, nchar(rownames(c_coef)))
+  }
 
   to_return <- list(
     "user_input" = obj$user_input,
@@ -60,44 +72,16 @@ summary.mesdt_fit <- function(obj) {
   else if (! is.null(obj$PB_tests)) to_return[["PB_tests"]] <- obj$LRTs$PB_test_results
 
   return(structure(to_return, class = "summary.mesdt_fit"))
-
-  #mm <- obj$mm
-
-  # Post-Processing the lme4 output
-  # backend = ifelse(options("backend") == "", "lme4", options("backend"))
-  #if (obj$backend == "lme4") {
-  #  coefs_lambda <- summary(obj$fit_obj)$coefficients[grepl("lambda", rownames(summary(obj$fit_obj)$coefficients)), ]
-  #  coefs_mu <- summary(obj$fit_obj)$coefficients[grepl("mu", rownames(summary(obj$fit_obj)$coefficients)), ]
-  #} else if (obj$backend == "glmmTMB") {
-  #  coefs_lambda <- summary(obj$fit_obj)$coefficients$cond[grepl("lambda", rownames(summary(obj$fit_obj)$coefficients$cond)), ]
-  #  coefs_mu <- summary(obj$fit_obj)$coefficients$cond[grepl("mu", rownames(summary(obj$fit_obj)$coefficients$cond)), ]
-  #}
-  #rownames(coefs_lambda) <- gsub('mm', "", rownames(coefs_lambda))
-  #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
-  #if (is.null(nrow(coefs_lambda))) {
-  #  coefs_lambda <- t(data.frame(coefs_lambda))
-  #} else {
-  #  coefs_lambda <- data.frame(coefs_lambda)
-  #}
-  #rownames(coefs_lambda) <- colnames(mm[["lambda"]])
-
-  #if (is.null(nrow(coefs_mu))) {
-  #  coefs_mu <- t(data.frame(coefs_mu))
-  #} else {
-  #  coefs_mu <- data.frame(coefs_mu)
-  #}
-  #rownames(coefs_mu) <- colnames(mm[["mu"]])
-
-  #print(coefs_mu)
-  #print(coefs_lambda)
-  #return(list("mu" = coefs_mu,
-  #            "lambda" = coefs_lambda))
 }
 
 
-
+# Taken from lme4
 printmethod <- function(x) {
-  pr <- "Mixed-effects signal detection theory model fit by maximum likelihood"
+  distr_pretty <- ifelse(x$user_input$distribution == "gaussian", "Gaussian",
+                         ifelse(x$user_input$distr == "logistic", "logistic", "Gumbel-Min"))
+  if (x$user_input$backend != "glm") pr <- "Mixed-effects signal "
+  else pr <- "Signal "
+  pr <- paste(pr, "detection theory model with ", distr_pretty, " evidence distributions fit by maximum likelihood ", sep = "")
   if (! is.null(x$opt_info)) {
     nAGQ <- x$opt_info$nAGQ
     print(nAGQ)
@@ -105,8 +89,12 @@ printmethod <- function(x) {
                    "(Laplace Approximation) ")
     pr <- paste(pr, meth, sep = "")
   }
-  pack <- x$mesdt_fit$user_input$backend
-  pr <- paste(pr, " with the ", pack, " package. \n \n", sep = "")
+  pack <- x$user_input$backend
+  if (pack != "glm") {
+    pr <- paste(pr, "with the ", pack, " package. \n \n", sep = "")
+  } else {
+    pr <- paste(pr, "with glm(). \n\n", sep = "")
+  }
   cat(pr)
   return()
 }
@@ -122,8 +110,8 @@ print.summary.mesdt_fit <- function(x,
 
   printmethod(x)
 
-  cat("Formula sensitivity:   ", deparse(x$user_input$formula_mu), "\n")
-  cat("Formula response bias: ", deparse(x$user_input$formula_lambda), "\n\n")
+  cat("Discriminability:", deparse(x$user_input$discriminability), "\n")
+  cat("Response Bias:     ", deparse(x$user_input$bias), "\n\n")
 
 
   # TODO: print AIC and log likelihood if requested
@@ -132,27 +120,28 @@ print.summary.mesdt_fit <- function(x,
 
 
   # Print fixed effects
-  cat("Fixed effects and Wald tests for sensitivity: \n")
+  cat("Fixed effects and Wald tests for discriminability: \n")
   stats::printCoefmat(x$d_coef, digits = digits, signif.stars = signif.stars)
   cat("\nFixed effects and Wald tests for response bias: \n")
   stats::printCoefmat(x$c_coef, digits = digits, signif.stars = signif.stars)
 
 
   # if the model object has LRTs, print those:
-  if (! is.null(x$LRTs)) {
-    cat("\nLikelihood ratio tests (type X) for sensitivity: \n \n")
-    LRTs_round <- x$LRTs
-    LRTs_round[] <- lapply(x$LRTs, round, 3)
-    print(LRTs_round)
-  }
+  #if (! is.null(x$LRTs)) {
+  #  cat("\nLikelihood ratio tests (type X) for sensitivity: \n \n")
+  #  LRTs_round <- x$LRTs
+  #  LRTs_round[] <- lapply(x$LRTs, round, 3)
+    # TODO: round p values appropriately
+  #  print(LRTs_round)
+  #}
 
   # if the model object has LRTs, print those:
-  if (! is.null(x$PB_tests)) {
-    cat("\nParametric bootstrapping tests (type X) for sensitivity: \n \n")
-    LRTs_round <- x$LRTs
-    LRTs_round[] <- lapply(x$LRTs, round, 3)
-    print(LRTs_round)
-  }
+  #if (! is.null(x$PB_tests)) {
+  #  cat("\nParametric bootstrapping tests (type X) for sensitivity: \n \n")
+  #  LRTs_round <- x$LRTs
+  #  LRTs_round[] <- lapply(x$LRTs, round, 3)
+  #  print(LRTs_round)
+  #}
 
 }
 

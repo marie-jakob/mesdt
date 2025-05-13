@@ -45,7 +45,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ 1 + x1 + (x1 || ID),
       formula_lambda = ~ 1 + x1 + (x1 || ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ 1 + x1 + (x1 || ID), ~1 + x1 + (x1 || ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ 1 + x1 + (x1 || ID), ~1 + x1 + (x1 || ID), data = internal_fake_data)[["mm"]],
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
                             (0 + mm[['rdm_lambda_ID']][, 2] | ID) + (0 + mm[['rdm_mu_ID']][, 1] | ID) +
@@ -57,7 +57,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ x1 + (x1 || ID),
       formula_lambda = ~ x1 + (x1 || ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ x1 + (x1 | ID), ~x1 + (x1 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ x1 + (x1 | ID), ~x1 + (x1 | ID), data = internal_fake_data)[["mm"]],
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
                             (0 + mm[['rdm_lambda_ID']][, 2] | ID) + (0 + mm[['rdm_mu_ID']][, 1] | ID) +
@@ -69,7 +69,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ x2 + (x2 || ID),
       formula_lambda = ~ x2 + (x2 || ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (x2 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (x2 | ID), data = internal_fake_data)[["mm"]],
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
                             (0 + mm[['rdm_lambda_ID']][, 2] | ID) + (0 + mm[['rdm_lambda_ID']][, 3] | ID) +
@@ -83,7 +83,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ x1 + (1 | ID) + (x1 | ID),
       formula_lambda = ~ x1 + (1 | ID) + (x1 | ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), data = internal_fake_data)[["mm"]],
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
                             (0 + mm[['rdm_lambda_ID']][, 2] | ID) + (0 + mm[['rdm_mu_ID']][, 1] | ID) +
@@ -96,7 +96,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ x2 + (1 | ID) + (x2 | ID),
       formula_lambda = ~ x2 + (1 | ID) + (x2 | ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (x2 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (x2 | ID), data = internal_fake_data)[["mm"]],
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
                             (0 + mm[['rdm_lambda_ID']][, 2] | ID) + (0 + mm[['rdm_lambda_ID']][, 3] | ID) +
@@ -110,7 +110,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ x2 + (1 | ID) + (x2 | ID),
       formula_lambda = ~ x2 + (1 | ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (1 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ x2 + (x2 | ID), ~ x2 + (1 | ID), data = internal_fake_data)[["mm"]],
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
                             (0 + mm[['rdm_mu_ID']][, 1] | ID) + (0 + mm[['rdm_mu_ID']][, 2] | ID) +
@@ -123,7 +123,7 @@ test_that("construct_glmer_formula() makes a valid formula for uncorrelated rand
       formula_mu = ~ x2 + (1 | rdm) + (x2 | rdm),
       formula_lambda = ~ x2 + (1 | rdm),
       dv = "dv",
-      mm = construct_modelmatrices(~ x2 + (x2 | rdm), ~ x2 + (1 | rdm), data = internal_fake_data),
+      mm = construct_modelmatrices(~ x2 + (x2 | rdm), ~ x2 + (1 | rdm), data = internal_fake_data)[["mm"]],
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_rdm']][, 1] | rdm) +
                             (0 + mm[['rdm_mu_rdm']][, 1] | rdm) + (0 + mm[['rdm_mu_rdm']][, 2] | rdm) +
@@ -199,7 +199,7 @@ test_that("construct_glmer_formula() handles correlate_sdt_params argument corre
       formula_mu = ~ 1 + x1 + (x1 || ID),
       formula_lambda = ~ 1 + x1 + (x1 || ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ 1 + x1 + (x1 | ID), ~ 1 + x1 + (x1 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ 1 + x1 + (x1 | ID), ~ 1 + x1 + (x1 | ID), data = internal_fake_data)[["mm"]],
       correlate_sdt_params = T
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
@@ -211,7 +211,7 @@ test_that("construct_glmer_formula() handles correlate_sdt_params argument corre
       formula_mu = ~ 1 + x1 + (x1 || ID),
       formula_lambda = ~ 1 + x1 + (x1 || ID),
       dv = "dv",
-      mm = construct_modelmatrices(~ 1 + x1 + (x1 | ID), ~ 1 + x1 + (x1 | ID), data = internal_fake_data),
+      mm = construct_modelmatrices(~ 1 + x1 + (x1 | ID), ~ 1 + x1 + (x1 | ID), data = internal_fake_data)[["mm"]],
       correlate_sdt_params = F
     )),
     as.character(as.formula("dv ~ 0 + mm[['lambda']] + mm[['mu']] + (0 + mm[['rdm_lambda_ID']][, 1] | ID) +
@@ -265,7 +265,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (committee || id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee || id) + (committee || stimulus),
                                    data = dat_exp_2,
-                                   trial_type_var = "status_fac")
+                                   trial_type_var = "status_fac")[["mm"]]
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -283,7 +283,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee || id) + (1 | stimulus),
                                    data = dat_exp_2,
-                                   trial_type_var = "status_fac")
+                                   trial_type_var = "status_fac")[["mm"]]
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -300,7 +300,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee || id) + (1 | stimulus),
                                    data = dat_exp_2,
-                                   trial_type_var = "status_fac")
+                                   trial_type_var = "status_fac")[["mm"]]
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -318,7 +318,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee | stimulus),
                                    formula_lambda = ~ committee + (committee | id),
                                    data = dat_exp_2,
-                                   trial_type_var = "status_fac")
+                                   trial_type_var = "status_fac")[["mm"]]
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']] + mm[['rdm_mu_id']] | id) +
@@ -332,7 +332,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee | id),
                                    data = dat_exp_2,
-                                   trial_type_var = "status_fac")
+                                   trial_type_var = "status_fac")[["mm"]]
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -350,7 +350,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee | id),
                                    data = dat_exp_2,
-                                   trial_type_var = "status_fac")
+                                   trial_type_var = "status_fac")[["mm"]]
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']] + mm[['mu']][, -c(1, 2)] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +
@@ -367,7 +367,7 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
       mm = construct_modelmatrices(formula_mu = ~ committee + (1 | id) + (committee || stimulus),
                                    formula_lambda = ~ committee + (committee | id),
                                    data = dat_exp_2,
-                                   trial_type_var = "status_fac")
+                                   trial_type_var = "status_fac")[["mm"]]
     )),
     as.character(as.formula("y ~ 0 + mm[['lambda']][, -c(1, 3)] + mm[['mu']] +
                             (0 + mm[['rdm_lambda_id']][, 1] | id) + (0 + mm[['rdm_lambda_id']][, 2] | id) +

@@ -1,11 +1,13 @@
 ##------------------------------------------------------------
-## Demo mlsdt
+## Demo mesdt
 ## Date: September 2024
 ## Marie Jakob <marie.jakob@psychologie.uni-freiburg.de>
 ## ------------------------------------------------------------
 
 library(tidyverse)
-library(mlsdt)
+library(parallel)
+library(lme4)
+library(glmmTMB)
 
 dat_exp_1 <- readRDS("tests/test-dat/data_prep.rds") %>%
   dplyr::mutate(committee = factor(committee_ef),
@@ -20,81 +22,70 @@ contrasts(dat_exp_1$participant_gender) <- contr.sum(2)
 contrasts(dat_exp_1$status_fac) <- contr.sum(2)
 
 
-#------------------------------------------------------------------------------#
-#### Fit SDT models ####
-
-# set backend to lme4
-options("mlsdt.backend" = "lme4")
-
-fit_sdt <- fit_mlsdt(formula_mu = ~ emp_gender * participant_gender + (1 | id),
-                     formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
-                     data = dat_exp_1,
-                     dv = "response",
-                     trial_type_var = "status_fac")
-summary(fit_sdt$fit_obj)
-fit_sdt$Lambda
-fit_sdt$Mu
-
-options("mlsdt.backend" = "glmmTMB")
-fit_sdt_glmmTMB <- fit_mlsdt(formula_mu = ~ emp_gender * participant_gender + (1 | id),
-                     formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
-                     data = dat_exp_1,
-                     dv = "response",
-                     trial_type_var = "status_fac")
-
-
-LRTs <- compute_tests(fit_sdt_glmmTMB,
-                      data = dat_exp_1,
-                      type = 3,
-                      test_intercepts = T,
-                      test_params_mu = "all",
-                      test_params_lambda = ~ committee,
-                      test_ran_ef = F)
-
-LRTs$LRTs
-
-
-# Test random effects
-LRTs_ranef <- compute_tests(fit_sdt_glmmTMB,
-                            data = dat_exp_1,
-                            type = 3,
-                            test_intercepts = T,
-                            test_ran_ef = F)
-
-# Significance tests based on parametric bootstrapping
-boot_tests <- compute_tests(fit_sdt_glmmTMB,
-                      data = dat_exp_1,
-                      tests = "bootstrap",
-                      nsim = 100,
-                      type = 3,
-                      test_intercepts = T,
-                      test_ran_ef = F)
-
-
 
 #------------------------------------------------------------------------------#
 #### Intended Workflow ####
 
 # 1. Fit the model
-fit_sdt <- fit_mlsdt(formula_mu = ~ emp_gender * participant_gender + (1 | id),
-                     formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
+# set backend to lme4
+options("mesdt.backend" = "lme4")
+
+fit_sdt <- fit_mesdt(formula_mu = ~ emp_gender + (1 | id),
+                     formula_lambda = ~ committee + (committee | id),
                      data = dat_exp_1,
                      dv = "response",
                      trial_type_var = "status_fac")
-
+summary(fit_sdt$fit_obj)
 # Model object now contains every information from the fitted model (including Wald tests)
 # Summary method prints coefficients and Wald tests for the parameters
 
-# 2. Compute tests
 
-# fit_sdt <- compute_tests(fit_sdt, ...)
+# backend glmmTMB
+options("mesdt.backend" = "glmmTMB")
+fit_sdt_glmmTMB <- fit_mesdt(formula_mu = ~ emp_gender * participant_gender + (1 | id),
+                             formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
+                             data = dat_exp_1,
+                             dv = "response",
+                             trial_type_var = "status_fac")
+summary(fit_sdt_glmmTMB)
 
+
+# 2. Compute relevant tests
+# e.g., LRTs
+CL <- makeCluster(4, type = "SOCK")
+
+fit_sdt_glmmTMB <- compute_tests(fit_sdt_glmmTMB,
+                        data = dat_exp_1,
+                        type = 3,
+                        cl = CL,
+                        test_intercepts = T,
+                        test_params_mu = "all",
+                        test_params_lambda = ~ committee,
+                        test_ran_ef = F)
 # -> Method returns the modified fit object with the added tests
 # Summary method prints coefficients and all tests that are stored in the model
 
+summary(fit_sdt_glmmTMB)
 
-# Optionally: compute tests for random effects, bootstrap tests etc.
+# or PB tests
+fit_sdt_glmmTMB <- compute_tests(fit_sdt_glmmTMB,
+                         data = dat_exp_1,
+                         type = 3,
+                         cl = CL,
+                         tests = "bootstrap",
+                         nsim = 2,
+                         test_intercepts = F,
+                         test_params_mu = ~ participant_gender,
+                         test_params_lambda = ~ committee,
+                         test_ran_ef = F)
+stopCluster(CL)
+summary(fit_sdt_glmmTMB)
+# Summary method now also prints PB tests
+
+# (2b. Tests for random effects -> only Type 3)
+
+# 3. Post-processing with emmeans()
+
+# -> Formula from
 
 
-
-# Compute emmeans

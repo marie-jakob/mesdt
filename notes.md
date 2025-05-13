@@ -2,31 +2,42 @@
 
 ### TODOs
 
-Definitely: 
-+ structure of mesdt objects (nested list with input, fit object, separate slots for tests)
-+ emmeans-like estimates + SEs
-+ Plots
-+ -> To do that: change formula structure from model matrices (only used for LRTs) to just using separate variables for the sensitivity parameters
+Functionality / Technical stuff:
++ different distributions: gumbel-min link function (gumbel max?)
+  + -> adapt to do the correct link stuff (reverse-coding response variable or something
+  + -> see DeCarlo 1998 paper)
++ gumbel-max + tests
++ Aggregation
++ handle reverse-coded trial type variable
++ LRTs: check if tests for an object were already computed
++ tests continuous predictors
+
+Post-Processing / Pretty Stuff
 + apa_print_mlsdt() method
-+ support for mix of correlated and uncorrelated random effects
-  + That should also be easier when the translation of the input syntax is changed
 + pretty output
   + summary() (+ print.summary()) method
+    + -> print random effects
   + print() method
-+ change mu / lambda to c / d' -> or just use "sensitivty" and "response bias"
++ df for random effects
+
+Documentations / Conventions / Naming / Practicality
++ README
 + documentation
 + examples
 + Check user input (Raphi: Check everything that users give you!)
+  + compute_tests()
 + Tests for customized SDT user output
-+ test only a subset of random effects
-
-
-
-Probably:
++ skip tests if packages not installed
++ Vignette extreme value SDT
++ datasets: detecting bias project? 
 
 
 Maybe: 
 + optionally test parameters instead of whole factors
++ support for mix of correlated and uncorrelated random effects
+  + That should also be easier when the translation of the input syntax is changed
++ Plots
++ test only a subset of random effects
 
 
 Probably not: 
@@ -49,15 +60,24 @@ Done:
 + mesdt model class
 + renaming stuff
 + simulate() method
++ emmeans method
++ input checks fit_mesdt()
++ change mu / lambda to c / d' -> or just use "sensitivity" and "response bias"  -> discriminability 
+
+
+
+### Questions Co-Authors
+
++ naming conventions for SDT parameters - what to use here? 
+
 
 
 ### Open Questions
 
-+ How to credit Henrik Singmann (a lot of things are similar to afex)
-	+ ask if he wants to join the project
++ How to credit Henrik Singmann (a lot of things are similar to afex + he helped)
 + How to handle contrast coding? Automatically use sum contrasts and notify the user? 
 + How to handle overparametrized models (when lme4 drops columns)? (fixed-effect model matrix is rank deficient so dropping XX columns / coefficients)
-+ How to handle reverse-coded trial_type variable? 
++ How to handle reverse-coded trial_type variable? -> warning to user
 
 
 ### Open Questions - Raphi & Constantin

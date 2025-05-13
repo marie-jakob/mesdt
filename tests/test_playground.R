@@ -8,7 +8,7 @@ test_formula <- construct_glmer_formula(
   formula_mu = ~ 1 + x1 + (x1 || ID),
   formula_lambda = ~ 1 + x1 + (x1 | ID),
   dv = "dv",
-  mm = construct_modelmatrices(~ 1 + x1 + (x1 || ID), ~ 1 + x1 + (x1 || ID), data = internal_sdt_data),
+  mm = construct_modelmatrices(~ 1 + x1 + (x1 || ID), ~ 1 + x1 + (x1 || ID), data = internal_sdt_data)[["mm"]],
 )
 
 
@@ -663,9 +663,114 @@ contrast(emmeans(mod_new, ~ status_fac + committee_s + committee),
          list("denied" = c(1, -1, 0, 0),
               "granted" = c(0, 0, 1, -1)))
 
+options("mesdt.backend" = "glmmTMB")
+fit_sdt <- fit_mesdt(formula_mu = ~ emp_gender + (1 | id),
+                     formula_lambda = ~ committee + (committee | id),
+                     data = dat_exp_2,
+                     dv = "assessment",
+                     trial_type_var = "status_fac")
+
+unique(dat_exp_1$committee)
+
+
+#ref_grid_obj <- ref_grid(fit_sdt$fit_obj,
+#                         at = list(
+#                           committee = unique(dat$committee),
+#                           B = c("yes", "no")
+#                         ),
+#                         cov.reduce = FALSE,
+#                         data = mydata,
+#                         options = list(contrast = list(A = "contr.treatment", B = "contr.treatment"))
+#)
 
 
 
+mm_mesdt <- construct_modelmatrices(~ committee, ~ contingencies,
+                                    data = dat_exp_2,
+                                    trial_type_var = "status_fac",
+                                    dv = "response")
+mm_mesdt
+
+m <- model.matrix(~ committee + status_fac * contingencies, data = dat_exp_2)
+
+
+# Marginal Means for Sensitivity
+dat_exp_1$status_fac <- dat_exp_1$status_ef
+test_m <- glmmTMB(assessment ~ status_ef * emp_gender + (1 | id),
+                  data = dat_exp_2,
+                  family = binomial("probit"))
+
+emm_sens <- contrast(emmeans(test_m, ~ status_ef * emp_gender),
+                     list("male" = c(-1, 1, 0, 0),
+                          "female" = c(0, 0, -1, 1)))
+
+emm_sens
+
+summary(test_m)
+fixef(test_m)$cond[2] + fixef(test_m)$cond[4]
+fixef(test_m)$cond[2] - fixef(test_m)$cond[4]
+
+vcov(test_m)
+# Var(X+Y)=Var(X) + Var(Y) + 2Cov(X,Y)
+sqrt(vcov(test_m)$cond[2, 2] + vcov(test_m)$cond[4, 4] + 2 * vcov(test_m)$cond[2, 4])
+sqrt(vcov(test_m)$cond[2, 2] + vcov(test_m)$cond[4, 4] - 2 * vcov(test_m)$cond[2, 4])
+
+# you don't actually need the other elements of the variance-covariance matrix!
+# -> provide to separate emmeans methods for sensitivity and response bias
+# using the model matrices etc. given in the model
+
+# example model
+options("mlsdt.backend" = "lme4")
+fit_sdt <- fit_mesdt(formula_mu = ~ emp_gender + (1 | id),
+                     formula_lambda = ~ committee + (committee | id),
+                     data = dat_exp_2,
+                     dv = "assessment",
+                     trial_type_var = "status_fac")
+
+# Try this
+recover_data.mesdt <- emmeans:::recover_data.merMod
+
+# rank-deficient models abfangen!
+# new argument: sdt_par = c("response_bias", "sensitivity")
+# store model matrices in object
+# object: whole fit object
+# terms: terms of response bias formula
+# xlev:
+emm_basis.mesdt_fit <- function(object, trms, xlev, grid, ...) {
+
+  if (sdt_par == "sensitivity") {
+    m = object$internal$m_frame$mu
+    X = object$internal$mm$mu
+    # get coefficients for lambda only
+    bhat = coef(object)
+    # only select rows and columns relevant for sensitivity
+    V <- vcov(object$fit_obj)[grep("mu", rownames(vcov(object$fit_obj))),
+                                  grep("mu", colnames(vcov(object$fit_obj)))]
+
+    nbasis = matrix(NA)
+    # if matrix is rank deficient:
+    dfargs <- list(df = summary(object)$d_coef[2])
+    dffun = function(k, dfargs) dfargs$df
+  } else {
+    m = object$internal$m_frame$lambda
+    X = object$internal$mm$lambda
+    # get coefficients for lambda only
+    bhat = coef(object)
+    # only select rows and columns relevant for sensitivity
+    V <- vcov(object$fit_obj)[grep("lambda", rownames(vcov(object$fit_obj))),
+                              grep("lambda", colnames(vcov(object$fit_obj)))]
+
+    nbasis = matrix(NA)
+    # if matrix is rank deficient:
+    dfargs <- list(df = summary(object)$c_coef[2])
+    dffun = function(k, dfargs) dfargs$df
+  }
+
+  list(X = X, bhat = bhat, nbasis = nbasis, V = V,
+       dffun = dffun, dfargs = dfargs)
+}
+
+emmeans(fit_sdt, ~ committee, sdt_par = "response_bias")
 
 
 #------------------------------------------------------------------------------#

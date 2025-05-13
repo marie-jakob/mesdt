@@ -1,6 +1,6 @@
 #' Convert two given formulas for the two SDT parameters to a glmer() formula
 #'
-#' @param formula_mu formula for sensitivity
+#' @param formula_mu formula for discriminability
 #' @param formula_lambda formula for response bias
 #' @param dv name of dependent variable
 #' @param correlate_sdt_params model correlations between mu and lambda random effects?

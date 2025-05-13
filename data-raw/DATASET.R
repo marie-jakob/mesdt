@@ -2,6 +2,8 @@
 
 
 set.seed(1340569)
+library(glmmTMB)
+
 #------------------------------------------------------------------------------#
 #### Simulate Test Data ####
 
@@ -94,8 +96,7 @@ sim_data <- data.frame(sim3)
 names(sim_data) <- c("y", "trial_type", "x1", "ID")
 
 sim_data$y <- factor(sim_data$y)
-sim_data$trial_type_fac <- factor(sim_data$trial_type, levels = c(0.5, -0.5))
-contrasts(sim_data$trial_type_fac) <- contr.sum(2)
+sim_data$trial_type_fac <- sim_data$trial_type * 2
 #sim_data$x1 <- factor(sim_data$x1)
 sim_data$ID <- factor(sim_data$ID)
 
@@ -163,9 +164,10 @@ dat_exp_2 <- readRDS("tests/test-dat/dat_exp_2.rds") %>%
                           "reversed-1", "reversed-2",
                           "balanced-1", "balanced-2"))
 dat_exp_2 %>%
-  dplyr::mutate(committee = factor(committee_ef),
-                emp_gender = factor(emp_gender_ef),
-                status_fac = factor(status_ef),
+  dplyr::mutate(committee = factor(ifelse(committee_ef == 1, "granted", "denied")),
+                emp_gender = factor(ifelse(emp_gender_ef == 1, "f", "m")),
+                # status_fac = factor(status_ef),
+                status_fac = status_ef,
                 status_ef = status_ef / 2,
                 contingencies = factor(contingencies),
                 stimulus = sample(c("stim-1", "stim-2", "stim-3",
@@ -174,7 +176,7 @@ dat_exp_2 %>%
                                   nrow(dat_exp_2),
                                   replace = T)) -> dat_exp_2
 
-contrasts(dat_exp_2$status_fac) <- contr.sum(2)
+# contrasts(dat_exp_2$status_fac) <- contr.sum(2)
 contrasts(dat_exp_2$committee) <- contr.sum(2)
 contrasts(dat_exp_2$emp_gender) <- contr.sum(2)
 contrasts(dat_exp_2$contingencies) <- contr.sum(3)

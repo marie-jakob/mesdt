@@ -1,15 +1,15 @@
-Package: mlsdt
-Title: Fit Multi-Level Signal Detection Theory Models Using Maximum Likelihood Estimation
+Package: mesdt
+Title: Mixed-Effects Signal Detection Theory Models
 Version: 0.0.0.9000
 Authors@R: 
     person("Marie", "Jakob", , "marie.a.jakob@gmail.com", role = c("aut", "cre"),)
-Description: Fit multi-level signal detection theory models using maximum likelihood estimation. 
+Description: Fit mixed-effects signal detection theory models using maximum likelihood estimation. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
-URL: https://github.com/marie-jakob/mlsdt
-BugReports: https://github.com/marie-jakob/mlsdt/issues
+URL: https://github.com/marie-jakob/mesdt
+BugReports: https://github.com/marie-jakob/mesdt/issues
 Imports: 
     lme4,
     withr,
@@ -21,5 +21,5 @@ Suggests:
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
 Depends: 
-    R (>= 2.10)
+    R (>= 3.5)
 LazyData: true

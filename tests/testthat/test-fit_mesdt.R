@@ -98,8 +98,10 @@ test_that("fit_mesdt() works for uncorrelated random effects (|| notation)", {
 
 test_that("fit_mesdt() notifies the user that only uncorrelated or correlated
           random effects are possible at the moment, iff specified.", {
-  expect_message(fit_mesdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 | ID), dv = "y", data = internal_sdt_data))
-  expect_message(fit_mesdt(~ 1 + x1 + (1 | ID) + (x1 | ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y", data = internal_sdt_data))
+  expect_message(fit_mesdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 | ID), dv = "y",
+                           trial_type_var = "trial_type_fac", data = internal_sdt_data))
+  expect_message(fit_mesdt(~ 1 + x1 + (1 | ID) + (x1 | ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y",
+                           trial_type_var = "trial_type_fac", data = internal_sdt_data))
 
 })
 
@@ -131,7 +133,7 @@ test_that("fit_mesdt() works for crossed random effects with random intercepts a
   expect_equal(abs(as.data.frame(VarCorr(fit))$vcov)[1:4], abs(as.data.frame(VarCorr(fit_cross_intercept))$vcov[1:4]), tolerance = 1e-2)
 
   # random effects estimates
-  expect_equal(ranef(fit)$file_name[, 1], ranef(fit_cross_intercept)$file_name[, 1] * -1, tolerance = 1e-2)
+  expect_equal(ranef(fit)$file_name[, 1], ranef(fit_cross_intercept)$file_name[, 1], tolerance = 1e-2)
   expect_equal(unname(abs(ranef(fit)$id)[, 1:2]), unname(abs(ranef(fit_cross_intercept)$id)[, 1:2]), tolerance = 1e-4)
 }
 )

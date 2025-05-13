@@ -1,70 +1,8 @@
 .onLoad <- function(libname, pkgname) {
   # TODO: user message about backend
   # TODO: check if package loaded / installed
+  message("Setting backend to lme4.")
   options(mesdt.backend = "lme4")
-}
-fit_glmm <- function(glmer_formula,
-                     data,
-                     mm,
-                     control = NULL) {
-  # mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
-  # get global options
-  if (! (options("mesdt.backend") %in% c("lme4", "glmmTMB"))) {
-    message("Only lme4 and glmmTMB backends are supported at the moment. Defaulting to lme4.")
-    (options("mesdt.backend" = "lme4"))
-  }
-
-  if (options("mesdt.backend") == "glmmTMB" & !requireNamespace("glmmTMB", quietly = TRUE)) {
-    message("Package \"glmmTMB\" must be installed and loaded to use it as backend. Setting backend to lme4.")
-    options("mesdt.backend" = "lme4")
-  }
-
-  # only applies to lme4, defaults to 0 at the moment
-  # -> might be changed later to a function argument
-  # nAGQ <<- ifelse(is.null(options("nAGQ")$nAGQ), 0, options("nAGQ"))
-  #print(nAGQ)
-
-
-  # Fit a GLM if there are no random effects
-  if (is.null(lme4::findbars(glmer_formula))) {
-    message("Formula does not contain any random terms. Fitting a single-level model.")
-    fit_obj <- stats::glm(glmer_formula,
-                          data = data,
-                          family = binomial(link = "probit"))
-  } else if ((options("mesdt.backend") == "lme4")) {
-    if (is.null(control) |
-        ! "glmerControl" %in% attr(control, "class")) {
-      if (! is.null(control)) message("Invalid control argument for lme4. Using the default settings.")
-      fit_obj <- lme4::glmer(glmer_formula,
-                             data = data,
-                             family = binomial(link = "probit"),
-                             # this is only for testing speed -> changed for actual use
-                             nAGQ = 0)
-    } else {
-      fit_obj <- lme4::glmer(glmer_formula,
-                             data = data,
-                             family = binomial(link = "probit"),
-                             # this is only for testing speed -> changed for actual use
-                             nAGQ = 0,
-                             control = control)
-    }
-
-  } else if ((options("mesdt.backend") == "glmmTMB")) {
-    #print("fitting with glmmTMB")
-    if (is.null(control) |
-        "glmerControl" %in% attr(control, "class")) {
-      if (! is.null(control)) message("Invalid control argument for glmmTMB. Using the default settings.")
-      fit_obj <- glmmTMB::glmmTMB(glmer_formula,
-                                  data = data,
-                                family = binomial(link = "probit"))
-    } else {
-      fit_obj <- glmmTMB::glmmTMB(glmer_formula,
-                                  data = data,
-                                  family = binomial(link = "probit"),
-                                  control = control)
-    }
-  }
-  return(fit_obj)
 }
 
 all_terms_in <- function(terms_to_check, reference_terms) {
@@ -113,5 +51,55 @@ which_terms_in <- function(reference_terms, terms_to_check) {
   print(matches)
   print(matches > 0)
   return(matches[matches > 0])
+}
+
+
+
+
+pchisqmix <- function(q, df, mix, lower.tail = TRUE) {
+  df_vec <- rep(df, length(q))
+  mix_vec <- rep(mix, length(q))
+  upper <- stats::pchisq(q = q, df = df, lower.tail = lower.tail)
+  lower <- ifelse(df_vec == 1, if (lower.tail) 1 else 0,
+                  stats::pchisq(q, df-1, lower.tail = lower.tail))
+  return(mix_vec * lower + (1 - mix_vec) * upper)
+}
+
+
+
+
+standardize_dist_input <- function(x) {
+  if (x %in% c("Gaussian", "gaussian", "normal", "Normal")) dist_std <- "gaussian"
+  else if (x %in% c("logistic", "Logistic")) dist_std <- "logistic"
+  else if (x %in% c("gumbel-min", "gumbel_min", "Gumbel-Min", "Gumbel-min",
+                    "Gumbel_Min", "Gumbel_min", "extreme-value-min", "extreme_value_min",
+                    "Extreme-value-min", "Extreme_value_min")) dist_std <- "gumbel-min"
+  else dist_std <- NULL
+  return(dist_std)
+}
+
+
+standardize_type_input <- function(x) {
+  if (x %in% c(2, "II", "ii", "2", "two")) type_std <- 2
+  else if (x %in% c(3, "III", "iii", "3", "trhee")) type_std <- 3
+  else type_std <- NULL
+  return(type_std)
+}
+
+
+standardize_tests_input <- function(x) {
+  if (x %in% c("LRT", "lrt")) test_std <- "lrt"
+  else if (x %in% c("boot", "Boot", "bootstrap", "Bootstrap", "pb", "PB")) test_std <- "bootstrap"
+  else test_std <- NULL
+  return(test_std)
+}
+
+
+gumbel_max_lnk <- function(x) {
+  return(-log(-log(x)))
+}
+
+gumbel_min_lnk <- function(x) {
+  return(log(log(x)))
 }
 

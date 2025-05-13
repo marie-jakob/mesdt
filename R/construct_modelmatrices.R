@@ -34,12 +34,16 @@ construct_modelmatrices <- function(formula_mu,
   # coded with 0.5 and -0.5 such that intercept and effects can be interpreted
   # directly as increases in sensitivity
   trial_type_ef <- stats::model.matrix(~ trial_type, data = data)[, 2] * 0.5
-  mm_mu <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
-  mm_mu <- mm_mu * trial_type_ef
+  mm_mu_raw <- stats::model.matrix(lme4::nobars(formula_mu), data = data)
+
+  mm_mu <- mm_mu_raw * trial_type_ef
 
   to_return <- list(
-    "mu" = mm_mu,
-    "lambda" = mm_lambda
+    "mm" = list(
+      "mu" = mm_mu,
+      "lambda" = mm_lambda,
+      "mu_raw" = mm_mu_raw
+    )
   )
 
   # mm_rdm_lambda
@@ -65,7 +69,7 @@ construct_modelmatrices <- function(formula_mu,
                                          data = data)
     mm_rdm_mu_tmp <- mm_rdm_mu_tmp * trial_type_ef
     name_rdm_mu_tmp <- paste("rdm_mu_", rdm_fac, sep = "")
-    to_return[[name_rdm_mu_tmp]] <- mm_rdm_mu_tmp
+    to_return[["mm"]][[name_rdm_mu_tmp]] <- mm_rdm_mu_tmp
   }
   for (rdm_fac in unique(rdm_facs_lambda)) {
     # get all predictors "belonging" to one random effects grouping factor
@@ -75,8 +79,16 @@ construct_modelmatrices <- function(formula_mu,
     mm_rdm_lambda_tmp <- stats::model.matrix(form_tmp,
                                              data = data)
     name_rdm_lambda_tmp <- paste("rdm_lambda_", rdm_fac, sep = "")
-    to_return[[name_rdm_lambda_tmp]] <- mm_rdm_lambda_tmp
+    to_return[["mm"]][[name_rdm_lambda_tmp]] <- mm_rdm_lambda_tmp
   }
+
+  # Additionally create model frames to use later for emmeans
+  m_frame_lambda <- stats::model.frame(lme4::nobars(formula_lambda),
+                                        data = data)
+  m_frame_mu <- stats::model.frame(lme4::nobars(formula_mu),
+                                   data = data)
+  to_return[["m_frames"]][["lambda"]] <- m_frame_lambda
+  to_return[["m_frames"]][["mu"]] <- m_frame_mu
 
   # the model matrices consist only of the predictor variables for mu and lambda
   # for the fixed and random effects, respectively

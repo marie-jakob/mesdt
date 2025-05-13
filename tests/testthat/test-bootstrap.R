@@ -8,8 +8,8 @@ for (backend in c("glmmTMB", "lme4")) {
 
   test_that("compute_tests() compares the correct models for bootstrap tests of fixed effects", {
 
-    fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
-                     formula_mu = ~ committee * emp_gender_ef + (1 | id),
+    fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+                     discriminability = ~ committee * emp_gender_ef + (1 | id),
                      dv = "assessment",
                      trial_type_var = "status_fac",
                      data = dat_exp_2)

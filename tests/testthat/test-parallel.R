@@ -5,8 +5,8 @@ options("mesdt.backend" = "lme4")
 test_that("compute_tests() works with bootstraps on multiple cores", {
   library(parallel)
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
-                   formula_mu = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+                   discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -28,8 +28,8 @@ test_that("compute_tests() works with bootstraps on multiple cores", {
 test_that("compute_tests() works with LRTs type 3 on multiple cores", {
   library(parallel)
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
-                   formula_mu = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+                   discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -55,8 +55,8 @@ test_that("compute_tests() works with LRTs type 3 on multiple cores", {
 test_that("compute_tests() works with LRTs type 2 on multiple cores", {
   library(parallel)
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
-                   formula_mu = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+                   discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -82,8 +82,8 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
   library(parallel)
   options("mesdt.backend" = "glmmTMB")
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
-                   formula_mu = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+                   discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
@@ -127,8 +127,8 @@ test_that("compute_tests() sets the correct backend", {
   library(parallel)
   options("mesdt.backend" = "glmmTMB")
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(formula_lambda = ~ committee * emp_gender + (1 | id),
-                   formula_mu = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+                   discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
