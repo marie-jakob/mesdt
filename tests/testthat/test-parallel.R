@@ -12,7 +12,6 @@ test_that("compute_tests() works with bootstraps on multiple cores", {
                    data = dat_exp_2)
   cl <- parallel::makeCluster(4, "SOCK")
   boots_cl <- compute_tests(fit,
-                        data = dat_exp_2,
                         type = 3,
                         tests = "bootstrap",
                         test_intercepts = T,
@@ -36,7 +35,6 @@ test_that("compute_tests() works with LRTs type 3 on multiple cores", {
   cl <- parallel::makeCluster(6, "SOCK")
   parallel::clusterEvalQ(cl = cl, {options("mesdt.backend" = "lme4")})
   LRTs_par <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 3,
                             tests = "LRT",
                             test_intercepts = T,
@@ -44,7 +42,6 @@ test_that("compute_tests() works with LRTs type 3 on multiple cores", {
   parallel::stopCluster(cl)
   options("mesdt.backend" = "lme4")
   LRTs_seq <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 3,
                             tests = "LRT",
                             test_intercepts = T)
@@ -63,7 +60,6 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
   cl <- parallel::makeCluster(6, "SOCK")
   # parallel::clusterEvalQ(cl = cl, {options("mesdt.backend" = "lme4")})
   LRTs_par <- compute_tests(fit,
-                         data = dat_exp_2,
                          type = 2,
                          tests = "LRT",
                          test_intercepts = T,
@@ -71,7 +67,6 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
   parallel::stopCluster(cl)
   options("mesdt.backend" = "lme4")
   LRTs_seq <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 2,
                             tests = "LRT",
                             test_intercepts = T)
@@ -90,7 +85,6 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
   cl <- parallel::makeCluster(6, "SOCK")
 
   LRTs_par <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 2,
                             tests = "LRT",
                             test_intercepts = T,
@@ -98,7 +92,6 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
   parallel::stopCluster(cl)
 
   LRTs_seq <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 2,
                             tests = "LRT",
                             test_intercepts = T)
@@ -107,7 +100,6 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
   cl <- parallel::makeCluster(6, "SOCK")
 
   LRTs_par <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 3,
                             tests = "LRT",
                             test_intercepts = T,
@@ -115,7 +107,6 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
   parallel::stopCluster(cl)
 
   LRTs_seq <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 3,
                             tests = "LRT",
                             test_intercepts = T)
@@ -133,14 +124,12 @@ test_that("compute_tests() sets the correct backend", {
                    trial_type_var = "status_fac",
                    data = dat_exp_2)
   LRTs_seq <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 2,
                             tests = "LRT",
                             test_intercepts = T)
   options("mesdt.backend" = "lme4")
   cl <- parallel::makeCluster(6, "SOCK")
   LRTs_par <- compute_tests(fit,
-                            data = dat_exp_2,
                             type = 2,
                             tests = "LRT",
                             test_intercepts = T,

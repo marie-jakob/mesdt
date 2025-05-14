@@ -18,7 +18,6 @@ for (backend in c("glmmTMB", "lme4")) {
         print(inter_tmp)
         print(type_tmp)
         suppressWarnings(boot <- compute_tests(fit,
-                              data = dat_exp_2,
                               tests = "bootstrap",
                               type = type_tmp,
                               nsim = 1,
@@ -40,7 +39,7 @@ for (backend in c("glmmTMB", "lme4")) {
       for (type_tmp in c(2, 3)) {
         print(inter_tmp)
         print(type_tmp)
-        suppressWarnings(boot <- compute_tests(fit, data = dat_exp_2,
+        suppressWarnings(boot <- compute_tests(fit,
                               test_intercepts = inter_tmp,
                               test_ran_ef = F,
                               type = type_tmp,
@@ -57,7 +56,7 @@ for (backend in c("glmmTMB", "lme4")) {
                      trial_type_var = "status_fac")
     for (inter_tmp in c(T, F)) {
       print(inter_tmp)
-      suppressWarnings(boot <- compute_tests(fit, data = dat_exp_2,
+      suppressWarnings(boot <- compute_tests(fit,
                            test_intercepts = T,
                            test_ran_ef = inter_tmp,
                            type = 3,
@@ -71,7 +70,7 @@ for (backend in c("glmmTMB", "lme4")) {
     fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                      trial_type_var = "status_fac")
     cl <- makeCluster(8, type = "SOCK")
-    suppressWarnings(boot <- compute_tests(fit, data = dat_exp_2,
+    suppressWarnings(boot <- compute_tests(fit,
                                            test_intercepts = T,
                                            test_ran_ef = T,
                                            type = 3,
@@ -95,7 +94,7 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
   fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")
   cl <- makeCluster(8, type = "SOCK")
-  suppressWarnings(boot_1 <- compute_tests(fit, data = dat_exp_2,
+  suppressWarnings(boot_1 <- compute_tests(fit,
                                          test_intercepts = T,
                                          test_ran_ef = T,
                                          type = 3,
@@ -103,7 +102,7 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
                                          nsim = 8,
                                          cl = cl,
                                          seed = 12))
-  suppressWarnings(boot_2 <- compute_tests(fit, data = dat_exp_2,
+  suppressWarnings(boot_2 <- compute_tests(fit,
                                            test_intercepts = T,
                                            test_ran_ef = T,
                                            type = 3,

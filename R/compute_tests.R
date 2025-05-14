@@ -7,33 +7,74 @@
 #' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
 #' "bootstrap" = parametric bootstrap)
 #' @param nsim number of simulated datasets for bootstrapping
-#' @param mm model matrices (optional)
 #' @param type type of tests (2 or 3, only relevant for likelihood ratio tests and
 #'  parametric bootstrapping)
 #' @param test_intercepts boolean indicating if intercepts for discriminability and
 #'  response bias should be tested
 #' @param test_ran_ef boolean indicating whether random (T) or fixed effects
 #'  should be tested (F)
-#' @param test_params_mu which coefficients on discriminability should be tested?
+#' @param test_discriminability which coefficients on discriminability should be tested?
 #'  (default is "all")
-#' @param test_params_lambda which coefficients on response bias should be tested?
+#' @param test_response_bias which coefficients on response bias should be tested?
 #'  (default is "all")
 #'
 #' @export
-compute_tests <- function(mesdt_fit, data,
+compute_tests <- function(mesdt_fit,
                           cl = NULL, tests = "lrt", nsim = 1000,
-                          mm = NULL, type = 3, test_intercepts = F, test_ran_ef = F,
-                          test_params_mu = "all",
-                          test_params_lambda = "all",
+                          type = 3, test_intercepts = F, test_ran_ef = F,
+                          tests_discriminability = "all",
+                          tests_response_bias = "all",
                           control = NULL,
                           seed = NULL) {
 
+  ##### Check Input
+  # TODO: give data as argument or take the data from the fitted model?
+  # -> could lead to issues with extreme value
+
+  if (class(mesdt_fit) != "mesdt_fit") stop("Input 'mesdt_fit' must be of class 'mesdt_fit'.")
   type <- standardize_type_input(type)
+
+  if (is.null(tests)) stop("Input 'tests' should be 'lrt' (for likelihood ratio tests) or 'boot' (for tests based on parametric bootstrapping")
+  if (! is.numeric(nsim)) stop("Input 'nsim' must be numeric.")
+  if (round(nsim, 0) != nsim) stop("Input 'nsim' must be an integer.")
   if (is.null(type)) stop("Input 'type' should be 2 or 3.")
   tests <- standardize_tests_input(tests)
-  if (is.null(tests)) stop("Input 'tests' should be 'lrt' (for likelihood ratio tests) or 'boot' (for tests based on parametric bootstrapping")
+  if (! is.logical(test_intercepts)) stop("Input 'test_intercepts' must be of type 'logical'.")
+  if (! is.logical(test_ran_ef)) stop("Input 'test_ran_ef' must be of type 'logical'.")
+
+  if (! is.null(tests_discriminability)) {
+    if (! typeof(tests_discriminability) == "language" & ! tests_discriminability == "all") stop("Input 'tests_discriminability' must be a formula or 'all'.")
+    if (typeof(tests_discriminability) == "language") {
+      # check that the formula does not contain random effects
+      if (lme4::nobars(tests_discriminability) != tests_discriminability) stop("Input 'tests_discriminability' must not contain random effects.")
+      else {
+        terms_mod <- attr(terms(nobars(fit$user_input$discriminability)), "term.labels")
+        print(terms_mod)
+        terms_input <- attr(terms(nobars(tests_discriminability)), "term.labels")
+        print(terms_input)
+        if (! all(terms_input %in% terms_mod)) stop("Input 'tests_discriminability' contains terms that are not present in the fitted model. Please check your formula again.")
+      }
+    }
+  }
+
+  if (! is.null(tests_response_bias)) {
+    if (! typeof(tests_response_bias) == "language" & ! tests_response_bias == "all") stop("Input 'tests_response_bias' must be a formula or 'all'.")
+    if (typeof(tests_response_bias) == "language") {
+      # check that the formula does not contain random effects
+      if (lme4::nobars(tests_response_bias) != tests_response_bias) stop("Input 'tests_response_bias' must not contain random effects.")
+      else {
+        terms_mod <- attr(terms(nobars(fit$user_input$bias)), "term.labels")
+        print(terms_mod)
+        terms_input <- attr(terms(nobars(tests_response_bias)), "term.labels")
+        print(terms_input)
+        if (! all(terms_input %in% terms_mod)) stop("Input 'tests_response_bias' contains terms that are not present in the fitted model. Please check your formula again.")
+      }
+    }
+  }
+
 
   fit_obj <- mesdt_fit$fit_obj
+  data <- mesdt_fit$internal$data
   formula_mu <- mesdt_fit$user_input$discriminability
   formula_lambda <- mesdt_fit$user_input$bias
   dv <- mesdt_fit$user_input$dv
@@ -41,11 +82,13 @@ compute_tests <- function(mesdt_fit, data,
   correlate_sdt_params <- mesdt_fit$user_input$correlate_sdt_params
   distribution <- mesdt_fit$user_input$distribution
 
+  mm <- mesdt_fit$internal$mm
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
-  if (is.null(mm)) {
-    mm <- construct_modelmatrices(formula_mu, formula_lambda, data, trial_type_var = trial_type_var, distribution = distribution)[["mm"]]
-  }
+
+  #if (is.null(mm)) {
+  #  mm <- construct_modelmatrices(formula_mu, formula_lambda, data, trial_type_var = trial_type_var, distribution = distribution)[["mm"]]
+  #}
   if (test_ran_ef & type != 3) {
     stop("Only type III sums of squares are available for testing random effects.")
   }
@@ -91,7 +134,7 @@ compute_tests <- function(mesdt_fit, data,
                              rem_ran_ef = test_ran_ef, correlate_sdt_params = correlate_sdt_params,
                              distribution = distribution,
                              cl = cl, control = control,
-                             test_params_mu = test_params_mu, test_params_lambda = test_params_lambda)
+                             tests_discriminability = tests_discriminability, tests_response_bias = tests_response_bias)
   if(is.null(submodels)) return(NULL)
   if (type == 3) {
     reduced_fits <- submodels
@@ -278,7 +321,7 @@ compute_tests <- function(mesdt_fit, data,
 
 fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, distribution,
                           test_intercepts = F, rem_ran_ef = F, correlate_sdt_params = T,
-                          cl = NULL, test_params_mu = "all", test_params_lambda = "all",
+                          cl = NULL, tests_discriminability = "all", tests_response_bias = "all",
                           control = NULL) {
   # Default behavior: generate reduced models for all _variables_ (not factors) in the formula
   # -> correspond to multiple model parameters for factors with more than two levels
@@ -322,11 +365,11 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
 
 
     # Update range of to-be-tested parameters if only some parameters are to be tested
-    if (is.null(test_params_mu)) {
+    if (is.null(tests_discriminability)) {
       labels_mu <- NULL; test_mu_labels <- NULL; range_mu <- NULL;
-    } else if (test_params_mu != "all") {
+    } else if (tests_discriminability != "all") {
       labels_mu <- attr(stats::terms.formula(lme4::nobars(formula_mu)), "term.labels")
-      test_mu_labels <- attr(stats::terms.formula(test_params_mu), "term.labels")
+      test_mu_labels <- attr(stats::terms.formula(tests_discriminability), "term.labels")
       if (! all_terms_in(test_mu_labels, labels_mu)) stop("Only parameters that are in the model can be tested.")
       range_mu <- ifelse(test_intercepts,
                          list(range_mu[[1]][c(1, which_terms_in(reference_terms = labels_mu,
@@ -334,11 +377,11 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
                          list(range_mu[[1]][which_terms_in(reference_terms = labels_mu,
                                                            terms_to_check = test_mu_labels)]))
     }
-    if (is.null(test_params_lambda)) {
+    if (is.null(tests_response_bias)) {
       labels_lambda <- NULL; test_lambda_labels <- NULL; range_lambda <- NULL;
-    } else if (test_params_lambda != "all") {
+    } else if (tests_response_bias != "all") {
       labels_lambda <- attr(stats::terms.formula(lme4::nobars(formula_lambda)), "term.labels")
-      test_lambda_labels <- attr(stats::terms.formula(test_params_lambda), "term.labels")
+      test_lambda_labels <- attr(stats::terms.formula(tests_response_bias), "term.labels")
       if (! all_terms_in(test_lambda_labels, labels_lambda)) stop("Only parameters that are in the model can be tested.")
       range_lambda <- ifelse(test_intercepts,
                              list(range_lambda[[1]][c(1, which_terms_in(reference_terms = labels_lambda,
@@ -397,7 +440,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
     assigns <- attr(mm[["lambda"]], "assign")
     orders <- attr(terms(lme4::nobars(formula_lambda)), "order")
 
-    if (is.null(test_params_lambda)) full_formulas_lambda <- NULL
+    if (is.null(tests_response_bias)) full_formulas_lambda <- NULL
     if ((max(c(0, orders)) + as.numeric(test_intercepts)) < 2) full_formulas_lambda <- NULL
     else {
       if (test_intercepts) n_orders_lambda <- 0:(max(orders) - 1)
@@ -427,7 +470,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
     assigns <- attr(mm[["mu"]], "assign")
     orders <- attr(terms(lme4::nobars(formula_mu)), "order")
 
-    if (is.null(test_params_mu)) full_formulas_mu <- NULL
+    if (is.null(tests_discriminability)) full_formulas_mu <- NULL
     if ((max(c(0, orders)) + as.numeric(test_intercepts)) < 2) full_formulas_mu <- NULL
     else {
       if (test_intercepts) n_orders_mu <- 0:(max(orders) - 1)
@@ -461,15 +504,15 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
   }
   if (! rem_ran_ef) {
     if (length(attr(terms(lme4::nobars(formula_lambda)), "term.labels")) > 0) {
-      if (! is.null(test_params_lambda)) {
-        if (test_params_lambda != "all") names_lambda <- paste(c(names_lambda, test_lambda_labels), "lambda", sep = "_")
+      if (! is.null(tests_response_bias)) {
+        if (tests_response_bias != "all") names_lambda <- paste(c(names_lambda, test_lambda_labels), "lambda", sep = "_")
         else names_lambda <- c(names_lambda, paste(attr(terms(lme4::nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
       }
     }
 
-    if (! is.null(test_params_mu)) {
+    if (! is.null(tests_discriminability)) {
       if (length(attr(terms(lme4::nobars(formula_mu)), "term.labels")) > 0) {
-        if (test_params_mu != "all") names_mu <- paste(c(names_mu, test_mu_labels), "mu", sep = "_")
+        if (tests_discriminability != "all") names_mu <- paste(c(names_mu, test_mu_labels), "mu", sep = "_")
         else names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
       }
     }

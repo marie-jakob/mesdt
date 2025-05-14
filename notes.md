@@ -7,6 +7,7 @@ Functionality / Technical stuff:
 + Aggregation
 + LRTs: check if tests for an object were already computed
 + tests continuous predictors
++ tests bootstrap with many samples
 
 Post-Processing / Pretty Stuff
 + apa_print_mlsdt() method
