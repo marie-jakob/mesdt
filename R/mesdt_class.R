@@ -36,7 +36,7 @@ summary.mesdt_fit <- function(obj) {
       opt_info <- list(
         "nAGQ" = obj$fit_obj@devcomp$dims[["nAGQ"]]
       )
-    }
+    } else opt_info <- NULL
 
   } else if (obj$user_input$backend == "glmmTMB") {
     summ_glmmtmb <- summary(obj$fit_obj)

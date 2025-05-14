@@ -44,12 +44,13 @@ d_broeder_long %>%
 
 options("mesdt.backend" = "glmmTMB")
 fit_broeder <- fit_mesdt(discriminability = ~ 1 + (1 | pid),
-                 bias = ~ 0 + baserate + (0 + baserate | pid),
+                 bias = ~ baserate + (baserate || pid),
                  data = d_broeder_bernoulli,
                  dv = "response",
                  trial_type_var = "old",
                  distribution = "gumbel-min")
 summary(fit_broeder)
+summary(fit_broeder$fit_obj)
 summary(fit_broeder_brms)
 emmeans(fit_broeder, ~baserate, dpar = "response bias")
 summary(fit_broeder_brms)

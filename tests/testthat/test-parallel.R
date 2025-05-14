@@ -19,7 +19,7 @@ test_that("compute_tests() works with bootstraps on multiple cores", {
                         nsim = 4,
                         cl = cl)
   parallel::stopCluster(cl)
-  expect_equal(boots_cl$pb_objects[[1]]$parallel, T)
+  expect_equal(boots_cl$PB_tests$pb_objects[[1]]$parallel, T)
 })
 
 #------------------------------------------------------------------------------#
@@ -48,7 +48,7 @@ test_that("compute_tests() works with LRTs type 3 on multiple cores", {
                             type = 3,
                             tests = "LRT",
                             test_intercepts = T)
-  expect_equal(LRTs_par$LRTs[, 4], LRTs_seq$LRTs[, 4])
+  expect_equal(LRTs_par$LRTs$LRT_results[, 4], LRTs_seq$LRTs$LRT_results[, 4])
 })
 
 
@@ -75,7 +75,7 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
                             type = 2,
                             tests = "LRT",
                             test_intercepts = T)
-  expect_equal(LRTs_par$LRTs[, 4], LRTs_seq$LRTs[, 4])
+  expect_equal(LRTs_par$LRTs$LRTs[, 4], LRTs_seq$LRTs$LRTs[, 4])
 })
 
 test_that("compute_tests() works with LRTs using glmmTMB as backend", {
@@ -102,7 +102,7 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
                             type = 2,
                             tests = "LRT",
                             test_intercepts = T)
-  expect_equal(LRTs_par$LRTs[, 4], LRTs_seq$LRTs[, 4])
+  expect_equal(LRTs_par$LRTs$LRTs[, 4], LRTs_seq$LRTs$LRTs[, 4])
 
   cl <- parallel::makeCluster(6, "SOCK")
 
@@ -119,7 +119,7 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
                             type = 3,
                             tests = "LRT",
                             test_intercepts = T)
-  expect_equal(LRTs_par$LRTs[, 4], LRTs_seq$LRTs[, 4])
+  expect_equal(LRTs_par$LRTs$LRTs[, 4], LRTs_seq$LRTs$LRTs[, 4])
 })
 
 
@@ -146,6 +146,6 @@ test_that("compute_tests() sets the correct backend", {
                             test_intercepts = T,
                             cl = cl)
   parallel::stopCluster(cl)
-  expect_equal(LRTs_par$LRTs[, 4], LRTs_seq$LRTs[, 4])
+  expect_equal(LRTs_par$LRTs$LRTs[, 4], LRTs_seq$LRTs$LRTs[, 4])
 
 })

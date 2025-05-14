@@ -44,7 +44,7 @@ compute_tests <- function(mesdt_fit, data,
   # only removes fixed effect, corresponding random slopes stay in the reduced model
 
   if (is.null(mm)) {
-    mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var = trial_type_var, distribution = distribution)[["mm"]]
+    mm <- construct_modelmatrices(formula_mu, formula_lambda, data, trial_type_var = trial_type_var, distribution = distribution)[["mm"]]
   }
   if (test_ran_ef & type != 3) {
     stop("Only type III sums of squares are available for testing random effects.")

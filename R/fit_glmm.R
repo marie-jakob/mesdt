@@ -4,7 +4,6 @@ fit_glmm <- function(glmer_formula,
                      distribution,
                      dv = NULL,
                      control = NULL) {
-  print(glmer_formula)
   # mm <- construct_modelmatrices(formula_mu, formula_lambda, dv, data, trial_type_var)
   # get global options
   if (! (options("mesdt.backend") %in% c("lme4", "glmmTMB"))) {

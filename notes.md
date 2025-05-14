@@ -3,21 +3,20 @@
 ### TODOs
 
 Functionality / Technical stuff:
-+ different distributions: gumbel-min link function (gumbel max?)
-  + -> adapt to do the correct link stuff (reverse-coding response variable or something
-  + -> see DeCarlo 1998 paper
-+ gumbel-max + tests
+(+ gumbel-max + tests)
 + Aggregation
-+ handle reverse-coded trial type variable
 + LRTs: check if tests for an object were already computed
 + tests continuous predictors
 
 Post-Processing / Pretty Stuff
 + apa_print_mlsdt() method
+  + can have a dependency for papaja
 + pretty output
   + summary() (+ print.summary()) method
     + -> print random effects
   + print() method
+  + print() etc. method for the tests
+  + correct names for the tests
 + df for random effects
 
 Documentations / Conventions / Naming / Practicality
@@ -29,7 +28,8 @@ Documentations / Conventions / Naming / Practicality
 + Tests for customized SDT user output
 + skip tests if packages not installed
 + Vignette extreme value SDT
-+ datasets: detecting bias project? 
++ datasets: detecting bias project?
+  + or use simulated data for a toy question?
 + set sum contrasts
 + center continuous predictors
 
@@ -65,12 +65,16 @@ Done:
 + emmeans method
 + input checks fit_mesdt()
 + change mu / lambda to c / d' -> or just use "sensitivity" and "response bias"  -> discriminability 
++ different distributions: gumbel-min link function (gumbel max?)
+  + -> adapt to do the correct link stuff (reverse-coding response variable or something
+  + -> see DeCarlo 1998 paper
 
 
 
 ### Questions Co-Authors
 
 + naming conventions for SDT parameters - what to use here? 
++ df for random effects tests
 
 
 

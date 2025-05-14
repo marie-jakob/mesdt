@@ -7,8 +7,6 @@
 #' @param data dataset
 #' @param correlate_sdt_params boolean indicating whether correlations between
 #'  SDT parameters should be modeled
-#' @param tests type of statistical tests that should be used ("Wald": Wald tests,
-#'  "LRT": likelihood ratio tests, "boot": parametric bootstrapping)
 #'
 #' @return TODO
 #' @importFrom lme4 fixef
@@ -53,17 +51,18 @@ fit_mesdt <- function(discriminability,
   if (is.null(distribution)) stop("Distribution must be gaussian, logistic, or gumbel-min.")
 
   #### Prep & fit model
-  if (distribution == "gumbel-min") {
-    glmer_formula <- construct_glmer_formula(discriminability, bias, "dv_rev", mm,
-                                             correlate_sdt_params = correlate_sdt_params)
-  } else {
-    glmer_formula <- construct_glmer_formula(discriminability, bias, dv, mm,
-                                             correlate_sdt_params = correlate_sdt_params)
-  }
-
   mm_all <- construct_modelmatrices(discriminability, bias, data, trial_type_var, distribution)
   m_frames <- mm_all[["m_frames"]]
   mm <- mm_all[["mm"]]
+
+  if (distribution == "gumbel-min") {
+    glmer_formula <- construct_glmer_formula(discriminability, bias, dv = "dv_rev", mm = mm,
+                                             correlate_sdt_params = correlate_sdt_params)
+  } else {
+    glmer_formula <- construct_glmer_formula(discriminability, bias, dv = dv, mm = mm,
+                                             correlate_sdt_params = correlate_sdt_params)
+  }
+
 
 
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"

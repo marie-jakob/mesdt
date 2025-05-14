@@ -136,7 +136,6 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
     }
     # Case 2: No Correlations
     # -> as many random-effects terms as predictors in the model
-
     for (rdm_fac in unique(rdm_facs_lambda)) {
       name_lambda_tmp <- paste("rdm_lambda_", rdm_fac, sep = "")
       rdm_parts_tmp <- sapply(1:ncol(mm[[name_lambda_tmp]]), function(x) {

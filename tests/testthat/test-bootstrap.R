@@ -109,7 +109,7 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
                                            type = 3,
                                            tests = "bootstrap",
                                            nsim = 8,
-                                           cl = cl,
+                                           #cl = cl,
                                            seed = 12))
 
   expect_equal(unlist(boot_1$PB_tests$pb_test_results[1:4, 1]), unlist(boot_2$PB_tests$pb_test_results[1:4, 1]))
