@@ -17,7 +17,7 @@ construct_glmer_formula(
 )
 }
 \arguments{
-\item{formula_mu}{formula for sensitivity}
+\item{formula_mu}{formula for discriminability}
 
 \item{formula_lambda}{formula for response bias}
 

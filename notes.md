@@ -7,7 +7,8 @@ Functionality / Technical stuff:
 + Aggregation
 + LRTs: check if tests for an object were already computed
 + tests continuous predictors
-+ tests bootstrap with many samples
++ tests bootstrap with many samples / compare with afex
++ tests random effects with random slopes with more than two levels
 
 Post-Processing / Pretty Stuff
 + apa_print_mlsdt() method
@@ -19,15 +20,13 @@ Post-Processing / Pretty Stuff
   + print() etc. method for the tests
   + correct names for the tests
 + df for random effects
++ progress bars PB
 
 Documentations / Conventions / Naming / Practicality
 + README
 + documentation
 + examples
-+ Check user input (Raphi: Check everything that users give you!)
-  + compute_tests()
-+ Tests for customized SDT user output
-+ skip tests if packages not installed
++ (Tests for customized SDT user output)
 + Vignette extreme value SDT
 + datasets: detecting bias project?
   + or use simulated data for a toy question?
@@ -65,10 +64,11 @@ Done:
 + simulate() method
 + emmeans method
 + input checks fit_mesdt()
-+ change mu / lambda to c / d' -> or just use "sensitivity" and "response bias"  -> discriminability 
++ change mu / lambda to c / d' -> or just use "sensitivity" and "response bias"  -> discriminability
 + different distributions: gumbel-min link function (gumbel max?)
   + -> adapt to do the correct link stuff (reverse-coding response variable or something
   + -> see DeCarlo 1998 paper
++ skip tests if packages not installed
 
 
 

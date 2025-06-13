@@ -1,10 +1,10 @@
 #------------------------------------------------------------------------------#
 #### fit_mesdt() ####
 
-library(parallel)
 
 for (backend in c("glmmTMB", "lme4")) {
   options("mesdt.backend" = backend)
+
 
   test_that("compute_tests() compares the correct models for bootstrap tests of fixed effects", {
 
@@ -28,6 +28,7 @@ for (backend in c("glmmTMB", "lme4")) {
   })
 
   test_that("compute_tests() compares the correct models for bootstrap tests of factors with multiple levels", {
+
     form_mu <- ~ contingencies + (1 | id)
     form_lambda <- ~ contingencies + (1 | id)
     # Same for the uncorrelated model
@@ -52,6 +53,7 @@ for (backend in c("glmmTMB", "lme4")) {
 
 
   test_that("compute_tests() compares the correct models for bootstrap tests of random effects", {
+
     fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                      trial_type_var = "status_fac")
     for (inter_tmp in c(T, F)) {
@@ -67,6 +69,10 @@ for (backend in c("glmmTMB", "lme4")) {
   })
 
   test_that("compute_tests() uses a given cluster for bootstrap tests", {
+
+    skip_if_not_installed("parallel")
+    library(parallel)
+
     fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                      trial_type_var = "status_fac")
     cl <- makeCluster(8, type = "SOCK")
@@ -91,6 +97,10 @@ options("mesdt.backend" = "lme4")
 #### Section ####
 
 test_that("compute_tests() uses the correct seed for bootstrapping", {
+
+  skip_if_not_installed("parallel")
+  library(parallel)
+
   fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
                    trial_type_var = "status_fac")
   cl <- makeCluster(8, type = "SOCK")

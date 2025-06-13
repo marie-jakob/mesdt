@@ -25,7 +25,6 @@ fit_mesdt <- function(discriminability,
                       correlate_sdt_params = T,
                       # tests = "Wald",
                       control = NULL) {
-
   #### Check input
   if (typeof(discriminability) != "language") stop("'discriminability' must be a formula'.")
   if (typeof(bias) != "language") stop("'bias' must be a 'formula'.")
@@ -33,17 +32,23 @@ fit_mesdt <- function(discriminability,
   if (typeof(dv) != "character") stop("'dv' must be of type 'character'.")
   if (is.null(data[[dv]])) stop(paste("Given dependent variable", dv, "not in data."))
   if (length(unique(data[[dv]])) != 2) stop("dv must be a binary variable.")
-  if (all(sort(unique(data[[dv]])) != c(0, 1))) stop("dv must be coded as 0 ('noise' response) and 1 ('signal' response)")
-
+  if (all(sort(unique(data[[dv]])) != c(0, 1))) {
+    if (class(data[[dv]]) == "factor" & length(unique(data[[dv]]) == 2)) {
+      data[["dv_num"]] <- as.numeric(data[[dv]]) -1
+    } else {
+      stop("dv must be coded as 0 ('noise' response) and 1 ('signal' response)")
+    }
+  }
   if (typeof(trial_type_var) != "character") stop("'trial_type_var' must be of type 'character'.")
   if (is.null(data[[trial_type_var]])) stop(paste("Given trialtype variable", trial_type_var, "not in data."))
   # TODO: if you have a predictor that only affects sensitivity (such as strength in the context of
   # memory, this won't work) -> maybe allow a ternary variable then (maybe with a warning)
   if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
+    print(unique(data[[trial_type_var]]))
     stop("'trial_type_var' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
   }
   if (class(data[[trial_type_var]]) != "numeric")
-    stop("'trial_type_var' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
+    stop("'trial_type_var' must be of type numeric.")
 
   if (typeof(correlate_sdt_params) != "logical") stop("'correlate_sdt_params' must be of type 'logical'.")
 

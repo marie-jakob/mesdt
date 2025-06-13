@@ -285,6 +285,10 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
 #### Random Effects ####
 
 test_that("compute_tests() works for testing random effects", {
+
+  skip_if_not_installed("glmmTMB")
+  library(glmmTMB)
+
   options("mesdt.backend" = "glmmTMB")
   # with correlations
   fit <- fit_mesdt(~ committee + (1 | id), ~ committee + (1 | id), dv = "assessment", data = dat_exp_2,
@@ -313,6 +317,10 @@ test_that("compute_tests() works for testing random effects", {
 # TODO: does the random stuff work for factors with multiple levels?
 
 test_that("compute_tests() works for testing crossed random effects", {
+
+  skip_if_not_installed("glmmTMB")
+  library(glmmTMB)
+
   options("mesdt.backend" = "glmmTMB")
   # with correlations
   fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
@@ -334,6 +342,9 @@ test_that("compute_tests() works for testing crossed random effects", {
 
 
 test_that("compute_tests() works for testing crossed random effects without the intercept", {
+  skip_if_not_installed("glmmTMB")
+  library(glmmTMB)
+
   options("mesdt.backend" = "glmmTMB")
   # with correlations
   fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,trial_type_var = "status_fac")
@@ -561,6 +572,8 @@ test_that("compute_tests() works for only tests on lambda", {
 #### Control Arguments on compute_tests() ####
 
 test_that("compute_tests() computes the correct Chisq value for correlated random effects.", {
+  skip_if_not_installed("glmmTMB")
+  library(glmmTMB)
   options("mesdt.backend" = "lme4")
   fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
                    trial_type_var = "trial_type_fac",

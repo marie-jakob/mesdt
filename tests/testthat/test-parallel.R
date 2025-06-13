@@ -3,6 +3,7 @@
 options("mesdt.backend" = "lme4")
 
 test_that("compute_tests() works with bootstraps on multiple cores", {
+  skip_if_not_installed("parallel")
   library(parallel)
   # Type II, test_intercepts = T
   fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
@@ -74,7 +75,11 @@ test_that("compute_tests() works with LRTs type 2 on multiple cores", {
 })
 
 test_that("compute_tests() works with LRTs using glmmTMB as backend", {
+  skip_if_not_installed("parallel")
   library(parallel)
+  skip_if_not_installed("glmmTMB")
+  library(glmmTMB)
+
   options("mesdt.backend" = "glmmTMB")
   # Type II, test_intercepts = T
   fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
@@ -115,7 +120,11 @@ test_that("compute_tests() works with LRTs using glmmTMB as backend", {
 
 
 test_that("compute_tests() sets the correct backend", {
+  skip_if_not_installed("glmmTMB")
+  skip_if_not_installed("glmmTMB")
   library(parallel)
+  library(glmmTMB)
+
   options("mesdt.backend" = "glmmTMB")
   # Type II, test_intercepts = T
   fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
