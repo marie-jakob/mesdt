@@ -42,8 +42,7 @@ construct_modelmatrices <- function(formula_mu,
   to_return <- list(
     "mm" = list(
       "mu" = mm_mu,
-      "lambda" = mm_lambda,
-      "mu_raw" = mm_mu_raw
+      "lambda" = mm_lambda
     )
   )
 

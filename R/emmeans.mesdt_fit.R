@@ -19,20 +19,23 @@ recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
 # terms: terms of response bias formula
 # xlev:
 emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
-  sdt_par = ifelse(dpar == "sensitivity", "mu", "lambda")
+  dpar <- match.arg(dpar, c("response bias", "discriminability", "sensitivity"))
+  sdt_par = ifelse(dpar == "discriminability" |
+                     dpar == "sensitivity", "mu", "lambda")
   m = object$internal$m_frame[[sdt_par]]
   contr <- attr(object$internal$mm[[sdt_par]], "contrasts")
+  mult <- ifelse(sdt_par == "lambda", -1, 1)
   X <- model.matrix(trms, grid, contrasts.arg = contr)
   if (object$internal$backend == "lme4") {
-    bhat <- lme4::fixef(object$fit_obj)[grep(sdt_par, names(lme4::fixef(object$fit_obj)))]
+    bhat <- lme4::fixef(object$fit_obj)[grep(sdt_par, names(lme4::fixef(object$fit_obj)))] * mult
       V <- as.matrix(.my.vcov(object$fit_obj)[grep(sdt_par, rownames(stats::vcov(object$fit_obj))),
                                     grep(sdt_par, colnames(stats::vcov(object$fit_obj)))])
   } else if (object$internal$backend == "glmmTMB") {
-    bhat <- glmmTMB::fixef(object$fit_obj)$cond[grep(sdt_par, names(lme4::fixef(object$fit_obj)$cond))]
+    bhat <- glmmTMB::fixef(object$fit_obj)$cond[grep(sdt_par, names(lme4::fixef(object$fit_obj)$cond))] * mult
       V <- as.matrix(stats::vcov(object$fit_obj)$cond)[grep(sdt_par, rownames(stats::vcov(object$fit_obj)$cond)),
                                                        grep(sdt_par, colnames(stats::vcov(object$fit_obj)$cond))]
   } else if (object$internal$backend == "glm") {
-    bhat <- stats::coef(object$fit_obj)[grep(sdt_par, names(stats::coef(object$fit_obj)))]
+    bhat <- stats::coef(object$fit_obj)[grep(sdt_par, names(stats::coef(object$fit_obj)))] * mult
     V <- as.matrix(.my.vcov(object$fit_obj)[grep(sdt_par, rownames(stats::vcov(object$fit_obj))),
                                   grep(sdt_par, colnames(stats::vcov(object$fit_obj)))])
   }

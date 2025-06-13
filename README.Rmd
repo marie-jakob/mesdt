@@ -32,7 +32,7 @@ parameters discriminability and response bias using the typical R formula syntax
 
 You can install the development version of `mesdt` from [GitHub](https://github.com/) with:
 
-``` {r}
+``` {r, eval = FALSE}
 # install.packages("devtools")
 devtools::install_github("marie-jakob/mesdt")
 ```
@@ -44,7 +44,7 @@ Upon loading the package, it tells us that it has set the backend, that is, the
 package used to estimate the GLMMS to `lme4`. If `glmmTMB` (which can be 
 significantly faster) is installed, the backend can be changed like so:
 
-``` {r}
+``` {r, eval = FALSE}
 options("mesdt.backend" = "glmmTMB")
 ```
 
@@ -63,12 +63,12 @@ debi3 <- mesdt::debi3
 
 ```
 
-To estimate effects of these variables on participants' sensitivity and 
+To estimate effects of these variables on participants' discriminability and 
 response bias, we include them as fixed effects in our model. To account for
 differences between our participants in these parameters, we include 
-by-participant random intercepts and slopes on sensitivity and response bias. 
+by-participant random intercepts and slopes on discriminability and response bias. 
 Our studies with this paradigm consistently showed considerable by-participant
-variability in mean response bias, mean sensitivity and the effect of the 
+variability in mean response bias, mean discriminability and the effect of the 
 committee decision on participants' response bias, which is why we include
 by-participant random intercepts on both SDT parameters and a by-participant
 random slope on response bias.
@@ -80,7 +80,7 @@ response (`assessment` in `debi3`).
 
 Thus, in `mesdt`, we can specify and fit our model like this:
 
-``` {r}
+``` {r fit}
 
 # TODO: change input so that lhs formulas are accepted as well 
 # (kind of unintuitive like this)
@@ -92,19 +92,65 @@ mod <- fit_mesdt(
   dv = "assessment"
 )
 
+summary(mod)
+
 ```
 
-
-
-
+The `summary()` method prints population-level estimates for the fixed effects 
+we specified separate for discriminability and response bias in a similar format
+as`lme4` and `glmmTMB`. The p values in the last column are results from Wald
+tests based on the beta estimates and their standard errors. 
 
 ### Step 2: Compute Hypothesis Tests for Selected Parameters
 
+Since Wald tests are often not recommended for inference in GLMM, `mesdt` allows
+the user to compute different types (see the documentation for details) 
+of likelihood ratio tests and parametric bootstrapping tests, that are based on 
+comparisons of nested models. 
+
+`mesdt` allows the user to either specify the to-be-tested parameters via 
+formulas (e.g., `~ committee`) or to test all fixed effects (`"all"`). For this
+experiment, we were interested (among other things) if participants' response 
+bias and / or discriminability vary as a function of the committee decision:
+
+
+```{r test}
+
+tests <- compute_tests(mod, 
+                       tests = "lrt",
+                       tests_discriminability = ~ committee,
+                       tests_response_bias = ~ committee)
+
+tests$LRTs$LRT_results
+
+```
+
+In this subset of our data, there is a significant effect of the committee 
+decision on discriminability, but not on response bias. 
+
+
 ### Step 3: Estimate marginal means
+
+`mesdt` additionally provides a custom `emmeans()` function, allowing the user
+to estimate marginal means for response bias and discriminability. The syntax
+is the typical `emmeans` syntax with an additional argument `dpar` specifying 
+the SDT parameter. 
+Thus, we can get estimated marginal means for response bias and discriminability
+for "denied" and "granted" decisions like so: 
+
+```{r emmeans}
+library(emmeans)
+
+emmeans(mod, ~ committee, dpar = "discriminability")
+emmeans(mod, ~ committee, dpar = "response bias")
+
+```
+
+The estimated marginal means show that participants' discriminability was higher 
+in trials where a pay raise was denied than for cases where one was granted. 
+Descriptively,  
 
 
 ## References
 
-+ glmmTMB package
-+ lme4 package
-+ DeCarlo 1998
+TODO

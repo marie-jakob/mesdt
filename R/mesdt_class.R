@@ -45,6 +45,7 @@ summary.mesdt_fit <- function(obj) {
     c_coef <- summ_glmmtmb$coefficients$cond[grepl("lambda", rownames(summ_glmmtmb$coefficients$cond)), ]
     opt_info <- NULL
   }
+
   if (is.null(rownames(d_coef))) {
     col_nms <- names(d_coef)
     d_coef <- matrix(d_coef, nrow = 1)
@@ -59,14 +60,23 @@ summary.mesdt_fit <- function(obj) {
     colnames(c_coef) <- col_nms
     rownames(c_coef) <- colnames(obj$internal$mm$lambda)
   } else {
+    c_coef[, 1:3] <- (-1) * c_coef[, 1:3]
     rownames(c_coef) <- substr(rownames(c_coef), 15, nchar(rownames(c_coef)))
   }
+
+
+  fitMsgs <- lme4::.merMod.msgs(obj$fit_obj)
+  if(any(nchar(fitMsgs) > 0)) {
+    cat("fit warnings:\n"); writeLines(fitMsgs)
+  }
+  .prt.warn(x@optinfo,summary=TRUE)
 
   to_return <- list(
     "user_input" = obj$user_input,
     "d_coef" = d_coef,
     "c_coef" = c_coef,
-    "opt_info" = opt_info
+    "opt_info" = opt_info,
+    "fitMsgs" = fitMsgs
   )
   if (! is.null(obj$LRTs)) to_return[["LRTs"]] <- obj$LRTs$LRT_results
   else if (! is.null(obj$PB_tests)) to_return[["PB_tests"]] <- obj$LRTs$PB_test_results
@@ -104,8 +114,7 @@ printmethod <- function(x) {
 #' @export
 print.summary.mesdt_fit <- function(x,
                                     digits = max(3, getOption("digits") - 3),
-                                    signif.stars = FALSE,
-                                    aic = FALSE) {
+                                    signif.stars = FALSE) {
 
 
   printmethod(x)
@@ -113,10 +122,17 @@ print.summary.mesdt_fit <- function(x,
   cat("Discriminability:", deparse(x$user_input$discriminability), "\n")
   cat("Response Bias:     ", deparse(x$user_input$bias), "\n\n")
 
-
-  # TODO: print AIC and log likelihood if requested
-  # if ()
   # Print random effects
+  cor_mat <- VarCorr(x$fit_obj)
+  if (x$user_input$correlate_sdt_params = T) {
+    # if random effects are correlated, print one correlation matrix
+
+
+
+  } else {
+    # two separate matrices
+  }
+
 
 
   # Print fixed effects
@@ -125,24 +141,11 @@ print.summary.mesdt_fit <- function(x,
   cat("\nFixed effects and Wald tests for response bias: \n")
   stats::printCoefmat(x$c_coef, digits = digits, signif.stars = signif.stars)
 
-
-  # if the model object has LRTs, print those:
-  #if (! is.null(x$LRTs)) {
-  #  cat("\nLikelihood ratio tests (type X) for sensitivity: \n \n")
-  #  LRTs_round <- x$LRTs
-  #  LRTs_round[] <- lapply(x$LRTs, round, 3)
-    # TODO: round p values appropriately
-  #  print(LRTs_round)
-  #}
-
-  # if the model object has LRTs, print those:
-  #if (! is.null(x$PB_tests)) {
-  #  cat("\nParametric bootstrapping tests (type X) for sensitivity: \n \n")
-  #  LRTs_round <- x$LRTs
-  #  LRTs_round[] <- lapply(x$LRTs, round, 3)
-  #  print(LRTs_round)
-  #}
-
+  if(length(x$fitMsgs) && any(nchar(x$fitMsgs) > 0)) {
+    cat("fit warnings:\n"); writeLines(x$fitMsgs)
+  }
+  .prt.warn(x$optinfo,summary=FALSE)
+  invisible(x)
 }
 
 

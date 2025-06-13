@@ -3,7 +3,6 @@
 #'
 #' @param fit_obj An mesdt fit object containing the full fit and
 #'  coefficients that should be tested
-#' @param data a data frame
 #' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
 #' "bootstrap" = parametric bootstrap)
 #' @param nsim number of simulated datasets for bootstrapping
@@ -48,10 +47,8 @@ compute_tests <- function(mesdt_fit,
       # check that the formula does not contain random effects
       if (lme4::nobars(tests_discriminability) != tests_discriminability) stop("Input 'tests_discriminability' must not contain random effects.")
       else {
-        terms_mod <- attr(terms(nobars(fit$user_input$discriminability)), "term.labels")
-        print(terms_mod)
-        terms_input <- attr(terms(nobars(tests_discriminability)), "term.labels")
-        print(terms_input)
+        terms_mod <- attr(terms(lme4::nobars(mesdt_fit$user_input$discriminability)), "term.labels")
+        terms_input <- attr(terms(lme4::nobars(tests_discriminability)), "term.labels")
         if (! all(terms_input %in% terms_mod)) stop("Input 'tests_discriminability' contains terms that are not present in the fitted model. Please check your formula again.")
       }
     }
@@ -63,10 +60,8 @@ compute_tests <- function(mesdt_fit,
       # check that the formula does not contain random effects
       if (lme4::nobars(tests_response_bias) != tests_response_bias) stop("Input 'tests_response_bias' must not contain random effects.")
       else {
-        terms_mod <- attr(terms(nobars(fit$user_input$bias)), "term.labels")
-        print(terms_mod)
-        terms_input <- attr(terms(nobars(tests_response_bias)), "term.labels")
-        print(terms_input)
+        terms_mod <- attr(terms(lme4::nobars(mesdt_fit$user_input$bias)), "term.labels")
+        terms_input <- attr(terms(lme4::nobars(tests_response_bias)), "term.labels")
         if (! all(terms_input %in% terms_mod)) stop("Input 'tests_response_bias' contains terms that are not present in the fitted model. Please check your formula again.")
       }
     }

@@ -29,6 +29,9 @@ fit_mesdt <- function(discriminability,
   if (typeof(discriminability) != "language") stop("'discriminability' must be a formula'.")
   if (typeof(bias) != "language") stop("'bias' must be a 'formula'.")
 
+  forms <- standardize_fit_formulas(discriminability, bias)
+  discriminability <- forms[[1]]; bias <- forms[[2]]
+
   if (typeof(dv) != "character") stop("'dv' must be of type 'character'.")
   if (is.null(data[[dv]])) stop(paste("Given dependent variable", dv, "not in data."))
   if (length(unique(data[[dv]])) != 2) stop("dv must be a binary variable.")

@@ -4,7 +4,11 @@ names(debi3)
 
 debi3 %>%
   dplyr::select(id, assessment, status, objective, committee, emp_gender, file_name,
-         participant_gender, age) -> debi3
+         participant_gender, age) %>%
+  dplyr::filter(as.numeric(id) < 100) -> debi3
+
+table(debi3$participant_gender)
+
 debi3$status <- ifelse(debi3$status == "signal", 1, -1)
 debi3$assessment <- factor(debi3$assessment)
 contrasts(debi3$assessment) <- contr.sum(2)

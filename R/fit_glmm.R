@@ -47,13 +47,13 @@ fit_glmm <- function(glmer_formula,
                              data = data,
                              family = binomial(link = lnk_fun),
                              # this is only for testing speed -> changed for actual use
-                             nAGQ = 1)
+                             nAGQ = 0)
     } else {
       fit_obj <- lme4::glmer(glmer_formula,
                              data = data,
                              family = binomial(link = lnk_fun),
                              # this is only for testing speed -> changed for actual use
-                             nAGQ = 1,
+                             nAGQ = 0,
                              control = control)
     }
 

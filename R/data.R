@@ -1,8 +1,8 @@
 #' Data from "On Bias in Detecting Bias: A Signal Detection Analysis of Attributions to Gender Discrimination (Experiment 3)
 #'
-#' Data reported in Jakob, Shechter, Calanchini, & Klauer (in prep.)
-#' investigating attributions to gender discrimination with a signal detection
-#' theory approach.
+#' A subset of the data (50 participants) reported in Jakob, Shechter, Calanchini,
+#' & Klauer (in prep.) investigating attributions to gender discrimination with
+#' a signal detection theory approach.
 #' Participants had to judge 256 fictional pay raise decisions as biased
 #' or unbiased. The cases involved male and female employees (`emp_gender`), who
 #' were either granted or denied a pay raise. A quarter of all cases was biased,
@@ -16,7 +16,7 @@
 #' denied or a male employee was granted a pay raise.
 #'
 #' @format ## `debi3`
-#' A data frame with 124672 rows and 9 columns:
+#' A data frame with 12544 rows and 9 columns:
 #' \describe{
 #'   \item{id}{Factor indicating the participant ID}
 #'   \item{assessment}{Factor indicating participants' judgments whether the
