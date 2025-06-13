@@ -47,7 +47,6 @@ fit_mesdt <- function(discriminability,
   # TODO: if you have a predictor that only affects sensitivity (such as strength in the context of
   # memory, this won't work) -> maybe allow a ternary variable then (maybe with a warning)
   if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
-    print(unique(data[[trial_type_var]]))
     stop("'trial_type_var' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
   }
   if (class(data[[trial_type_var]]) != "numeric")

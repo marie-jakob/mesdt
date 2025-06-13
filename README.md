@@ -38,8 +38,12 @@ devtools::install_github("marie-jakob/mesdt")
 Since `mesdt` uses `lme4` as the default backend, you also need a
 working installation of `lme4` and, if you want to use it, `glmmTMB`.
 
+``` r
+library(mesdt)
+```
+
 Upon loading the package, it tells us that it has set the backend, that
-is, the package used to estimate the GLMMS to `lme4`. If `glmmTMB`
+is, the package used to estimate the GLMMs to `lme4`. If `glmmTMB`
 (which can be significantly faster) is installed, the backend can be
 changed like so:
 
@@ -81,11 +85,9 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 
 ``` r
 
-# TODO: change input so that lhs formulas are accepted as well 
-# (kind of unintuitive like this)
 mod <- fit_mesdt(
-  discriminability =~ committee * emp_gender * participant_gender + (1 | id),
-  bias =~ committee * emp_gender * participant_gender + (committee | id),
+  discriminability ~ committee * emp_gender * participant_gender + (1 | id),
+  bias ~ committee * emp_gender * participant_gender + (committee | id),
   data = debi3,
   trial_type_var = "status",
   dv = "assessment"
@@ -93,7 +95,6 @@ mod <- fit_mesdt(
 #> [1] "lme4 was used to fit the model."
 
 summary(mod)
-#> [1] 0
 #> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood  (Adaptive Gauss-Hermite Quadrature, nAGQ = 0)with the lme4 package. 
 #>  
 #> Discriminability: ~committee * emp_gender * participant_gender + (1 | id) 
@@ -142,15 +143,16 @@ if participants’ response bias and / or discriminability vary as a
 function of the committee decision:
 
 ``` r
+fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                 trial_type_var = "trial_type_fac")
+#> [1] "lme4 was used to fit the model."
+
+lrts_test <- compute_tests(fit, test_intercepts = T)
 
 tests <- compute_tests(mod, 
                        tests = "lrt",
                        tests_discriminability = ~ committee,
                        tests_response_bias = ~ committee)
-#> [1] 1
-#> [1] TRUE
-#> [1] 1
-#> [1] TRUE
 
 tests$LRTs$LRT_results
 #>                  deviance_full deviance_reduced df.LRT Chisq     p.value    
@@ -172,11 +174,6 @@ get estimated marginal means for response bias and discriminability for
 
 ``` r
 library(emmeans)
-#> 
-#> Attache Paket: 'emmeans'
-#> Das folgende Objekt ist maskiert 'package:devtools':
-#> 
-#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions

@@ -48,8 +48,6 @@ which_terms_in <- function(reference_terms, terms_to_check) {
 
   # Find matches
   matches <- match(normalized_to_check, normalized_reference, nomatch = 0)
-  print(matches)
-  print(matches > 0)
   return(matches[matches > 0])
 }
 

@@ -65,18 +65,17 @@ summary.mesdt_fit <- function(obj) {
   }
 
 
-  fitMsgs <- lme4::.merMod.msgs(obj$fit_obj)
-  if(any(nchar(fitMsgs) > 0)) {
-    cat("fit warnings:\n"); writeLines(fitMsgs)
-  }
-  .prt.warn(x@optinfo,summary=TRUE)
+  #fitMsgs <- lme4::.merMod.msgs(obj$fit_obj)
+  #if(any(nchar(fitMsgs) > 0)) {
+  #  cat("fit warnings:\n"); writeLines(fitMsgs)
+  #}
+  #.prt.warn(x@optinfo,summary=TRUE)
 
   to_return <- list(
     "user_input" = obj$user_input,
     "d_coef" = d_coef,
     "c_coef" = c_coef,
-    "opt_info" = opt_info,
-    "fitMsgs" = fitMsgs
+    "opt_info" = opt_info
   )
   if (! is.null(obj$LRTs)) to_return[["LRTs"]] <- obj$LRTs$LRT_results
   else if (! is.null(obj$PB_tests)) to_return[["PB_tests"]] <- obj$LRTs$PB_test_results
@@ -94,7 +93,6 @@ printmethod <- function(x) {
   pr <- paste(pr, "detection theory model with ", distr_pretty, " evidence distributions fit by maximum likelihood ", sep = "")
   if (! is.null(x$opt_info)) {
     nAGQ <- x$opt_info$nAGQ
-    print(nAGQ)
     meth <- ifelse(nAGQ != 1, paste(" (Adaptive Gauss-Hermite Quadrature, nAGQ = ", nAGQ, ")", sep = ""),
                    "(Laplace Approximation) ")
     pr <- paste(pr, meth, sep = "")
@@ -123,15 +121,13 @@ print.summary.mesdt_fit <- function(x,
   cat("Response Bias:     ", deparse(x$user_input$bias), "\n\n")
 
   # Print random effects
-  cor_mat <- VarCorr(x$fit_obj)
-  if (x$user_input$correlate_sdt_params = T) {
+  # cor_mat <- VarCorr(x$fit_obj)
+  #if (x$user_input$correlate_sdt_params = T) {
     # if random effects are correlated, print one correlation matrix
 
-
-
-  } else {
+  #} else {
     # two separate matrices
-  }
+  #}
 
 
 
