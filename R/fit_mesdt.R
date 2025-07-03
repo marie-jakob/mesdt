@@ -1,14 +1,20 @@
-#' Fit a multilevel signal detection theory model
+#' Fit a mixed-effects signal detection theory model
 #'
 #' @param discriminability Formula specifying fixed and random effects on sensitivity
 #' @param bias Formula specifying fixed and random effects on response bias
 #' @param dv name of the (binary) dependent variable
 #' @param trial_type_var name of the variable coding signal vs. noise trials
 #' @param data dataset
+#' @param distribution parametric distributions of signal and noise evidence
+#' (supports gaussian, logistic, or gumbel-min)
 #' @param correlate_sdt_params boolean indicating whether correlations between
 #'  SDT parameters should be modeled
+#' @param control optional control arguments that are included in the glmmTMB()
+#'  or glmer() call
+#'  SDT parameters should be modeled
 #'
-#' @return TODO
+#' @return an object of class "mesdt_fit" with the following slots:
+#'  TODO
 #' @importFrom lme4 fixef
 #' @importFrom lme4 ranef
 #' @importFrom lme4 VarCorr
@@ -69,8 +75,6 @@ fit_mesdt <- function(discriminability,
     glmer_formula <- construct_glmer_formula(discriminability, bias, dv = dv, mm = mm,
                                              correlate_sdt_params = correlate_sdt_params)
   }
-
-
 
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
   # (y, ID)
