@@ -57,8 +57,7 @@ options("mesdt.backend" = "glmmTMB")
 
 We are using the `debi3` dataset provided with this package, where we 
 investigated attributions to gender discrimination using a signal detection 
-approach. In the experiment, male and female participants 
-(as indicated by the variable `participant gender`) had to judge 256 
+approach. In the experiment, participants had to judge 256 
 fictional pay raise decisions as biased or unbiased. The cases involved male 
 and female employees(`emp_gender`), who were either granted or denied a pay raise 
 (`committee`). 
@@ -88,8 +87,8 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 ``` {r fit}
 
 mod <- fit_mesdt(
-  discriminability ~ committee * emp_gender * participant_gender + (1 | id),
-  bias ~ committee * emp_gender * participant_gender + (committee | id),
+  discriminability ~ committee * emp_gender + (1 | id),
+  bias ~ committee * emp_gender + (committee | id),
   data = debi3,
   trial_type_var = "status",
   dv = "assessment"
@@ -118,11 +117,6 @@ bias and / or discriminability vary as a function of the committee decision:
 
 
 ```{r test}
-fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
-                 trial_type_var = "trial_type_fac")
-
-lrts_test <- compute_tests(fit, test_intercepts = T)
-
 tests <- compute_tests(mod, 
                        tests = "lrt",
                        tests_discriminability = ~ committee,
@@ -154,8 +148,11 @@ emmeans(mod, ~ committee, dpar = "response bias")
 ```
 
 The estimated marginal means show that participants' discriminability was higher 
-in trials where a pay raise was denied than for cases where one was granted. 
-Descriptively,  
+in trials where a pay raise was denied ($d' = 1.7$ than for cases where one was 
+granted $d' = 1.83$). Descriptively, we can see a similar pattern for response
+bias, with a smaller, that is, more liberal response criterion in "denied" cases 
+($\lambda = 0.12$) than in "granted" cases ($\lambda = 0.183$), but this 
+difference was not significantly different from zero in this subset of the data. 
 
 
 ## References

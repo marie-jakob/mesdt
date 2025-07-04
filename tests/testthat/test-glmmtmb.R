@@ -54,25 +54,21 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
 
   # Type 2 - test_intercepts = T
   LRTs_2_intercepts_lme <- compute_tests(fit_lme,
-                                    data = dat_exp_2,
                                     type = 2,
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
   LRTs_2_lme <- compute_tests(fit_lme,
-                         data = dat_exp_2,
                          type = 2,
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
   LRTs_3_intercepts_lme <- compute_tests(fit_lme,
-                                    data = dat_exp_2,
                                     type = 3,
                                     test_intercepts = T)
 
   # Type 3 - test_intercepts = F
   LRTs_3_lme <- compute_tests(fit_lme,
-                              data = dat_exp_2,
                               type = 3,
                               test_intercepts = F)
 
@@ -84,25 +80,21 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
 
   # Type 2 - test_intercepts = T
   LRTs_2_intercepts_tmb <- compute_tests(fit_tmb,
-                                    data = dat_exp_2,
                                     type = 2,
                                     test_intercepts = T)
 
   # Type 2 - test_intercepts = F
   LRTs_2_tmb <- compute_tests(fit_tmb,
-                         data = dat_exp_2,
                          type = 2,
                          test_intercepts = F)
 
   # Type 3 - test_intercepts = T
   LRTs_3_intercepts_tmb <- compute_tests(fit_tmb,
-                                         data = dat_exp_2,
                                          type = 3,
                                          test_intercepts = T)
 
   # Type 3 - test_intercepts = F
   LRTs_3_tmb <- compute_tests(fit_tmb,
-                              data = dat_exp_2,
                               type = 3,
                               test_intercepts = F)
 
@@ -111,18 +103,18 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
   expect_equal(logLik(fit_tmb$fit), logLik(fit_lme$fit), tolerance = 1e-3)
 
   # LRTs
-  expect_equal(chisquares_cross_2, as.numeric(LRTs_2_intercepts_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-3)
-  expect_equal(chisquares_cross_2[c(2, 4)], as.numeric(LRTs_2_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-2)
-  expect_equal(chisquares_cross_3, as.numeric(LRTs_3_intercepts_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-2)
-  expect_equal(chisquares_cross_3[c(2, 4)], as.numeric(LRTs_3_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-2)
+  expect_equal(chisquares_cross_2, as.numeric(LRTs_2_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-3)
+  expect_equal(chisquares_cross_2[c(2, 4)], as.numeric(LRTs_2_tmb$LRT_results[, 4]), tolerance = 1e-2)
+  expect_equal(chisquares_cross_3, as.numeric(LRTs_3_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-2)
+  expect_equal(chisquares_cross_3[c(2, 4)], as.numeric(LRTs_3_tmb$LRT_results[, 4]), tolerance = 1e-2)
 
-  expect_equal(as.numeric(LRTs_2_intercepts_lme$LRTs$LRT_results[, 4]),
-               as.numeric(LRTs_2_intercepts_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-3)
-  expect_equal(as.numeric(LRTs_2_lme$LRTs$LRT_results[, 4]),
-               as.numeric(LRTs_2_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-2)
-  expect_equal(as.numeric(LRTs_3_intercepts_lme$LRTs$LRT_results[, 4]),
-               as.numeric(LRTs_3_intercepts_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-2)
-  expect_equal(as.numeric(LRTs_3_lme$LRTs$LRT_results[, 4]),
-               as.numeric(LRTs_3_tmb$LRTs$LRT_results[, 4]), tolerance = 1e-2)
+  expect_equal(as.numeric(LRTs_2_intercepts_lme$LRT_results[, 4]),
+               as.numeric(LRTs_2_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-3)
+  expect_equal(as.numeric(LRTs_2_lme$LRT_results[, 4]),
+               as.numeric(LRTs_2_tmb$LRT_results[, 4]), tolerance = 1e-2)
+  expect_equal(as.numeric(LRTs_3_intercepts_lme$LRT_results[, 4]),
+               as.numeric(LRTs_3_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-2)
+  expect_equal(as.numeric(LRTs_3_lme$LRT_results[, 4]),
+               as.numeric(LRTs_3_tmb$LRT_results[, 4]), tolerance = 1e-2)
 
 })

@@ -151,28 +151,24 @@ compute_tests <- function(mesdt_fit,
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
 
-      # Return a new mesdt_fit object that also includes the LRTs and PB tests
-      to_return <- mesdt_fit
-      to_return$LRTs <- list(
+      # Return an mesdt_test object
+      to_return <- new_mesdt_test(list(
+        "fit_obj" = mesdt_fit,
         "reduced_fits" = reduced_fits,
         "LRT_results" = t(LRT_results),
-        "type" = type
-      )
-
-      to_return$PB_tests <- list(
+        "type" = type,
         "pb_test_results" = t(boot_table),
         "pb_objects" = pb_objects,
-        "seed" = seed,
-        "type" = type
-      )
+        "seed" = seed
+      ))
 
     } else {
-      to_return <- mesdt_fit
-      to_return$LRTs <- list(
+      to_return <- new_mesdt_test(list(
+        "fit_obj" = mesdt_fit,
         "reduced_fits" = reduced_fits,
         "LRT_results" = t(LRT_results),
         "type" = type
-      )
+      ))
     }
   }
 
@@ -284,30 +280,25 @@ compute_tests <- function(mesdt_fit,
 
       pb_objects <- c(pb_objects_lambda, pb_objects_mu)
       boot_table <- cbind(boot_table_lambda, boot_table_mu)
-
-      # Return a new mesdt_fit object that also includes the LRTs and PB tests
-      to_return <- mesdt_fit
-      to_return$LRTs <- list(
+      # Return a new mesdt_test object
+      to_return <- new_mesdt_test(list(
+        "fit_obj" = mesdt_fit,
         "reduced_fits" = reduced_fits,
         "LRT_results" = t(LRT_results),
-        "type" = type
-      )
-
-      to_return$PB_tests <- list(
+        "type" = type,
         "pb_test_results" = t(boot_table),
         "pb_objects" = pb_objects,
-        "seed" = seed,
-        "type" = type
-      )
+        "seed" = seed
+      ))
 
     } else {
-      # Return a new mesdt_fit object that also includes the LRTs and PB tests
-      to_return <- mesdt_fit
-      to_return$LRTs <- list(
+      # Return a new mesdt_test object
+      to_return <- new_mesdt_test(list(
+        "fit_obj" = mesdt_fit,
         "reduced_fits" = reduced_fits,
         "LRT_results" = t(LRT_results),
         "type" = type
-      )
+      ))
     }
   }
   return(to_return)

@@ -22,7 +22,7 @@ for (backend in c("glmmTMB", "lme4")) {
                               type = type_tmp,
                               nsim = 1,
                               test_intercepts = inter_tmp))
-        expect_equal(boot$PB_tests$pb_test_results[, 1], boot$LRTs$LRT_results[, 4])
+        expect_equal(boot$pb_test_results[, 1], boot$LRT_results[, 4])
       }
     }
   })
@@ -46,7 +46,7 @@ for (backend in c("glmmTMB", "lme4")) {
                               type = type_tmp,
                               tests = "bootstrap",
                               nsim = 1))
-        expect_equal(boot$PB_tests$pb_test_results[, 1], boot$LRTs$LRT_results[, 4])
+        expect_equal(boot$pb_test_results[, 1], boot$LRT_results[, 4])
       }
     }
   })
@@ -64,7 +64,7 @@ for (backend in c("glmmTMB", "lme4")) {
                            type = 3,
                            tests = "bootstrap",
                            nsim = 1))
-      expect_equal(boot$PB_tests$pb_test_results[, 1], boot$LRTs$LRT_results[, 4])
+      expect_equal(boot$pb_test_results[, 1], boot$LRT_results[, 4])
     }
   })
 
@@ -84,7 +84,7 @@ for (backend in c("glmmTMB", "lme4")) {
                                            nsim = 8,
                                            cl = cl))
 
-      expect_equal(unname(boot$PB_tests$pb_objects[[1]]$parallel), T)
+      expect_equal(unname(boot$pb_objects[[1]]$parallel), T)
       stopCluster(cl)
   })
 }
@@ -121,9 +121,9 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
                                            #cl = cl,
                                            seed = 12))
 
-  expect_equal(unlist(boot_1$PB_tests$pb_test_results[1:4, 1]), unlist(boot_2$PB_tests$pb_test_results[1:4, 1]))
-  expect_equal(unlist(boot_1$PB_tests$pb_test_results[1:4, 3]), unlist(boot_2$PB_tests$pb_test_results[1:4, 3]))
-  expect_equal(boot_1$PB_tests$seed, boot_2$PB_tests$seed)
+  expect_equal(unlist(boot_1$pb_test_results[1:4, 1]), unlist(boot_2$pb_test_results[1:4, 1]))
+  expect_equal(unlist(boot_1$pb_test_results[1:4, 3]), unlist(boot_2$pb_test_results[1:4, 3]))
+  expect_equal(boot_1$seed, boot_2$seed)
 
   stopCluster(cl)
 })

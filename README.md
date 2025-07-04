@@ -55,8 +55,7 @@ options("mesdt.backend" = "glmmTMB")
 
 We are using the `debi3` dataset provided with this package, where we
 investigated attributions to gender discrimination using a signal
-detection approach. In the experiment, male and female participants (as
-indicated by the variable `participant gender`) had to judge 256
+detection approach. In the experiment, participants had to judge 256
 fictional pay raise decisions as biased or unbiased. The cases involved
 male and female employees(`emp_gender`), who were either granted or
 denied a pay raise (`committee`).
@@ -86,8 +85,8 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 ``` r
 
 mod <- fit_mesdt(
-  discriminability ~ committee * emp_gender * participant_gender + (1 | id),
-  bias ~ committee * emp_gender * participant_gender + (committee | id),
+  discriminability ~ committee * emp_gender + (1 | id),
+  bias ~ committee * emp_gender + (committee | id),
   data = debi3,
   trial_type_var = "status",
   dv = "assessment"
@@ -97,30 +96,22 @@ mod <- fit_mesdt(
 summary(mod)
 #> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood  (Adaptive Gauss-Hermite Quadrature, nAGQ = 0)with the lme4 package. 
 #>  
-#> Discriminability: ~committee * emp_gender * participant_gender + (1 | id) 
-#> Response Bias:      ~committee * emp_gender * participant_gender + (committee | id) 
+#> Discriminability: ~committee * emp_gender + (1 | id) 
+#> Response Bias:      ~committee * emp_gender + (committee | id) 
 #> 
 #> Fixed effects and Wald tests for discriminability: 
-#>                                             Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)                                 1.740768   0.051873  33.558  < 2e-16
-#> committee1                                 -0.064500   0.021468  -3.004 0.002661
-#> emp_gender1                                 0.029145   0.020047   1.454 0.146003
-#> participant_gender1                        -0.175371   0.051873  -3.381 0.000723
-#> committee1:emp_gender1                      0.003390   0.020047   0.169 0.865721
-#> committee1:participant_gender1              0.013531   0.021468   0.630 0.528510
-#> emp_gender1:participant_gender1             0.035473   0.020047   1.769 0.076812
-#> committee1:emp_gender1:participant_gender1 -0.009961   0.020047  -0.497 0.619261
+#>                         Estimate Std. Error z value Pr(>|z|)
+#> (Intercept)             1.741054   0.055083  31.608  < 2e-16
+#> committee1             -0.063726   0.021433  -2.973  0.00295
+#> emp_gender1             0.030921   0.020024   1.544  0.12254
+#> committee1:emp_gender1  0.003458   0.020024   0.173  0.86290
 #> 
 #> Fixed effects and Wald tests for response bias: 
-#>                                             Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)                                 0.151158  -0.026793   5.642 1.68e-08
-#> committee1                                  0.031319  -0.076754   0.408    0.683
-#> emp_gender1                                -0.015726  -0.010023  -1.569    0.117
-#> participant_gender1                        -0.023609  -0.026793  -0.881    0.378
-#> committee1:emp_gender1                      0.016032  -0.010024   1.599    0.110
-#> committee1:participant_gender1             -0.005700  -0.076754  -0.074    0.941
-#> emp_gender1:participant_gender1            -0.001055  -0.010023  -0.105    0.916
-#> committee1:emp_gender1:participant_gender1  0.011400  -0.010024   1.137    0.255
+#>                        Estimate Std. Error z value Pr(>|z|)
+#> (Intercept)             0.15138   -0.02686   5.635 1.75e-08
+#> committee1              0.03115   -0.07670   0.406   0.6847
+#> emp_gender1            -0.01543   -0.01001  -1.542   0.1232
+#> committee1:emp_gender1  0.01671   -0.01001   1.669   0.0952
 ```
 
 The `summary()` method prints population-level estimates for the fixed
@@ -155,9 +146,9 @@ tests <- compute_tests(mod,
                        tests_response_bias = ~ committee)
 
 tests$LRTs$LRT_results
-#>                  deviance_full deviance_reduced df.LRT Chisq     p.value    
-#> committee_lambda 21584.14      21584.31         1      0.1608541 0.6883714  
-#> committee_mu     21584.14      21593.07         1      8.924664  0.002813451
+#>                  deviance_full deviance_reduced df.LRT Chisq     p.value   
+#> committee_lambda 21600.89      21601.05         1      0.1578843 0.6911119 
+#> committee_mu     21600.89      21609.64         1      8.750854  0.00309457
 ```
 
 In this subset of our data, there is a significant effect of the
@@ -174,22 +165,27 @@ get estimated marginal means for response bias and discriminability for
 
 ``` r
 library(emmeans)
+#> 
+#> Attache Paket: 'emmeans'
+#> Das folgende Objekt ist maskiert 'package:devtools':
+#> 
+#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions
 #>  committee emmean     SE  df asymp.LCL asymp.UCL
-#>  true        1.68 0.0558 Inf      1.57      1.79
-#>  false       1.81 0.0565 Inf      1.69      1.92
+#>  true        1.68 0.0588 Inf      1.56      1.79
+#>  false       1.80 0.0595 Inf      1.69      1.92
 #> 
-#> Results are averaged over the levels of: emp_gender, participant_gender 
+#> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
 emmeans(mod, ~ committee, dpar = "response bias")
 #> NOTE: Results may be misleading due to involvement in interactions
 #>  committee emmean     SE  df asymp.LCL asymp.UCL
-#>  true       0.182 0.0785 Inf    0.0286     0.336
-#>  false      0.120 0.0840 Inf   -0.0448     0.284
+#>  true       0.183 0.0785 Inf    0.0286     0.336
+#>  false      0.120 0.0839 Inf   -0.0442     0.285
 #> 
-#> Results are averaged over the levels of: emp_gender, participant_gender 
+#> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
 ```
 

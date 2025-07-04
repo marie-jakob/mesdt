@@ -94,7 +94,6 @@ summary.mesdt_fit <- function(obj) {
         rownames(cov_mat[[fac]]) <- new_col_name
 
       } else {
-        print("else")
         sdt_names <- ifelse(grepl("lambda", colnames_tmp), "(Response Bias)", "(Discriminability)")
         colnames_new <- colnames_tmp
         for (i in 1:length(colnames_new)) {
