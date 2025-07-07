@@ -18,13 +18,14 @@
 #'  (default is "all")
 #'
 #' @export
-compute_tests <- function(mesdt_fit,
-                          cl = NULL, tests = "lrt", nsim = 1000,
+compute_tests <- function(mesdt_fit, tests = "lrt", nsim = 1000,
                           type = 3, test_intercepts = F, test_ran_ef = F,
                           tests_discriminability = "all",
                           tests_response_bias = "all",
+                          cl = NULL,
                           control = NULL,
                           seed = NULL) {
+  print(tests)
 
   ##### Check Input
   # TODO: give data as argument or take the data from the fitted model?
@@ -32,12 +33,12 @@ compute_tests <- function(mesdt_fit,
 
   if (class(mesdt_fit) != "mesdt_fit") stop("Input 'mesdt_fit' must be of class 'mesdt_fit'.")
   type <- standardize_type_input(type)
-
-  if (is.null(tests)) stop("Input 'tests' should be 'lrt' (for likelihood ratio tests) or 'boot' (for tests based on parametric bootstrapping")
+  tests <- standardize_tests_input(tests)
+  if (is.null(tests)) stop("Input 'tests' should be 'lrt' (for likelihood ratio tests) or 'bootstrap' (for tests based on parametric bootstrapping")
   if (! is.numeric(nsim)) stop("Input 'nsim' must be numeric.")
   if (round(nsim, 0) != nsim) stop("Input 'nsim' must be an integer.")
   if (is.null(type)) stop("Input 'type' should be 2 or 3.")
-  tests <- standardize_tests_input(tests)
+
   if (! is.logical(test_intercepts)) stop("Input 'test_intercepts' must be of type 'logical'.")
   if (! is.logical(test_ran_ef)) stop("Input 'test_ran_ef' must be of type 'logical'.")
 
@@ -120,7 +121,7 @@ compute_tests <- function(mesdt_fit,
 
   }
 
-  #if (is.null(seed)) seed <- sample(1:1e8, 1)
+  if (is.null(seed)) seed <- sample(1:1e8, 1)
   # TODO: test compatibility of input arguments
 
   submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts = test_intercepts,
@@ -139,12 +140,11 @@ compute_tests <- function(mesdt_fit,
       message(paste("Reduced model has a higher log likelihood for: ", paste(which_tests_weird, collapse = ", "), ". Results cannot be trusted! Try fitting the model with a different optimizer or reducing the random-effects structure.",
                     sep = ""))
     }
-
     if (tests == "bootstrap") {
       pb_objects <- lapply(reduced_fits, function(fit_tmp) {
         boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data,
                                                       distribution = distribution,
-                                                      mm = mm, nsim = nsim, cl = cl, control = control)#, seed = seed)
+                                                      mm = mm, nsim = nsim, cl = cl, control = control, seed = seed)
         return(boot_tmp)
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
@@ -156,8 +156,8 @@ compute_tests <- function(mesdt_fit,
         "LRT_results" = t(LRT_results),
         "type" = type,
         "pb_test_results" = t(boot_table),
-        "pb_objects" = pb_objects#,
-        # "seed" = seed
+        "pb_objects" = pb_objects,
+        "seed" = seed
       ))
 
     } else {
@@ -210,8 +210,8 @@ compute_tests <- function(mesdt_fit,
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
           fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data, distribution = distribution,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)#,
-                                                        #seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
+                                                        seed = seed)
           return(boot_tmp)
         })
         boot_table_lambda <- sapply(pb_objects_lambda, function(x) { return(data.frame(x$test)[2, ]) })
@@ -250,8 +250,8 @@ compute_tests <- function(mesdt_fit,
           fit_tmp <- reduced_fits_mu[[fit_ind]]
           fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data, distribution = distribution,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)#,
-                                                        #seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
+                                                        seed = seed)
           return(boot_tmp)
         })
         boot_table_mu <- sapply(pb_objects_mu, function(x) { return(data.frame(x$test)[2, ]) })
@@ -285,8 +285,8 @@ compute_tests <- function(mesdt_fit,
         "LRT_results" = t(LRT_results),
         "type" = type,
         "pb_test_results" = t(boot_table),
-        "pb_objects" = pb_objects#,
-        #"seed" = seed
+        "pb_objects" = pb_objects,
+        "seed" = seed
       ))
 
     } else {
@@ -346,7 +346,6 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       if (length(attr(mm[["mu"]], "assign")) == 1) range_mu <- c()
       else range_mu <- list(1:max(attr(mm[["mu"]], "assign")))
     }
-
 
     # Update range of to-be-tested parameters if only some parameters are to be tested
     if (is.null(tests_discriminability)) {
@@ -525,7 +524,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       })
       all_fits <- c(full_fits, reduced_fits)
     } else {
-      #print("cluster")
+      print("cluster")
       throwaway <- parallel::clusterExport(cl = cl,
                                            varlist = c("data", "mm", "fit_glmm"),
                                            env = environment())
@@ -567,13 +566,13 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
 
   else {
     if (is.null(cl)) {
-      #print("No cluster")
+      print("No cluster")
       reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), fit_glmm,
                              data = data, mm = mm, distribution = distribution, dv = dv,
                              control = control)
       #print("reduced_fits done")
     } else {
-      #print("cluster")
+      print("cluster")
       throwaway <- parallel::clusterExport(cl = cl,
                                            varlist = c("data", "mm", "fit_glmm", "control"),
                                            env = environment())
@@ -585,6 +584,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       if (options("mesdt.backend") == "lme4") reduced_fits <- unlist(reduced_fits)
       names(reduced_fits) <- names(c(reduced_formulas_lambda, reduced_formulas_mu))
     }
+    print(names(reduced_fits))
     return(reduced_fits)
   }
 }
@@ -624,8 +624,8 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
 
   do_pb <- function(x) {
     dat_tmp <- data
-    sim_dat_tmp <- stats::simulate(small_model)[[1]]
-    #sim_dat_tmp <- stats::simulate(small_model, seed = seed)[[1]]
+    # sim_dat_tmp <- stats::simulate(small_model)[[1]]
+    sim_dat_tmp <- stats::simulate(small_model, seed = seed + x)[[1]]
     # Do refitting manually
     dat_tmp[[dv]] <- sim_dat_tmp
     sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm, distribution, dv, control)
@@ -640,8 +640,8 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
     parallel <- T
     # load variables on cluster
     throwaway <- parallel::clusterExport(cl = cl,
-                            #varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control", "seed"),
-                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control"),
+                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control", "seed"),
+                            #varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control"),
                             env = environment())
     if (options("mesdt.backend") == "glmmTMB") throwaway <- parallel::clusterCall(cl = cl, "require", package = "glmmTMB", character.only = T)
     # set seed on cluster
