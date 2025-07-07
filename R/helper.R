@@ -1,5 +1,4 @@
 .onLoad <- function(libname, pkgname) {
-  # TODO: user message about backend
   # TODO: check if package loaded / installed
   message("Setting backend to lme4.")
   options(mesdt.backend = "lme4")

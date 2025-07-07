@@ -104,9 +104,7 @@ compute_tests <- function(mesdt_fit,
   } else {
     backend_cl <- unname(unlist(clusterEvalQ(cl, options("mesdt.backend"))))[1]
     if (is.null(backend_cl)) {
-      message(paste("No backend was set for the cluster. Setting mesdt.backend on
-                    the cluster and locally to",
-                    mesdt_fit$user_input$backend, "which was used to fit the supplied model."))
+      message(paste("No backend was set for the cluster. Setting mesdt.backend on the cluster and locally to", mesdt_fit$user_input$backend, "which was used to fit the supplied model."))
       throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
       # print(paste("mesdt.backend: ", mesdt_fit$user_input$backend))
       options("mesdt.backend" = mesdt_fit$user_input$backend)
@@ -122,7 +120,7 @@ compute_tests <- function(mesdt_fit,
 
   }
 
-  if (is.null(seed)) seed <- sample(1:1e8, 1)
+  #if (is.null(seed)) seed <- sample(1:1e8, 1)
   # TODO: test compatibility of input arguments
 
   submodels <- fit_submodels(formula_mu, formula_lambda, dv, data, mm, type, test_intercepts = test_intercepts,
@@ -146,7 +144,7 @@ compute_tests <- function(mesdt_fit,
       pb_objects <- lapply(reduced_fits, function(fit_tmp) {
         boot_tmp <- compute_parametric_bootstrap_test(fit_obj, fit_tmp, dv = dv, data = data,
                                                       distribution = distribution,
-                                                      mm = mm, nsim = nsim, cl = cl, control = control, seed = seed)
+                                                      mm = mm, nsim = nsim, cl = cl, control = control)#, seed = seed)
         return(boot_tmp)
       })
       boot_table <- sapply(pb_objects, function(x) { return(data.frame(x$test)[2, ]) })
@@ -158,8 +156,8 @@ compute_tests <- function(mesdt_fit,
         "LRT_results" = t(LRT_results),
         "type" = type,
         "pb_test_results" = t(boot_table),
-        "pb_objects" = pb_objects,
-        "seed" = seed
+        "pb_objects" = pb_objects#,
+        # "seed" = seed
       ))
 
     } else {
@@ -212,8 +210,8 @@ compute_tests <- function(mesdt_fit,
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
           fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data, distribution = distribution,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
-                                                        seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)#,
+                                                        #seed = seed)
           return(boot_tmp)
         })
         boot_table_lambda <- sapply(pb_objects_lambda, function(x) { return(data.frame(x$test)[2, ]) })
@@ -252,8 +250,8 @@ compute_tests <- function(mesdt_fit,
           fit_tmp <- reduced_fits_mu[[fit_ind]]
           fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data, distribution = distribution,
-                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
-                                                        seed = seed)
+                                                        mm = mm, dv = dv, nsim = nsim, cl = cl, control = control)#,
+                                                        #seed = seed)
           return(boot_tmp)
         })
         boot_table_mu <- sapply(pb_objects_mu, function(x) { return(data.frame(x$test)[2, ]) })
@@ -287,8 +285,8 @@ compute_tests <- function(mesdt_fit,
         "LRT_results" = t(LRT_results),
         "type" = type,
         "pb_test_results" = t(boot_table),
-        "pb_objects" = pb_objects,
-        "seed" = seed
+        "pb_objects" = pb_objects#,
+        #"seed" = seed
       ))
 
     } else {
@@ -485,8 +483,8 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
   names_lambda <- c(); names_mu <- c();
   # names(reduced_formulas_lambda) <- c(); names(reduced_formulas_mu) <- c()
   if (test_intercepts) {
-    names_lambda <- c("Intercept")
-    names_mu <- c("Intercept")
+    names_lambda <- c("(Intercept)_lambda")
+    names_mu <- c("(Intercept)_mu")
   }
   if (! rem_ran_ef) {
     if (length(attr(terms(lme4::nobars(formula_lambda)), "term.labels")) > 0) {
@@ -622,11 +620,12 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
                                               distribution,
                                               nsim = 1000, cl = NULL, control = NULL,
                                               seed = NULL) {
-  if (is.null(seed)) seed <- sample(1:1e6, 1)
+  #if (is.null(seed)) seed <- sample(1:1e6, 1)
 
   do_pb <- function(x) {
     dat_tmp <- data
-    sim_dat_tmp <- stats::simulate(small_model, seed = seed)[[1]]
+    sim_dat_tmp <- stats::simulate(small_model)[[1]]
+    #sim_dat_tmp <- stats::simulate(small_model, seed = seed)[[1]]
     # Do refitting manually
     dat_tmp[[dv]] <- sim_dat_tmp
     sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm, distribution, dv, control)
@@ -641,7 +640,8 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
     parallel <- T
     # load variables on cluster
     throwaway <- parallel::clusterExport(cl = cl,
-                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control", "seed"),
+                            #varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control", "seed"),
+                            varlist = c("data", "mm", "fit_glmm", "dv", "small_model", "large_model", "control"),
                             env = environment())
     if (options("mesdt.backend") == "glmmTMB") throwaway <- parallel::clusterCall(cl = cl, "require", package = "glmmTMB", character.only = T)
     # set seed on cluster

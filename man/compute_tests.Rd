@@ -37,8 +37,6 @@ should be tested (F)}
 \item{fit_obj}{An mesdt fit object containing the full fit and
 coefficients that should be tested}
 
-\item{data}{a data frame}
-
 \item{test_discriminability}{which coefficients on discriminability should be tested?
 (default is "all")}
 

@@ -114,7 +114,6 @@ fit_mesdt <- function(discriminability,
       "backend" = backend
     )
     ))
-
   # Give a warning if mean sensitivity is < 0
   check_sensitivity(obj)
 

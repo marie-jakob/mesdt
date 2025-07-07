@@ -2,7 +2,7 @@
 % Please edit documentation in R/fit_mesdt.R
 \name{fit_mesdt}
 \alias{fit_mesdt}
-\title{Fit a multilevel signal detection theory model}
+\title{Fit a mixed-effects signal detection theory model}
 \usage{
 fit_mesdt(
   discriminability,
@@ -26,12 +26,20 @@ fit_mesdt(
 
 \item{data}{dataset}
 
+\item{distribution}{parametric distributions of signal and noise evidence
+(supports gaussian, logistic, or gumbel-min)}
+
 \item{correlate_sdt_params}{boolean indicating whether correlations between
+SDT parameters should be modeled}
+
+\item{control}{optional control arguments that are included in the glmmTMB()
+or glmer() call
 SDT parameters should be modeled}
 }
 \value{
+an object of class "mesdt_fit" with the following slots:
 TODO
 }
 \description{
-Fit a multilevel signal detection theory model
+Fit a mixed-effects signal detection theory model
 }

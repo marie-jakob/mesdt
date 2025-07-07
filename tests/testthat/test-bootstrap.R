@@ -109,7 +109,7 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
                                          test_ran_ef = T,
                                          type = 3,
                                          tests = "bootstrap",
-                                         nsim = 8,
+                                         nsim = 100,
                                          cl = cl,
                                          seed = 12))
   suppressWarnings(boot_2 <- compute_tests(fit,
