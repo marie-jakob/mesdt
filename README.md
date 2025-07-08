@@ -14,14 +14,15 @@ typical R formula syntax:
 
 `bias = ~ X + (X | ID)`
 
-`mesdt` translates the given model formulas to a GLMM, uses either
-`lme4` or `glmmTMB` to estimate the model (based on the user-specified
-backend), and transforms the parameters back to SDT space, such that all
-post-processing (e.g., estimating marginal means) can take place on the
-level of SDT parameters as well. Hypothesis tests related to fixed and
-random effects can be conducted with Wald tests (only for fixed
-effects), likelihood ratio tests (type II and type III), and tests based
-on parametric bootstrapping (type II and type III).
+`mesdt` translates the given model formulas to a generalized linear
+mixed model (GLMM), uses either `lme4` or `glmmTMB` to estimate the
+model (based on the user-specified backend), and transforms the
+parameters back to SDT space, such that all post-processing (e.g.,
+estimating marginal means) can take place on the level of SDT parameters
+as well. Hypothesis tests related to fixed and random effects can be
+conducted with Wald tests (only for fixed effects), likelihood ratio
+tests (type II and type III), and tests based on parametric
+bootstrapping (type II and type III).
 
 ## Getting Started
 
@@ -43,25 +44,25 @@ library(mesdt)
 ```
 
 Upon loading the package, it tells us that it has set the backend, that
-is, the package used to estimate the GLMMs to `lme4`. If `glmmTMB`
+is, the package used to estimate the GLMMs, to `lme4`. If `glmmTMB`
 (which can be significantly faster) is installed, the backend can be
 changed like so:
 
 ``` r
-options("mesdt.backend" = "glmmTMB")
+set_backend("glmmTMB")
 ```
 
 ### Step 1: Specify and Fit a Mixed-Effects SDT Model
 
-We are using the `debi3` dataset provided with this package, where we
-investigated attributions to gender discrimination using a signal
-detection approach. In the experiment, participants had to judge 256
-fictional pay raise decisions as biased or unbiased. The cases involved
-male and female employees(`emp_gender`), who were either granted or
-denied a pay raise (`committee`).
+We are using the `debi3_sub` dataset provided with this package[^1],
+where we investigated attributions to gender discrimination using a
+signal detection approach. In the experiment, participants had to judge
+256 fictional pay raise decisions as biased or unbiased. The cases
+involved male and female employees(`emp_gender`), who were either
+granted or denied a pay raise (`committee`).
 
 ``` r
-debi3 <- mesdt::debi3
+debi3_sub <- mesdt::debi3_sub
 ```
 
 To estimate effects of these variables on participants’ discriminability
@@ -77,8 +78,8 @@ slope on response bias.
 
 `mesdt` also requires the user to specify the variable indicating the
 type of trial (i.e., whether the given trial was a signal, coded as 1,
-or noise trial, coded as 0, `status` in `debi3`) and the variable
-indicating participants’ response (`assessment` in `debi3`).
+or noise trial, coded as 0, `status` in `debi3_sub`) and the variable
+indicating participants’ response (`assessment` in `debi3_sub`).
 
 Thus, in `mesdt`, we can specify and fit our model like this:
 
@@ -87,38 +88,44 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 mod <- fit_mesdt(
   discriminability ~ committee * emp_gender + (1 | id),
   bias ~ committee * emp_gender + (committee | id),
-  data = debi3,
-  trial_type_var = "status",
+  data = debi3_sub,
+  trial_type = "status",
   dv = "assessment"
 )
 #> [1] "lme4 was used to fit the model."
 
 summary(mod)
-#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood  (Adaptive Gauss-Hermite Quadrature, nAGQ = 0)with the lme4 package. 
+#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. 
 #>  
-#> Discriminability: ~committee * emp_gender + (1 | id) 
-#> Response Bias:      ~committee * emp_gender + (committee | id) 
+#> Discriminability:  ~committee * emp_gender + (1 | id) 
+#> Response Bias:     ~committee * emp_gender + (committee | id) 
+#> 
+#> Random effects:
+#>  Groups Name                          Std.Dev. Corr       
+#>  id     (Intercept)(Response Bias)    0.3848              
+#>         committee1(Response Bias)     0.5801    0.17      
+#>         (Intercept)(Discriminability) 0.3902   -0.39  0.18
 #> 
 #> Fixed effects and Wald tests for discriminability: 
-#>                         Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             1.741054   0.055083  31.608  < 2e-16
-#> committee1             -0.063726   0.021433  -2.973  0.00295
-#> emp_gender1             0.030921   0.020024   1.544  0.12254
-#> committee1:emp_gender1  0.003458   0.020024   0.173  0.86290
+#>                        Estimate Std. Error z value Pr(>|z|)
+#> (Intercept)             1.75932    0.09974  17.638   <2e-16
+#> committee1             -0.04001    0.04671  -0.857    0.392
+#> emp_gender1            -0.01419    0.04308  -0.329    0.742
+#> committee1:emp_gender1  0.03843    0.04308   0.892    0.372
 #> 
 #> Fixed effects and Wald tests for response bias: 
-#>                        Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             0.15138   -0.02686   5.635 1.75e-08
-#> committee1              0.03115   -0.07670   0.406   0.6847
-#> emp_gender1            -0.01543   -0.01001  -1.542   0.1232
-#> committee1:emp_gender1  0.01671   -0.01001   1.669   0.0952
+#>                         Estimate Std. Error z value Pr(>|z|)
+#> (Intercept)             0.145662  -0.088899   1.639    0.101
+#> committee1             -0.018567  -0.131821  -0.141    0.888
+#> emp_gender1             0.006281  -0.021540   0.292    0.771
+#> committee1:emp_gender1  0.034437  -0.021540   1.599    0.110
 ```
 
 The `summary()` method prints population-level estimates for the fixed
-effects we specified separate for discriminability and response bias in
-a similar format as`lme4` and `glmmTMB`. The p values in the last column
-are results from Wald tests based on the beta estimates and their
-standard errors.
+effects and variances and covariances of the random effects separately
+for discriminability and response bias in a similar format as `lme4` and
+`glmmTMB`. The p values in the last column are results from Wald tests
+based on the beta estimates and their standard errors.
 
 ### Step 2: Compute Hypothesis Tests for Selected Parameters
 
@@ -134,21 +141,22 @@ if participants’ response bias and / or discriminability vary as a
 function of the committee decision:
 
 ``` r
-fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
-                 trial_type_var = "trial_type_fac")
-#> [1] "lme4 was used to fit the model."
-
-lrts_test <- compute_tests(fit, test_intercepts = T)
-
 tests <- compute_tests(mod, 
                        tests = "lrt",
                        tests_discriminability = ~ committee,
                        tests_response_bias = ~ committee)
+#> [1] "committee_lambda" "committee_mu"
 
-tests$LRTs$LRT_results
-#>                  deviance_full deviance_reduced df.LRT Chisq     p.value   
-#> committee_lambda 21600.89      21601.05         1      0.1578843 0.6911119 
-#> committee_mu     21600.89      21609.64         1      8.750854  0.00309457
+tests
+#> Type III likelihood ratio tests 
+#> 
+#> Discriminability: 
+#>           deviance_full deviance_reduced df.LRT Chisq   p.value
+#> committee       4718.78          4719.49      1  0.71 0.3999445
+#> 
+#> Response Bias: 
+#>           deviance_full deviance_reduced df.LRT Chisq   p.value
+#> committee       4718.78           4718.8      1  0.02 0.8803103
 ```
 
 In this subset of our data, there is a significant effect of the
@@ -165,34 +173,36 @@ get estimated marginal means for response bias and discriminability for
 
 ``` r
 library(emmeans)
-#> 
-#> Attache Paket: 'emmeans'
-#> Das folgende Objekt ist maskiert 'package:devtools':
-#> 
-#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions
-#>  committee emmean     SE  df asymp.LCL asymp.UCL
-#>  true        1.68 0.0588 Inf      1.56      1.79
-#>  false       1.80 0.0595 Inf      1.69      1.92
+#>  committee emmean   SE  df asymp.LCL asymp.UCL
+#>  true        1.72 0.11 Inf      1.50      1.94
+#>  false       1.80 0.11 Inf      1.58      2.01
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
 emmeans(mod, ~ committee, dpar = "response bias")
 #> NOTE: Results may be misleading due to involvement in interactions
-#>  committee emmean     SE  df asymp.LCL asymp.UCL
-#>  true       0.183 0.0785 Inf    0.0286     0.336
-#>  false      0.120 0.0839 Inf   -0.0442     0.285
+#>  committee emmean    SE  df asymp.LCL asymp.UCL
+#>  true       0.127 0.170 Inf    -0.207     0.461
+#>  false      0.164 0.147 Inf    -0.123     0.452
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
 ```
 
 The estimated marginal means show that participants’ discriminability
-was higher in trials where a pay raise was denied than for cases where
-one was granted. Descriptively,
+was higher in trials where a pay raise was denied ($d' = 1.72$ than for
+cases where one was granted $d' = 1.83$). Descriptively, we can see a
+similar pattern for response bias, with a smaller, that is, more liberal
+response criterion in “denied” cases ($\lambda = 0.12$) than in
+“granted” cases ($\lambda = 0.183$), but this difference was not
+significantly different from zero in this subset of the data.
 
 ## References
 
 TODO
+
+[^1]: `debi3_sub` contains a subset of 20 participants. The complete
+    dataset is provided as `debi3`.

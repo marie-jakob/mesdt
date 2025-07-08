@@ -25,7 +25,7 @@ parameters discriminability and response bias using the typical R formula syntax
 
 ` bias = ~ X + (X | ID)` 
 
-`mesdt` translates the given model formulas to a GLMM, uses either `lme4` or `glmmTMB` to estimate the model (based on the user-specified backend), and transforms the parameters back to SDT space, such that all post-processing (e.g., estimating marginal means) can take place on the level of SDT parameters as well. Hypothesis tests related to fixed and random effects can be conducted with Wald tests (only for fixed effects), likelihood ratio tests (type II and type III), and tests based on parametric bootstrapping (type II and type III). 
+`mesdt` translates the given model formulas to a generalized linear mixed model (GLMM), uses either `lme4` or `glmmTMB` to estimate the model (based on the user-specified backend), and transforms the parameters back to SDT space, such that all post-processing (e.g., estimating marginal means) can take place on the level of SDT parameters as well. Hypothesis tests related to fixed and random effects can be conducted with Wald tests (only for fixed effects), likelihood ratio tests (type II and type III), and tests based on parametric bootstrapping (type II and type III). 
 
 ## Getting Started
 
@@ -46,16 +46,18 @@ library(mesdt)
 ```
 
 Upon loading the package, it tells us that it has set the backend, that is, the
-package used to estimate the GLMMs to `lme4`. If `glmmTMB` (which can be 
+package used to estimate the GLMMs, to `lme4`. If `glmmTMB` (which can be 
 significantly faster) is installed, the backend can be changed like so:
 
 ``` {r, eval = FALSE}
-options("mesdt.backend" = "glmmTMB")
+set_backend("glmmTMB")
 ```
 
 ### Step 1: Specify and Fit a Mixed-Effects SDT Model
 
-We are using the `debi3` dataset provided with this package, where we 
+We are using the `debi3_sub` dataset provided with this package^[`debi3_sub` 
+contains a subset of 20 participants. The complete dataset is provided as 
+`debi3`.], where we 
 investigated attributions to gender discrimination using a signal detection 
 approach. In the experiment, participants had to judge 256 
 fictional pay raise decisions as biased or unbiased. The cases involved male 
@@ -63,7 +65,7 @@ and female employees(`emp_gender`), who were either granted or denied a pay rais
 (`committee`). 
 
 ```{r}
-debi3 <- mesdt::debi3
+debi3_sub <- mesdt::debi3_sub
 
 ```
 
@@ -79,8 +81,8 @@ random slope on response bias.
 
 `mesdt` also requires the user to specify the variable indicating the type of
 trial (i.e., whether the given trial was a signal, coded as 1, or noise trial, 
-coded as 0, `status` in `debi3`) and the variable indicating participants' 
-response (`assessment` in `debi3`). 
+coded as 0, `status` in `debi3_sub`) and the variable indicating participants' 
+response (`assessment` in `debi3_sub`). 
 
 Thus, in `mesdt`, we can specify and fit our model like this:
 
@@ -89,8 +91,8 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 mod <- fit_mesdt(
   discriminability ~ committee * emp_gender + (1 | id),
   bias ~ committee * emp_gender + (committee | id),
-  data = debi3,
-  trial_type_var = "status",
+  data = debi3_sub,
+  trial_type = "status",
   dv = "assessment"
 )
 
@@ -99,8 +101,9 @@ summary(mod)
 ```
 
 The `summary()` method prints population-level estimates for the fixed effects 
-we specified separate for discriminability and response bias in a similar format
-as`lme4` and `glmmTMB`. The p values in the last column are results from Wald
+and variances and covariances of the random effects separately for 
+discriminability and response bias in a similar format
+as `lme4` and `glmmTMB`. The p values in the last column are results from Wald
 tests based on the beta estimates and their standard errors. 
 
 ### Step 2: Compute Hypothesis Tests for Selected Parameters
@@ -122,7 +125,7 @@ tests <- compute_tests(mod,
                        tests_discriminability = ~ committee,
                        tests_response_bias = ~ committee)
 
-tests$LRTs$LRT_results
+tests
 
 ```
 
@@ -148,7 +151,7 @@ emmeans(mod, ~ committee, dpar = "response bias")
 ```
 
 The estimated marginal means show that participants' discriminability was higher 
-in trials where a pay raise was denied ($d' = 1.7$ than for cases where one was 
+in trials where a pay raise was denied ($d' = 1.72$ than for cases where one was 
 granted $d' = 1.83$). Descriptively, we can see a similar pattern for response
 bias, with a smaller, that is, more liberal response criterion in "denied" cases 
 ($\lambda = 0.12$) than in "granted" cases ($\lambda = 0.183$), but this 
