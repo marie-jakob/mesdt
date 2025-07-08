@@ -1,8 +1,41 @@
 .onLoad <- function(libname, pkgname) {
-  # TODO: check if package loaded / installed
-  message("Setting backend to lme4.")
-  options(mesdt.backend = "lme4")
+  options("mesdt.backend" = "lme4")
+  packageStartupMessage("Setting backend to lme4.")
 }
+
+
+#' Set backend for mesdt.
+#'
+#' @param backend_name `character` indicating the backend that should be used
+#' to estimate the models (`lme4`, the default, which is set when loading the
+#' package, or `glmmTMB`).
+#'
+#' @return NULL
+#' @description
+#' Allows the user to change the package that is used to estimate the
+#' models. When loading the package, the backend is automatically set to `lme4`
+#' (which is a dependency for this package). If `glmmTMB` is installed, the
+#' backend can be changed to that package through this function.
+#'
+#' @export
+#'
+#' @examples
+#' set_backend("lme4")
+#' \dontrun{
+#' set_backend("glmmTMB")
+#' }
+set_backend <- function(backend_name) {
+  backend_name <- match.arg(backend_name, c("lme4", "glmmTMB"))
+  if (! requireNamespace(backend_name, quietly = TRUE)) {
+    msg <- paste("The", backend_name, "package must be installed to be used as
+                 a backend.")
+    stop(msg)
+  } else {
+    message(paste("Setting backend to ", backend_name, ".", sep = ""))
+    options("mesdt.backend" = backend_name)
+  }
+}
+
 
 all_terms_in <- function(terms_to_check, reference_terms) {
   normalize_interaction <- function(term) {
@@ -78,14 +111,14 @@ standardize_dist_input <- function(x) {
 
 standardize_type_input <- function(x) {
   if (x %in% c(2, "II", "ii", "2", "two")) type_std <- 2
-  else if (x %in% c(3, "III", "iii", "3", "trhee")) type_std <- 3
+  else if (x %in% c(3, "III", "iii", "3", "three")) type_std <- 3
   else type_std <- NULL
   return(type_std)
 }
 
 
 standardize_tests_input <- function(x) {
-  if (x %in% c("LRT", "lrt")) test_std <- "lrt"
+  if (x %in% c("LRT", "lrt", "LRTs")) test_std <- "lrt"
   else if (x %in% c("boot", "Boot", "bootstrap", "Bootstrap", "pb", "PB")) test_std <- "bootstrap"
   else test_std <- NULL
   return(test_std)

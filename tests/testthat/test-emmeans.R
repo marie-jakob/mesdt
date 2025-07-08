@@ -17,7 +17,7 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
   test_mod_mesdt <- fit_mesdt(~ committee + (1 | id),
                               ~ committee + (1 | id),
                               data = dat_exp_2,
-                              trial_type_var = "status_fac",
+                              trial_type = "status_fac",
                               dv = "assessment",
                               correlate_sdt_params = T)
   logLik(test_mod_lme)
@@ -30,10 +30,10 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
   # Response Bias
   emm_lme_c <- data.frame(emmeans(test_mod_lme, ~ committee))
   emm_mesdt_c <- data.frame(emmeans(test_mod_mesdt, ~ committee, dpar = "response bias"))
-  expect_equal(emm_lme_c$emmean, emm_mesdt_c$emmean, tolerance = 1e-4)
+  expect_equal(emm_lme_c$emmean * -1, emm_mesdt_c$emmean, tolerance = 1e-4)
   expect_equal(emm_lme_c$se, emm_mesdt_c$se, tolerance = 1e-4)
-  expect_equal(emm_lme_c$asymp.LCL, emm_mesdt_c$asymp.LCL, tolerance = 1e-4)
-  expect_equal(emm_lme_c$asymp.UCL, emm_mesdt_c$asymp.UCL, tolerance = 1e-3)
+  expect_equal(emm_lme_c$asymp.UCL * -1, emm_mesdt_c$asymp.LCL, tolerance = 1e-4)
+  expect_equal(emm_lme_c$asymp.LCL * -1, emm_mesdt_c$asymp.UCL, tolerance = 1e-3)
 
   # Discriminability
   emm_lme <- data.frame(contrast(emmeans(test_mod_lme, ~ status_fac * committee),
@@ -52,16 +52,16 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
   test_mod_mesdt <- fit_mesdt(~ contingencies + (1 | id),
                               ~ contingencies + (1 | id),
                               data = dat_exp_2,
-                              trial_type_var = "status_fac",
+                              trial_type = "status_fac",
                               dv = "assessment",
                               correlate_sdt_params = T)
   # Response Bias
   emm_lme_c <- data.frame(emmeans(test_mod_lme, ~ contingencies))
   emm_mesdt_c <- data.frame(emmeans(test_mod_mesdt, ~ contingencies, dpar = "response bias"))
-  expect_equal(emm_lme_c$emmean, emm_mesdt_c$emmean, tolerance = 1e-4)
+  expect_equal(emm_lme_c$emmean * -1, emm_mesdt_c$emmean, tolerance = 1e-4)
   expect_equal(emm_lme_c$se, emm_mesdt_c$se, tolerance = 1e-4)
-  expect_equal(emm_lme_c$asymp.LCL, emm_mesdt_c$asymp.LCL, tolerance = 1e-4)
-  expect_equal(emm_lme_c$asymp.UCL, emm_mesdt_c$asymp.UCL, tolerance = 1e-4)
+  expect_equal(emm_lme_c$asymp.UCL * -1, emm_mesdt_c$asymp.LCL, tolerance = 1e-4)
+  expect_equal(emm_lme_c$asymp.LCL * -1, emm_mesdt_c$asymp.UCL, tolerance = 1e-4)
 
   # Sensitivity:
   emm_lme <- data.frame(contrast(emmeans(test_mod_lme, ~ status_fac * contingencies),
@@ -82,16 +82,16 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
   test_mod_mesdt <- fit_mesdt(~ contingencies * emp_gender + (1 | id),
                               ~ contingencies * emp_gender + (1 | id),
                               data = dat_exp_2,
-                              trial_type_var = "status_fac",
+                              trial_type = "status_fac",
                               dv = "assessment",
                               correlate_sdt_params = T)
   # Response Bias
   emm_lme_c <- data.frame(emmeans(test_mod_lme, ~ contingencies * emp_gender))
   emm_mesdt_c <- data.frame(emmeans(test_mod_mesdt, ~ contingencies * emp_gender, dpar = "response bias"))
-  expect_equal(emm_lme_c$emmean, emm_mesdt_c$emmean, tolerance = 1e-4)
+  expect_equal(emm_lme_c$emmean * -1, emm_mesdt_c$emmean, tolerance = 1e-4)
   expect_equal(emm_lme_c$se, emm_mesdt_c$se, tolerance = 1e-4)
-  expect_equal(emm_lme_c$asymp.LCL, emm_mesdt_c$asymp.LCL, tolerance = 1e-4)
-  expect_equal(emm_lme_c$asymp.UCL, emm_mesdt_c$asymp.UCL, tolerance = 1e-4)
+  expect_equal(emm_lme_c$asymp.UCL * -1, emm_mesdt_c$asymp.LCL, tolerance = 1e-4)
+  expect_equal(emm_lme_c$asymp.LCL * -1, emm_mesdt_c$asymp.UCL, tolerance = 1e-4)
 
   # Sensitivity:
   emm_lme <- data.frame(contrast(emmeans(test_mod_lme, ~ status_fac * contingencies * emp_gender),
@@ -120,17 +120,17 @@ test_that("emmeans.mesdt_fit() works for glmmTMB", {
   test_mod_mesdt <- fit_mesdt(~ contingencies * emp_gender + (1 | id),
                               ~ contingencies * emp_gender + (1 | id),
                               data = dat_exp_2,
-                              trial_type_var = "status_fac",
+                              trial_type = "status_fac",
                               dv = "assessment",
                               correlate_sdt_params = T)
 
   # Response Bias
   emm_tmb_c <- data.frame(emmeans(test_mod_tmb, ~ contingencies * emp_gender))
   emm_mesdt_c <- data.frame(emmeans(test_mod_mesdt, ~ contingencies * emp_gender, dpar = "response bias"))
-  expect_equal(emm_tmb_c$emmean, emm_mesdt_c$emmean, tolerance = 1e-2)
+  expect_equal(emm_tmb_c$emmean * -1, emm_mesdt_c$emmean, tolerance = 1e-2)
   expect_equal(emm_tmb_c$se, emm_mesdt_c$se, tolerance = 1e-4)
-  expect_equal(emm_tmb_c$asymp.LCL, emm_mesdt_c$asymp.LCL, tolerance = 1e-2)
-  expect_equal(emm_tmb_c$asymp.UCL, emm_mesdt_c$asymp.UCL, tolerance = 1e-2)
+  expect_equal(emm_tmb_c$asymp.UCL * -1, emm_mesdt_c$asymp.LCL, tolerance = 1e-2)
+  expect_equal(emm_tmb_c$asymp.LCL * -1, emm_mesdt_c$asymp.UCL, tolerance = 1e-2)
 
   # Sensitivity:
   emm_tmb <- data.frame(contrast(emmeans(test_mod_tmb, ~ status_fac * contingencies * emp_gender),
@@ -155,17 +155,17 @@ test_that("emmeans.mesdt_fit() works for a single-level model fit with glm()", {
   test_mod_mesdt <- fit_mesdt(~ contingencies * emp_gender,
                               ~ contingencies * emp_gender,
                               data = dat_exp_2,
-                              trial_type_var = "status_fac",
+                              trial_type = "status_fac",
                               dv = "assessment",
                               correlate_sdt_params = T)
 
   # Response Bias
   emm_glm_c <- data.frame(emmeans(test_mod_glm, ~ contingencies * emp_gender))
   emm_mesdt_c <- data.frame(emmeans(test_mod_mesdt, ~ contingencies * emp_gender, dpar = "response bias"))
-  expect_equal(emm_glm_c$emmean, emm_mesdt_c$emmean, tolerance = 1e-2)
+  expect_equal(emm_glm_c$emmean * -1, emm_mesdt_c$emmean, tolerance = 1e-2)
   expect_equal(emm_glm_c$se, emm_mesdt_c$se, tolerance = 1e-4)
-  expect_equal(emm_glm_c$asymp.LCL, emm_mesdt_c$asymp.LCL, tolerance = 1e-2)
-  expect_equal(emm_glm_c$asymp.UCL, emm_mesdt_c$asymp.UCL, tolerance = 1e-2)
+  expect_equal(emm_glm_c$asymp.UCL * -1, emm_mesdt_c$asymp.LCL, tolerance = 1e-2)
+  expect_equal(emm_glm_c$asymp.LCL * -1, emm_mesdt_c$asymp.UCL, tolerance = 1e-2)
 
   # Sensitivity:
   emm_glm <- data.frame(contrast(emmeans(test_mod_glm, ~ status_fac * contingencies * emp_gender),

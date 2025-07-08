@@ -9,4 +9,4 @@
 library(testthat)
 library(mlsdt)
 
-test_check("mlsdt")
+test_check("mesdt")

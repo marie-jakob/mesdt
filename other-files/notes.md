@@ -5,11 +5,9 @@
 Functionality / Technical stuff:
 (+ gumbel-max + tests)
 + Aggregation
-+ LRTs: check if tests for an object were already computed
 + tests continuous predictors
 + tests bootstrap with many samples / compare with afex
-+ tests random effects with random slopes with more than two levels
-+ Fix random seed thing for bootstrap
++ gumbel-max
 
 Post-Processing / Pretty Stuff
 + apa_print_mlsdt() method
@@ -20,8 +18,6 @@ Post-Processing / Pretty Stuff
 + progress bars PB
 
 Documentations / Conventions / Naming / Practicality
-+ documentation
-+ examples
 + (Tests for customized SDT user output)
 + Vignette extreme value SDT
 + set sum contrasts
@@ -34,7 +30,7 @@ Maybe:
   + That should also be easier when the translation of the input syntax is changed
 + Plots
 + test only a subset of random effects
-
++ tests random effects with random slopes with more than two levels
 
 Probably not: 
 + reduced random-effects structure
@@ -70,19 +66,23 @@ Done:
 + README
 + datasets: detecting bias project?
   + or use simulated data for a toy question?
-
++ Fix random seed thing for bootstrap
++ documentation
++ examples
 
 ### Questions Co-Authors
 
 + naming conventions for SDT parameters - what to use here? 
 + df for random effects tests
++ leave random effects out for now?
++ How to handle contrast coding? Automatically use sum contrasts and notify the user? 
++ default for compute_tests() test argument
 
 
 
 ### Open Questions
 
 + How to credit Henrik Singmann (a lot of things are similar to afex + he helped)
-+ How to handle contrast coding? Automatically use sum contrasts and notify the user? 
 + How to handle overparametrized models (when lme4 drops columns)? (fixed-effect model matrix is rank deficient so dropping XX columns / coefficients)
 + How to handle reverse-coded trial_type variable? -> warning to user
 

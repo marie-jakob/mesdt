@@ -2,13 +2,13 @@
 % Please edit documentation in R/fit_mesdt.R
 \name{fit_mesdt}
 \alias{fit_mesdt}
-\title{Fit a mixed-effects signal detection theory model}
+\title{Fit a (mixed-effects) signal detection theory (SDT) model}
 \usage{
 fit_mesdt(
   discriminability,
   bias,
   dv,
-  trial_type_var = "trial_type",
+  trial_type = "trial_type",
   data,
   distribution = "gaussian",
   correlate_sdt_params = T,
@@ -16,30 +16,102 @@ fit_mesdt(
 )
 }
 \arguments{
-\item{discriminability}{Formula specifying fixed and random effects on sensitivity}
+\item{discriminability}{\code{formula} specifying fixed and random effects on
+discriminability with the common syntax for mixed-effects models from
+\code{lme4} (see Details).}
 
-\item{bias}{Formula specifying fixed and random effects on response bias}
+\item{bias}{\code{formula} specifying fixed and random effects on response bias
+with the common syntax for mixed-effects models from lme4 (see Details).}
 
-\item{dv}{name of the (binary) dependent variable}
+\item{dv}{\code{character} string specifying the name of the (binary) dependent
+variable.}
 
-\item{trial_type_var}{name of the variable coding signal vs. noise trials}
+\item{trial_type}{\code{character} specifying name of the variable coding
+whether a trial in the given df is a signal or a noise trial.}
 
-\item{data}{dataset}
+\item{data}{\code{data.frame} containing the variables used in the formulas for
+discriminability and response bias.}
 
-\item{distribution}{parametric distributions of signal and noise evidence
-(supports gaussian, logistic, or gumbel-min)}
+\item{distribution}{\code{character} specifying the parametric distribution
+of signal and noise evidence ("gaussian", which is the default, "logistic",
+or "gumbel-min").}
 
-\item{correlate_sdt_params}{boolean indicating whether correlations between
-SDT parameters should be modeled}
+\item{correlate_sdt_params}{\code{boolean} indicating whether correlations between
+SDT parameters should be modeled (see Details).}
 
-\item{control}{optional control arguments that are included in the glmmTMB()
-or glmer() call
-SDT parameters should be modeled}
+\item{control}{list containing optional control arguments that are included
+in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
 }
 \value{
-an object of class "mesdt_fit" with the following slots:
-TODO
+An object of class \code{mesdt_fit}, containing the fitted model
+(\verb{$fit_obj}), information about the specified strucure of the model
+(\verb{$user_input}) and internal information used for post-processing.
+(\verb{$internal}).
 }
 \description{
-Fit a mixed-effects signal detection theory model
+Estimates (mixed-effects) signal detection theory (SDT) models with maximum
+likelihood estimation by leveraging the equivalence between certain SDT and
+certain generalized linear models (GLMM; De Carlo, 1998). The GLMMs are
+estimated using either the \code{lme4} (the default) or the \code{glmmTMB} package
+(which can be significantly faster) as a backend, which can be changed with
+\link{set_backend}.
+
+The default SDT parametrization is the common equal-variance Gaussian model,
+but \code{fit_mesdt()} and this package support other distributions (i.e., the
+logistic, gumbel-min and gumbel-max distribution) as well, which can be
+more appropriate in certain contexts.
+
+\code{summary()} and \code{print()} methods are provided, showing parameter estimates,
+standard errors and results of Wald tests (as returned by \code{lme4} and
+\code{glmmTMB}); however, it is usually recommended to rely on likelihood ratio
+tests or parametric bootstrapping tests (in case of few levels of the
+random-effects grouping factor) for statistical inference with GLMM, which
+are provided in the \link{compute_tests} function.
+}
+\details{
+\itemize{
+\item Formulas for sensitivity and response bias can be two-sided, specifying the
+SDT parameter on the left-hand-side (e.g., \code{discriminability ~ 1 + (1 | id)})
+or one-sided (e.g., \code{~ 1 + (1 | id)}). In the latter case, the corresponding
+SDT parameter is extracted from the name of the function argument.
+\item Formulas can also specify single-level models without random effects. In
+such a case, the \code{glm()} function from \code{stats} is used to estimate the model.
+\item Per default, correlations between the random effects for discriminability
+and response bias are modeled with a joint covariance matrix (i.e., random
+intercepts and slopes for discriminability and response bias are correlated
+with each other). Setting \code{correlate_sdt_params = F} splits this up into
+two separate covariance matrices for discriminability and response bias
+(which can help to achieve convergence).
+\item The \code{control} argument allows to pass all control arguments taken by
+\code{lme4} or \code{glmmTMB} (depending on the backend used; see the relevant
+documentation for details).
+\item TODO: correlations between random effects
+}
+}
+\examples{
+\dontrun{
+# Mixed-effects SDT model
+# by-participant random intercepts for msensitivity and response bias
+# by-participant random slope for the effect of the committee decision on
+# response bias
+# correlations between all random effects
+mod_mixed <- fit_mesdt(
+  discriminability ~ committee * emp_gender + (1 | id),
+   bias ~ committee * emp_gender + (committee | id),
+   data = debi3_sub,
+   trial_type = "status",
+   dv = "assessment"
+)
+summary(mod_mixed)
+
+# Fixed-effects model (not recommended for this type of nested data structure!):
+mod_fixed_only <- fit_mesdt(
+  discriminability ~ committee * emp_gender,
+   bias ~ committee * emp_gender,
+   data = debi3_sub,
+   trial_type = "status",
+   dv = "assessment"
+)
+summary(mod_fixed_only)
+}
 }

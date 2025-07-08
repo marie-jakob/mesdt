@@ -2,48 +2,181 @@
 % Please edit documentation in R/compute_tests.R
 \name{compute_tests}
 \alias{compute_tests}
-\title{Compute Likelihood Ratio Tests or tests based on parametric bootstrapping
-for a fitted SDT model}
+\title{Compute likelihood ratio tests and parametric bootstrapping tests for a
+(mixed-effects) SDT model.}
 \usage{
 compute_tests(
   mesdt_fit,
-  cl = NULL,
   tests = "lrt",
-  nsim = 1000,
   type = 3,
   test_intercepts = F,
-  test_ran_ef = F,
   tests_discriminability = "all",
   tests_response_bias = "all",
+  nsim = 1000,
+  cl = NULL,
   control = NULL,
   seed = NULL
 )
 }
 \arguments{
-\item{tests}{type of tests that should be computed ("LRT" -> likelihood ratio tests,
-"bootstrap" = parametric bootstrap)}
+\item{tests}{\code{character} specifying the type of tests that should be
+computed ("LRT" for likelihood ratio tests, "bootstrap" for parametric
+bootstrapping tests, see Details).}
 
-\item{nsim}{number of simulated datasets for bootstrapping}
+\item{type}{\code{integer} or \code{character} specifying the type of tests
+(default 3 / "III", 2 / "II") that are computed (see Details).}
 
-\item{type}{type of tests (2 or 3, only relevant for likelihood ratio tests and
-parametric bootstrapping)}
+\item{test_intercepts}{\code{boolean} indicating if intercepts for
+discriminability and response bias should be tested.}
 
-\item{test_intercepts}{boolean indicating if intercepts for discriminability and
-response bias should be tested}
+\item{nsim}{\code{integer} specifying the number of simulated datasets for
+bootstrapping.}
 
-\item{test_ran_ef}{boolean indicating whether random (T) or fixed effects
-should be tested (F)}
+\item{cl}{name of a cluster to distribute computation across multiple cores}
 
-\item{fit_obj}{An mesdt fit object containing the full fit and
-coefficients that should be tested}
+\item{control}{list containing optional control arguments that are included
+in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
 
-\item{test_discriminability}{which coefficients on discriminability should be tested?
-(default is "all")}
+\item{fit_obj}{\code{mesdt_fit} object containing the full fit and the
+coefficients that should be tested.}
 
-\item{test_response_bias}{which coefficients on response bias should be tested?
-(default is "all")}
+\item{test_discriminability}{\code{formula} or \code{character} indicating which
+coefficients on discriminability should be tested (default is "all").
+See Details.}
+
+\item{test_response_bias}{\code{formula} or \code{character} indicating which
+coefficients on response bias should be tested (default is "all").
+See Details.}
+}
+\value{
+An object of class \code{mesdt_test}, containing the fitted model
+(\verb{$fit_obj}), fit objects for the reduced fits (\verb{$reduced_fits}), fit objects
+for the full fits (\verb{$full_fits}, only for type II tests), a dataframe
+containing results of likelihood ratio tests (\verb{$LRT_results}), the type of
+tests that were computed (\verb{$type}). For parametric bootstrap tests, there are
+additional slots for the results of those tests (\verb{$pb_test_results}), further
+information about the tests (\verb{$pb_objects}, similar to the structure
+returned by the \code{pbkrtest} package), and the random seed that was used to
+simulate the data (\verb{$seed}).
 }
 \description{
-Compute Likelihood Ratio Tests or tests based on parametric bootstrapping
-for a fitted SDT model
+Computes likelihood ratio tests and parametric bootstrapping tests for a
+(mixed-effects) SDT model. The function allows the user to either test all
+effects on sensitivity, response bias or both
+(\code{tests_discriminability = "all"}, \code{tests_response_bias = "all"},
+the default), to specify
+effects to be tested (by providing formulas, see Examples), or to don't
+test any effect on one of the SDT parameters
+(\code{tests_discriminability = NULL} or \code{tests_response_bias = NULL}).
+Intercepts for response bias and discriminability can optionally be tested as
+well by setting \code{test_intercepts = TRUE}. A \code{print} method is provided,
+showing the test results; Everything else can be directly extracted
+from the returned \code{mesdt_test} object.
+
+Both methods compute tests for the given effects by comparing a full model,
+containing the fixed effect of interest with a restricted model, where the
+fixed effect of interest is fixed to zero. For likelihood ratio tests
+Chi^2 value and p-values are computed with a Chi^2 test. For parametric
+bootstrapping, p-values are computed based on a simulated reference
+distribution of the restricted model (see Details). The function implements
+type III (the default) and type II tests, as specified with the \code{type}
+argument.
+}
+\details{
+\subsection{Test Logic}{
+
+Likelihood ratio tests (LRTs) and parametric bootstrapping tests (PBTs)
+are based on comparisons of nested models: A full model, containing the
+effect of interest, and a restricted model, where the fixed effect of
+interest is set to zero. The resulting difference in the deviance of both
+models is a likelihood ratio, which asymptotically follows a Chi^2
+distribution, with degrees of freedom equal to the difference in the
+numbers of parameters of both models. LRTs thus use this Chi^2 distribution
+as the reference distribution. However, because this is an \emph{asymmetric}
+property of the likelihood ratio, it is usually only recommended for models
+and data with a sufficiently high number of levels for the random-effects
+grouping factors (e.g., > 50, as recommended in the afex package). For
+other cases, PBTs can be used (note, however, that the computation is
+computationally intensive): PBTs generate the reference distribution by
+repeatedly simulating data from the restricted model and estimating the
+full model on the simulated data.
+}
+
+\subsection{Model Specification of Type II and III tests}{
+
+Type III and type II tests follow a similar logic as the types of sums of
+squares in analyses of variance: For type III (the default) the full model
+is always the given model and the restricted models are specified by
+only removing the fixed effect of interest from the model. In contrast,
+type II sums of squares take into account the order of the to-be-tested
+effect and aim to preserve the principle of marginality (i.e., models
+including higher-order effects such as interactions should always include
+all effects that are marginal to them). Thus, type II tests are obtained by
+comparing a model in which the to-be-tested effect and all higher-order
+effects are removed with a model in which only effects up to the effect of
+the to-be-tested parameter are included (similar to the logic applied in
+afex). Importantly, this logic is applied only to the model structure for
+the SDT parameter for which the effect is to be tested (e.g., when testing
+a main effect of a variable on response bias, all higher-order effects are
+removed from response bias, while the model for discriminability remains
+unchanged). Thus, marginality is preserved \emph{within} the respective SDT
+parameter, but higher-order interactions of to-be-tested effects can
+(if specified) be included on the respective other SDT parameter.
+}
+
+\subsection{Random effects of Restricted Models}{
+
+The hypothesis tests implemented here only concern fixed effects, meaning
+that the random effects structure remains unchanged. Thus, when testing
+effects of a variable x, the random slope for x remains in the restricted
+model, if it is present in the full model. This corresponds to what has
+been referred to as a \emph{balanced null} model (unlike a \emph{strict null} model,
+in which a possible corresponding random slope is removed from the
+restricted model as well). Substantively, these types of model comparison
+test whether the \emph{mean population effect} is significantly different from
+zero, regardless of variability in this effect according to random grouping
+factors. Thus, in case of a non-significant effect, individuals might still
+exhibit non-zero effects.
+}
+
+\subsection{Computational Details}{
+
+The \code{control} argument allows to pass all control arguments taken by
+\code{lme4} or \code{glmmTMB} (depending on the backend used; see the relevant
+documentation for details).
+}
+}
+\examples{
+\dontrun{
+mod <- fit_mesdt(
+discriminability ~ committee * emp_gender + (1 | id),
+bias ~ committee * emp_gender + (committee | id),
+data = debi3_sub,
+trial_type = "status",
+dv = "assessment"
+)
+# LRTs for all parameters
+tests_all <- compute_tests(mod)
+tests_all
+# Tests intercepts as well
+tests_all <- compute_tests(mod, test_intercepts = TRUE)
+tests_all
+# Only test effect of committee on response bias
+tests_committee <- compute_tests(mod,
+                                 tests_discriminability = NULL,
+                                 tests_response_bias = ~ committee)
+tests_committee
+# parametric bootstrapping tests with a given cluster
+require(parallel)
+cl <- makeCluster(4, type = "SOCK")
+tests_boot <- compute_tests(fit,
+                            tests_response_bias = ~ committee,
+                            tests_discriminability = NULL,
+                            tests = "bootstrap",
+                            nsim = 1000,
+                            cl = cl,
+                            seed = 51)
+stopCluster(cl)
+tests_boot
+}
 }

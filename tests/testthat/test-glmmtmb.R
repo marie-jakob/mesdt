@@ -6,11 +6,12 @@ options("mesdt.backend" = "lme4")
 
 
 test_that("fit_mesdt() estimates the correct model with glmmTMB", {
+  skip_if_not_installed("glmmTMB")
 
   options("mesdt.backend" = "glmmTMB")
 
   fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
-                   trial_type_var = "trial_type_fac")$fit_obj
+                   trial_type = "trial_type_fac")$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)[[1]]), length(fixef(model_test_tmb)[[1]]))
@@ -42,14 +43,14 @@ test_that("fit_mesdt() estimates the correct model with glmmTMB", {
 
 
 test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (crossed random effects)", {
-  options("mesdt.backend" = "glmmTMB")
+  skip_if_not_installed("glmmTMB")
   form_mu <- ~ committee_ef + (1 | id) + (1 | file_name)
   form_lambda <- ~ committee_ef + (committee_ef | id)
 
   options("mesdt.backend" = "lme4")
   fit_lme <- fit_mesdt(form_mu, form_lambda,
                    dv = "assessment",
-                   trial_type_var = "status_fac",
+                   trial_type = "status_fac",
                    data = dat_exp_2)
 
   # Type 2 - test_intercepts = T
@@ -75,7 +76,7 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
   options("mesdt.backend" = "glmmTMB")
   fit_tmb <- fit_mesdt(form_mu, form_lambda,
                        dv = "assessment",
-                       trial_type_var = "status_fac",
+                       trial_type = "status_fac",
                        data = dat_exp_2)
 
   # Type 2 - test_intercepts = T

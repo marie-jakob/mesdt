@@ -1,12 +1,15 @@
 test_that("gumbel-min implementation through cloglog gives correct results", {
 
+
+  skip_if_not_installed("janitor")
+  skip_if_not_installed("tidyr")
+  skip_if_not_installed("dplyr")
   library(janitor)
-  # TODO: put this into the package
-  #dat_exp_2$assessment_rev <- ifelse(dat_exp_2$assessment == "fair", 1, 0)
-  #dat_exp_2$status_fac_rev <- ifelse(dat_exp_2$status_fac == 1, -1, 1)
+  library(tidyr)
+  library(dplyr)
 
   gumbel_min_mod <- fit_mesdt(~ 1,
-                              ~ 1, dv = "assessment", trial_type_var = "status_fac",
+                              ~ 1, dv = "assessment", trial_type = "status_fac",
                               data = dat_exp_2, distribution = "gumbel-min")
   # Compute this based on aggregated data
 

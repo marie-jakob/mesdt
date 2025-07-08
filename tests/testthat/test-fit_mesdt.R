@@ -8,7 +8,7 @@ options("mesdt.backend" = "lme4")
 
 test_that("fit_mesdt() estimates the correct model", {
   fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
-                   trial_type_var = "trial_type_fac")$fit_obj
+                   trial_type = "trial_type_fac")$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_test)))
@@ -38,7 +38,7 @@ test_that("fit_mesdt() estimates the correct model", {
 test_that("fit_mesdt() works for uncorrelated mu and lambda effects", {
   fit <- fit_mesdt(~ 1 + committee + (1 + committee | id),
                    ~ 1 + committee + (1 + committee | id),
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
                    correlate_sdt_params = F)$fit_obj
 
   # Number of estimated fixed effects parameters
@@ -71,7 +71,7 @@ test_that("fit_mesdt() works for uncorrelated random effects (|| notation)", {
   fit <- fit_mesdt(~ 1 + x1 + (1 + x1 || ID),
                    ~ 1 + x1 + (1 + x1 || ID), dv = "y",
                    data = internal_sdt_data,
-                   trial_type_var = "trial_type_fac")$fit_obj
+                   trial_type = "trial_type_fac")$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_test_uncor)))
@@ -101,9 +101,9 @@ test_that("fit_mesdt() works for uncorrelated random effects (|| notation)", {
 test_that("fit_mesdt() notifies the user that only uncorrelated or correlated
           random effects are possible at the moment, iff specified.", {
   expect_message(fit_mesdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 | ID), dv = "y",
-                           trial_type_var = "trial_type_fac", data = internal_sdt_data))
+                           trial_type = "trial_type_fac", data = internal_sdt_data))
   expect_message(fit_mesdt(~ 1 + x1 + (1 | ID) + (x1 | ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y",
-                           trial_type_var = "trial_type_fac", data = internal_sdt_data))
+                           trial_type = "trial_type_fac", data = internal_sdt_data))
 
 })
 
@@ -113,7 +113,7 @@ test_that("fit_mesdt() notifies the user that only uncorrelated or correlated
 test_that("fit_mesdt() works for crossed random effects with random intercepts and no predictors", {
   fit <- fit_mesdt(~ 1 + (1 | id) + (1 | file_name),
                    ~ 1 + (1 | id),
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac")$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(fit_cross_intercept)))
@@ -142,10 +142,11 @@ test_that("fit_mesdt() works for crossed random effects with random intercepts a
 
 
 test_that("fit_mesdt() works for crossed random effects with random intercepts, predictors and random slopes", {
+  skip_if_not_installed("glmmTMB")
   options("mesdt.backend" = "glmmTMB")
   fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name),
                    ~ committee + (committee | id),
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac")$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)[[1]]), length(fixef(fit_cross_slopes)[[1]]))
@@ -173,7 +174,7 @@ test_that("fit_mesdt() works when only mu or lambda have random effects", {
   options("mesdt.backend" = "lme4")
   fit <- fit_mesdt(~ committee,
                    ~ committee + (1 | id),
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac")$fit_obj
   fit_test <- lme4::glmer(assessment ~ status_ef * committee + (1 | id), data = dat_exp_2, family = binomial("probit"),
                     nAGQ = 0)
   expect_equal(logLik(fit), logLik(fit_test))
@@ -184,7 +185,7 @@ test_that("fit_mesdt() works when only mu or lambda have random effects", {
 
   fit <- fit_mesdt(~ committee + (1 | id),
                    ~ committee,
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac")$fit_obj
   fit_test <- lme4::glmer(assessment ~ status_ef * committee + (0 + status_ef | id), data = dat_exp_2, family = binomial("probit"),
                     nAGQ = 0)
   expect_equal(logLik(fit), logLik(fit_test))
@@ -199,10 +200,10 @@ test_that("fit_mesdt() works when only mu or lambda have random effects", {
 test_that("fit_mesdt() works without any random effects", {
   expect_message(fit_mesdt(~ committee,
                            ~ emp_gender,
-                           dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac"))
+                           dv = "assessment", data = dat_exp_2, trial_type = "status_fac"))
   fit <- fit_mesdt(~ committee,
                    ~ committee,
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac")$fit_obj
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac")$fit_obj
   fit_test <- glm(assessment ~ status_ef * committee, data = dat_exp_2, family = binomial("probit"))
   expect_equal(logLik(fit), logLik(fit_test))
   expect_equal(sort(abs(as.numeric(coefficients(fit)))), sort(abs(as.numeric(coefficients(fit_test)))))
@@ -215,14 +216,15 @@ test_that("fit_mesdt() works without any random effects", {
 
 
 test_that("Setting control arguments in fit_mesdt() works", {
+  skip_if_not_installed("glmmTMB")
   options("mesdt.backend" = "lme4")
   expect_message(fit_mesdt(~ committee + (1 | id),
                            ~ emp_gender,
-                           dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                           dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
                            control = glmmTMB::glmmTMBControl(list(iter.max=5000, eval.max=5000))))
   fit <- fit_mesdt(~ committee + (1 | id),
                    ~ emp_gender,
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
                    control = lme4::glmerControl(optCtrl=list(maxfun=450)))
   expect_equal(fit$fit_obj@optinfo$control$maxfun, 450)
 
@@ -231,11 +233,11 @@ test_that("Setting control arguments in fit_mesdt() works", {
   options("mesdt.backend" = "glmmTMB")
   expect_message(fit_mesdt(~ committee + (1 | id),
                            ~ emp_gender,
-                           dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                           dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
                            control = lme4::glmerControl(optCtrl = list(maxfun = 500))))
   fit <- fit_mesdt(~ committee + (1 | id),
                    ~ emp_gender,
-                   dv = "assessment", data = dat_exp_2, trial_type_var = "status_fac",
+                   dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
                    control = glmmTMB::glmmTMBControl(list(iter.max=5000)))
   expect_true("control" %in% as.character(fit$fit_obj$call))
 }
@@ -250,7 +252,7 @@ test_that("mesdt throws a message when sensitivity < 0", {
   dat_exp_2$status_rev <- ifelse(dat_exp_2$status_fac == 1, -1, 1)
   expect_warning(fit_mesdt(~ committee + (1 | id),
                          ~ emp_gender,
-                         dv = "assessment", data = dat_exp_2, trial_type_var = "status_rev",
+                         dv = "assessment", data = dat_exp_2, trial_type = "status_rev",
                          ))
   }
 )

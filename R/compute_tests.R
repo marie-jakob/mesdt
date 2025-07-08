@@ -1,37 +1,171 @@
-#' Compute Likelihood Ratio Tests or tests based on parametric bootstrapping
-#' for a fitted SDT model
+#' Compute likelihood ratio tests and parametric bootstrapping tests for a
+#' (mixed-effects) SDT model.
 #'
-#' @param fit_obj An mesdt fit object containing the full fit and
-#'  coefficients that should be tested
-#' @param tests type of tests that should be computed ("LRT" -> likelihood ratio tests,
-#' "bootstrap" = parametric bootstrap)
-#' @param nsim number of simulated datasets for bootstrapping
-#' @param type type of tests (2 or 3, only relevant for likelihood ratio tests and
-#'  parametric bootstrapping)
-#' @param test_intercepts boolean indicating if intercepts for discriminability and
-#'  response bias should be tested
-#' @param test_ran_ef boolean indicating whether random (T) or fixed effects
-#'  should be tested (F)
-#' @param test_discriminability which coefficients on discriminability should be tested?
-#'  (default is "all")
-#' @param test_response_bias which coefficients on response bias should be tested?
-#'  (default is "all")
+#' @param fit_obj `mesdt_fit` object containing the full fit and the
+#'  coefficients that should be tested.
+#' @param tests `character` specifying the type of tests that should be
+#' computed ("LRT" for likelihood ratio tests, "bootstrap" for parametric
+#' bootstrapping tests, see Details).
+#' @param type `integer` or `character` specifying the type of tests
+#'  (default 3 / "III", 2 / "II") that are computed (see Details).
+#' @param test_intercepts `boolean` indicating if intercepts for
+#' discriminability and response bias should be tested.
+#' @param test_discriminability `formula` or `character` indicating which
+#'  coefficients on discriminability should be tested (default is "all").
+#'  See Details.
+#' @param test_response_bias `formula` or `character` indicating which
+#'  coefficients on response bias should be tested (default is "all").
+#'  See Details.
+#' @param nsim `integer` specifying the number of simulated datasets for
+#'  bootstrapping.
+#' @param cl name of a cluster to distribute computation across multiple cores
+#' @param control list containing optional control arguments that are included
+#'  in the `glmmTMB()` or `glmer()` call (see Details).
+
 #'
+#' @return An object of class `mesdt_test`, containing the fitted model
+#' (`$fit_obj`), fit objects for the reduced fits (`$reduced_fits`), fit objects
+#' for the full fits (`$full_fits`, only for type II tests), a dataframe
+#' containing results of likelihood ratio tests (`$LRT_results`), the type of
+#' tests that were computed (`$type`). For parametric bootstrap tests, there are
+#' additional slots for the results of those tests (`$pb_test_results`), further
+#' information about the tests (`$pb_objects`, similar to the structure
+#' returned by the `pbkrtest` package), and the random seed that was used to
+#' simulate the data (`$seed`).
+#'
+#' @description
+#' Computes likelihood ratio tests and parametric bootstrapping tests for a
+#' (mixed-effects) SDT model. The function allows the user to either test all
+#' effects on sensitivity, response bias or both
+#' (`tests_discriminability = "all"`, `tests_response_bias = "all"`,
+#' the default), to specify
+#' effects to be tested (by providing formulas, see Examples), or to don't
+#' test any effect on one of the SDT parameters
+#' (`tests_discriminability = NULL` or `tests_response_bias = NULL`).
+#' Intercepts for response bias and discriminability can optionally be tested as
+#' well by setting `test_intercepts = TRUE`. A `print` method is provided,
+#' showing the test results; Everything else can be directly extracted
+#' from the returned `mesdt_test` object.
+#'
+#' Both methods compute tests for the given effects by comparing a full model,
+#' containing the fixed effect of interest with a restricted model, where the
+#' fixed effect of interest is fixed to zero. For likelihood ratio tests
+# ("lrt", the default), the resulting likelihood ratio is taken as an empirical
+#' Chi^2 value and p-values are computed with a Chi^2 test. For parametric
+#' bootstrapping, p-values are computed based on a simulated reference
+#' distribution of the restricted model (see Details). The function implements
+#' type III (the default) and type II tests, as specified with the `type`
+#' argument.
+#'
+#' @details
+#'
+#' ## Test Logic
+#'  Likelihood ratio tests (LRTs) and parametric bootstrapping tests (PBTs)
+#'  are based on comparisons of nested models: A full model, containing the
+#'  effect of interest, and a restricted model, where the fixed effect of
+#'  interest is set to zero. The resulting difference in the deviance of both
+#'  models is a likelihood ratio, which asymptotically follows a Chi^2
+#'  distribution, with degrees of freedom equal to the difference in the
+#'  numbers of parameters of both models. LRTs thus use this Chi^2 distribution
+#'  as the reference distribution. However, because this is an _asymmetric_
+#'  property of the likelihood ratio, it is usually only recommended for models
+#'  and data with a sufficiently high number of levels for the random-effects
+#'  grouping factors (e.g., > 50, as recommended in the afex package). For
+#'  other cases, PBTs can be used (note, however, that the computation is
+#'  computationally intensive): PBTs generate the reference distribution by
+#'  repeatedly simulating data from the restricted model and estimating the
+#'  full model on the simulated data.
+#'
+#'
+#' ## Model Specification of Type II and III tests
+#'  Type III and type II tests follow a similar logic as the types of sums of
+#'  squares in analyses of variance: For type III (the default) the full model
+#'  is always the given model and the restricted models are specified by
+#'  only removing the fixed effect of interest from the model. In contrast,
+#'  type II sums of squares take into account the order of the to-be-tested
+#'  effect and aim to preserve the principle of marginality (i.e., models
+#'  including higher-order effects such as interactions should always include
+#'  all effects that are marginal to them). Thus, type II tests are obtained by
+#'  comparing a model in which the to-be-tested effect and all higher-order
+#'  effects are removed with a model in which only effects up to the effect of
+#'  the to-be-tested parameter are included (similar to the logic applied in
+#'  afex). Importantly, this logic is applied only to the model structure for
+#'  the SDT parameter for which the effect is to be tested (e.g., when testing
+#'  a main effect of a variable on response bias, all higher-order effects are
+#'  removed from response bias, while the model for discriminability remains
+#'  unchanged). Thus, marginality is preserved _within_ the respective SDT
+#'  parameter, but higher-order interactions of to-be-tested effects can
+#'  (if specified) be included on the respective other SDT parameter.
+#'
+#' ## Random effects of Restricted Models
+#'  The hypothesis tests implemented here only concern fixed effects, meaning
+#'  that the random effects structure remains unchanged. Thus, when testing
+#'  effects of a variable x, the random slope for x remains in the restricted
+#'  model, if it is present in the full model. This corresponds to what has
+#'  been referred to as a _balanced null_ model (unlike a _strict null_ model,
+#'  in which a possible corresponding random slope is removed from the
+#'  restricted model as well). Substantively, these types of model comparison
+#'  test whether the _mean population effect_ is significantly different from
+#'  zero, regardless of variability in this effect according to random grouping
+#'  factors. Thus, in case of a non-significant effect, individuals might still
+#'  exhibit non-zero effects.
+#'
+#'
+#' ## Computational Details
+#'
+#'  The `control` argument allows to pass all control arguments taken by
+#'  `lme4` or `glmmTMB` (depending on the backend used; see the relevant
+#'  documentation for details).
+#'
+#' @examples
+#' \dontrun{
+#' mod <- fit_mesdt(
+#' discriminability ~ committee * emp_gender + (1 | id),
+#' bias ~ committee * emp_gender + (committee | id),
+#' data = debi3_sub,
+#' trial_type = "status",
+#' dv = "assessment"
+#' )
+#' # LRTs for all parameters
+#' tests_all <- compute_tests(mod)
+#' tests_all
+#' # Tests intercepts as well
+#' tests_all <- compute_tests(mod, test_intercepts = TRUE)
+#' tests_all
+#' # Only test effect of committee on response bias
+#' tests_committee <- compute_tests(mod,
+#'                                  tests_discriminability = NULL,
+#'                                  tests_response_bias = ~ committee)
+#' tests_committee
+#' # parametric bootstrapping tests with a given cluster
+#' require(parallel)
+#' cl <- makeCluster(4, type = "SOCK")
+#' tests_boot <- compute_tests(fit,
+#'                             tests_response_bias = ~ committee,
+#'                             tests_discriminability = NULL,
+#'                             tests = "bootstrap",
+#'                             nsim = 1000,
+#'                             cl = cl,
+#'                             seed = 51)
+#' stopCluster(cl)
+#' tests_boot
+#'}
+#' @importFrom parallel clusterEvalQ
+#' @importFrom parallel clusterCall
+#' @importFrom parallel clusterApplyLB
+#' @importFrom parallel clusterExport
 #' @export
-compute_tests <- function(mesdt_fit, tests = "lrt", nsim = 1000,
-                          type = 3, test_intercepts = F, test_ran_ef = F,
+compute_tests <- function(mesdt_fit, tests = "lrt",
+                          type = 3, test_intercepts = F,
                           tests_discriminability = "all",
                           tests_response_bias = "all",
-                          cl = NULL,
-                          control = NULL,
-                          seed = NULL) {
-  print(tests)
-
+                          nsim = 1000, cl = NULL, control = NULL, seed = NULL) {
   ##### Check Input
   # TODO: give data as argument or take the data from the fitted model?
   # -> could lead to issues with extreme value
+  test_ran_ef <- F
 
-  if (class(mesdt_fit) != "mesdt_fit") stop("Input 'mesdt_fit' must be of class 'mesdt_fit'.")
+  if (! inherits(mesdt_fit, "mesdt_fit")) stop("Input 'mesdt_fit' must be of class 'mesdt_fit'.")
   type <- standardize_type_input(type)
   tests <- standardize_tests_input(tests)
   if (is.null(tests)) stop("Input 'tests' should be 'lrt' (for likelihood ratio tests) or 'bootstrap' (for tests based on parametric bootstrapping")
@@ -68,7 +202,6 @@ compute_tests <- function(mesdt_fit, tests = "lrt", nsim = 1000,
     }
   }
 
-
   fit_obj <- mesdt_fit$fit_obj
   data <- mesdt_fit$internal$data
   formula_mu <- mesdt_fit$user_input$discriminability
@@ -103,10 +236,10 @@ compute_tests <- function(mesdt_fit, tests = "lrt", nsim = 1000,
     }
     # same when a cluster is used
   } else {
-    backend_cl <- unname(unlist(clusterEvalQ(cl, options("mesdt.backend"))))[1]
+    backend_cl <- unname(unlist(parallel::clusterEvalQ(cl, options("mesdt.backend"))))[1]
     if (is.null(backend_cl)) {
       message(paste("No backend was set for the cluster. Setting mesdt.backend on the cluster and locally to", mesdt_fit$user_input$backend, "which was used to fit the supplied model."))
-      throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
+      throwaway <- parallel::clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
       # print(paste("mesdt.backend: ", mesdt_fit$user_input$backend))
       options("mesdt.backend" = mesdt_fit$user_input$backend)
     } else {
@@ -114,7 +247,7 @@ compute_tests <- function(mesdt_fit, tests = "lrt", nsim = 1000,
         message(paste("Model was fitted using", mesdt_fit$user_input$backend, "but the current
                   backend on the supplied cluster is ", backend_cl,
                   ". Setting msldt.backend on the cluster and locally to ", mesdt_fit$user_input$backend))
-        throwaway <- clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
+        throwaway <- parallel::clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
         options("mesdt.backend" = mesdt_fit$user_input$backend)
       }
     }
@@ -566,13 +699,13 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
 
   else {
     if (is.null(cl)) {
-      print("No cluster")
+      #print("No cluster")
       reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), fit_glmm,
                              data = data, mm = mm, distribution = distribution, dv = dv,
                              control = control)
       #print("reduced_fits done")
     } else {
-      print("cluster")
+      #print("cluster")
       throwaway <- parallel::clusterExport(cl = cl,
                                            varlist = c("data", "mm", "fit_glmm", "control"),
                                            env = environment())

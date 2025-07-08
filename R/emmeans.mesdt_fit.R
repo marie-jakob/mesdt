@@ -1,3 +1,6 @@
+#' @importFrom emmeans emm_basis recover_data
+#' @method recover_data mesdt_fit
+#' @export
 recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
   if (dpar == "response bias") {
     form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv, paste(as.character(object$user_input$bias), collapse = ""))))
@@ -17,7 +20,11 @@ recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
 # store model matrices in object
 # object: whole fit object
 # terms: terms of response bias formula
-# xlev:
+#' @importFrom emmeans emm_basis recover_data
+#' @importFrom emmeans .my.vcov
+#' @importFrom stats model.matrix
+#' @method emm_basis mesdt_fit
+#' @export
 emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
   dpar <- match.arg(dpar, c("response bias", "discriminability", "sensitivity"))
   sdt_par = ifelse(dpar == "discriminability" |
@@ -25,7 +32,7 @@ emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
   m = object$internal$m_frame[[sdt_par]]
   contr <- attr(object$internal$mm[[sdt_par]], "contrasts")
   mult <- ifelse(sdt_par == "lambda", -1, 1)
-  X <- model.matrix(trms, grid, contrasts.arg = contr)
+  X <- stats::model.matrix(trms, grid, contrasts.arg = contr)
   if (object$internal$backend == "lme4") {
     bhat <- lme4::fixef(object$fit_obj)[grep(sdt_par, names(lme4::fixef(object$fit_obj)))] * mult
       V <- as.matrix(.my.vcov(object$fit_obj)[grep(sdt_par, rownames(stats::vcov(object$fit_obj))),
@@ -36,7 +43,7 @@ emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
                                                        grep(sdt_par, colnames(stats::vcov(object$fit_obj)$cond))]
   } else if (object$internal$backend == "glm") {
     bhat <- stats::coef(object$fit_obj)[grep(sdt_par, names(stats::coef(object$fit_obj)))] * mult
-    V <- as.matrix(.my.vcov(object$fit_obj)[grep(sdt_par, rownames(stats::vcov(object$fit_obj))),
+    V <- as.matrix(emmeans::.my.vcov(object$fit_obj)[grep(sdt_par, rownames(stats::vcov(object$fit_obj))),
                                   grep(sdt_par, colnames(stats::vcov(object$fit_obj)))])
   }
   sdt_n_char <- ifelse(dpar == "sensitivity", 11, 15)

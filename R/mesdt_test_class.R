@@ -6,13 +6,14 @@ new_mesdt_test <- function(input_list) {
 #' print method
 #' TODO
 #' @export
-print.mesdt_test <- function(obj) {
-  print.summary.mesdt_test(obj)
+print.mesdt_test <- function(x, ...) {
+  print.summary.mesdt_test(x)
 }
 
 
 #' @export
-summary.mesdt_test <- function(obj) {
+summary.mesdt_test <- function(x, ...) {
+  obj <- x
   to_return <- list()
   to_return[["LRT_results"]] <- obj$LRT_results
   to_return[["type"]] <- obj$type
@@ -24,7 +25,7 @@ summary.mesdt_test <- function(obj) {
 
 
 #' @export
-print.summary.mesdt_test <- function(x) {
+print.summary.mesdt_test <- function(x, ...) {
   # if bootstrap exists:
   if (! is.null(x$pb_test_results)) {
     meth_str <- paste("Type ", ifelse(x$type == 2, "II", "III"),

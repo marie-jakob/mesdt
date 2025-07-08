@@ -1,4 +1,3 @@
-
 #' Construct Model Matrices From the Given Data to give to glmer()
 #'
 #' @param formula_mu formula for sensitivity (mu)

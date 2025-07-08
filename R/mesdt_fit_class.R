@@ -5,14 +5,9 @@ new_mesdt_fit <- function(input_list) {
   structure(input_list, class = "mesdt_fit")
 }
 
-#' print method
-#' TODO
+
 #' @export
-#print.mesdt_fit <- function(obj) {
-#  print("this is an mesdt object")
-#}
-print.mesdt_fit <- function(obj) {
-  x <- summary.mesdt_fit(obj)
+print.mesdt_fit <- function(x) {
   print.summary.mesdt_fit(x)
 }
 
@@ -160,7 +155,8 @@ printmethod <- function(x) {
 #' @export
 print.summary.mesdt_fit <- function(x,
                                     digits = max(3, getOption("digits") - 3),
-                                    signif.stars = FALSE) {
+                                    signif.stars = FALSE,
+                                    ...) {
 
   printmethod(x)
 
@@ -168,8 +164,11 @@ print.summary.mesdt_fit <- function(x,
   cat("Response Bias:    ", deparse(x$user_input$bias), "\n\n")
 
   # Print random effects
-  .prt.VC(x$cov_mat, digits)
-  cat("\n")
+  if (! is.null(x$cov_mat)) {
+    .prt.VC(x$cov_mat, digits)
+    cat("\n")
+  }
+
 
   # Print fixed effects
   cat("Fixed effects and Wald tests for discriminability: \n")
@@ -186,14 +185,14 @@ print.summary.mesdt_fit <- function(x,
 
 
 
-# TODO: test if this works
+#' @importFrom stats simulate
 #' @export
-simulate.mesdt_fit <- function(mesdt_obj, ...) {
+simulate.mesdt_fit <- function(obj, ...) {
   # get method for correct backend
   #print(mesdt_obj$backend)
   #if (mesdt_obj$backend == "lme4") pred <- lme4::simulate.merMod(mesdt_obj$fit_obj, ...)
   #else if (mesdt_obj$backend == "glmmTMB") pred <- glmmTMB::simulate(mesdt_obj$fit_obj, ...)
-  pred <- stats::simulate(mesdt_obj$fit_obj, ...)
+  pred <- stats::simulate(obj$fit_obj, ...)
   return(pred)
 }
 

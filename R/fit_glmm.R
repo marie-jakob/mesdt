@@ -1,3 +1,5 @@
+#' @importFrom stats glm
+#'
 fit_glmm <- function(glmer_formula,
                      data,
                      mm,
