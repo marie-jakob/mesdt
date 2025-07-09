@@ -1,4 +1,6 @@
 
+# mesdt
+
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
 Estimate and test mixed-effects signal detection theory models with
