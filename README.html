@@ -754,18 +754,17 @@ discriminability vary as a function of the committee decision:</p>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>                       <span class="at">tests =</span> <span class="st">&quot;lrt&quot;</span>,</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>                       <span class="at">tests_discriminability =</span> <span class="sc">~</span> committee,</span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>                       <span class="at">tests_response_bias =</span> <span class="sc">~</span> committee)</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a><span class="co">#&gt; [1] &quot;committee_lambda&quot; &quot;committee_mu&quot;</span></span>
-<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a></span>
-<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>tests</span>
-<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; Type III likelihood ratio tests </span></span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; Discriminability: </span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt;           deviance_full deviance_reduced df.LRT Chisq   p.value</span></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; committee       4718.78          4719.49      1  0.71 0.3999445</span></span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Response Bias: </span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;           deviance_full deviance_reduced df.LRT Chisq   p.value</span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; committee       4718.78           4718.8      1  0.02 0.8803103</span></span></code></pre></div>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a></span>
+<span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>tests</span>
+<span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a><span class="co">#&gt; Type III likelihood ratio tests </span></span>
+<span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Discriminability: </span></span>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt;           deviance_full deviance_reduced df.LRT Chisq   p.value</span></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="co">#&gt; committee       4718.78          4719.49      1  0.71 0.3999445</span></span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; Response Bias: </span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt;           deviance_full deviance_reduced df.LRT Chisq   p.value</span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; committee       4718.78           4718.8      1  0.02 0.8803103</span></span></code></pre></div>
 <p>In this subset of our data, there is a significant effect of the
 committee decision on discriminability, but not on response bias.</p>
 <h3 id="step-3-estimate-marginal-means">Step 3: Estimate marginal
