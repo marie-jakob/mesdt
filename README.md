@@ -161,8 +161,8 @@ tests
 #> committee       4718.78           4718.8      1  0.02 0.8803103
 ```
 
-In this subset of our data, there is a significant effect of the
-committee decision on discriminability, but not on response bias.
+In this subset of our data, there is neither a significant effect of the
+committee decision on discriminability, nor on response bias.
 
 ### Step 3: Estimate marginal means
 
@@ -195,11 +195,11 @@ emmeans(mod, ~ committee, dpar = "response bias")
 ```
 
 The estimated marginal means show that participants’ discriminability
-was higher in trials where a pay raise was denied ($d' = 1.72$ than for
-cases where one was granted $d' = 1.83$). Descriptively, we can see a
-similar pattern for response bias, with a smaller, that is, more liberal
-response criterion in “denied” cases ($\lambda = 0.12$) than in
-“granted” cases ($\lambda = 0.183$), but this difference was not
+was descriptively higher in trials where a pay raise was denied
+($d' = 1.72$ than for cases where one was granted $d' = 1.80$). We can
+see a similar pattern for response bias, with a smaller, that is, more
+liberal response criterion in “denied” cases ($\lambda = 0.12$) than in
+“granted” cases ($\lambda = 0.164$). However, both effects were not
 significantly different from zero in this subset of the data.
 
 ## References
