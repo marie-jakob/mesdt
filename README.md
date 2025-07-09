@@ -17,10 +17,12 @@ typical R formula syntax:
 `mesdt` translates the given model formulas to a generalized linear
 mixed model (GLMM), uses either `lme4` or `glmmTMB` to estimate the
 model (based on the user-specified backend), and transforms the
-parameters back to SDT space, such that all post-processing (e.g.,
+parameters back to the SDT logic, such that all post-processing (e.g.,
 estimating marginal means) can take place on the level of SDT parameters
-as well. Hypothesis tests related to fixed and random effects can be
-conducted with Wald tests (only for fixed effects), likelihood ratio
+as well. 
+
+Hypothesis tests can be conducted with Wald tests (returned be the fitting
+function for each fixed effects parameter), likelihood ratio
 tests (type II and type III), and tests based on parametric
 bootstrapping (type II and type III).
 
