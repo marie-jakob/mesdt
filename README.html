@@ -638,25 +638,28 @@ Object.defineProperty(e,"__esModule",{value:!0}),e.mhchemParser=void 0;var r=fun
 <h1 id="mesdt">mesdt</h1>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<p>Estimate and test mixed-effects signal detection theory models with
-maximum likelihood estimation. This package leverages the equivalence
-between a subclass of SDT and a subclass of generalized linear models
-first shown by DeCarlo (1998) to estimate mixed SDT models using
-software for generalized linear mixed models, that is, the
-<code>lme4</code> or <code>glmmTMB</code> package. Mixed-effects SDT
-models can be specified on the level of SDT parameters discriminability
-and response bias using the typical R formula syntax:</p>
+<p>Estimate and test (mixed-effects) signal detection theory models for
+binary data with maximum likelihood estimation. This package leverages
+the equivalence between a subclass of SDT and a subclass of generalized
+linear models first shown by DeCarlo (1998) to estimate SDT models using
+software for generalized linear mixed models (GLMM), that is, the
+<code>lme4</code> or <code>glmmTMB</code> package (for mixed-effects SDT
+models) and the <code>glm()</code> function (for single-level SDT
+models). SDT models can be specified on the level of the SDT parameters
+discriminability and response bias using the typical R formula
+syntax:</p>
 <p><code>discriminability = ~ X + (X | ID)</code></p>
 <p><code>bias = ~ X + (X | ID)</code></p>
 <p><code>mesdt</code> translates the given model formulas to a
-generalized linear mixed model (GLMM), uses either <code>lme4</code> or
-<code>glmmTMB</code> to estimate the model (based on the user-specified
-backend), and transforms the parameters back to SDT space, such that all
-post-processing (e.g., estimating marginal means) can take place on the
-level of SDT parameters as well. Hypothesis tests related to fixed and
-random effects can be conducted with Wald tests (only for fixed
-effects), likelihood ratio tests (type II and type III), and tests based
-on parametric bootstrapping (type II and type III).</p>
+generalized linear (mixed) model, uses either <code>lme4</code>,
+<code>glmmTMB</code> or <code>glm()</code> to estimate the model (based
+on the user-specified backend), and transforms the parameters back to
+SDT space, such that all post-processing (e.g., estimating marginal
+means) can take place on the level of SDT parameters as well. Hypothesis
+tests can be conducted with Wald tests (returned be the fitting function
+for each fixed effects parameter), likelihood ratio tests (type II and
+type III), and tests based on parametric bootstrapping (type II and type
+III).</p>
 <h2 id="getting-started">Getting Started</h2>
 <h3 id="step-0-installation--setup">Step 0: Installation &amp;
 Setup</h3>
