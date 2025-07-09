@@ -1,12 +1,15 @@
 # mesdt
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-Estimate and test mixed-effects signal detection theory models with
-maximum likelihood estimation. This package leverages the equivalence
-between a subclass of SDT and a subclass of generalized linear models
-first shown by DeCarlo (1998) to estimate mixed SDT models using
-software for generalized linear mixed models, that is, the `lme4` or
-`glmmTMB` package. Mixed-effects SDT models can be specified on the
+Estimate and test (mixed-effects) signal detection theory models for
+binary data with maximum likelihood estimation. 
+This package leverages the equivalence between a subclass of SDT 
+and a subclass of generalized linear models first shown by 
+DeCarlo (1998) to estimate SDT models using software for 
+generalized linear mixed models (GLMM), that is, the `lme4` or
+`glmmTMB` package (for mixed-effects SDT models) and the `glm()`
+function (for single-level SDT models). 
+SDT models can be specified on the
 level of SDT parameters discriminability and response bias using the
 typical R formula syntax:
 
@@ -15,7 +18,7 @@ typical R formula syntax:
 `bias = ~ X + (X | ID)`
 
 `mesdt` translates the given model formulas to a generalized linear
-mixed model (GLMM), uses either `lme4` or `glmmTMB` to estimate the
+(mixed) model, uses either `lme4`, `glmmTMB` or `glm()` to estimate the
 model (based on the user-specified backend), and transforms the
 parameters back to the SDT logic, such that all post-processing (e.g.,
 estimating marginal means) can take place on the level of SDT parameters
