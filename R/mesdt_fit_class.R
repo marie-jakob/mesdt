@@ -55,7 +55,9 @@ summary.mesdt_fit <- function(obj) {
     colnames(c_coef) <- col_nms
     rownames(c_coef) <- colnames(obj$internal$mm$lambda)
   } else {
-    c_coef[, 1:3] <- (-1) * c_coef[, 1:3]
+    if (obj$user_input$distribution != "gumbel-min") {
+      c_coef[, 1:3] <- (-1) * c_coef[, 1:3]
+    }
     rownames(c_coef) <- substr(rownames(c_coef), 15, nchar(rownames(c_coef)))
   }
 
