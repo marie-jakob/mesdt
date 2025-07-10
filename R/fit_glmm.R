@@ -23,9 +23,10 @@ fit_glmm <- function(glmer_formula,
   # nAGQ <<- ifelse(is.null(options("nAGQ")$nAGQ), 0, options("nAGQ"))
   #print(nAGQ)
 
+  # cloglog link is used for gumbel-max and gumbel-min distribution
+  # -> For gumbel-min, dependent variable is reversed
   lnk_fun <- ifelse(distribution == "gaussian", "probit",
-                    ifelse(distribution == "logistic", "logit",
-                           ifelse(distribution == "gumbel-min", "cloglog")))
+                    ifelse(distribution == "logistic", "logit", "cloglog"))
 
   # reverse-code dv for gumbel-min distribution
   if (distribution == "gumbel-min") {

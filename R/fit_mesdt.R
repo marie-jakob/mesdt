@@ -104,7 +104,7 @@ fit_mesdt <- function(discriminability,
                       dv,
                       trial_type = "trial_type",
                       data,
-                      distribution = "gaussian",
+                      distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
                       correlate_sdt_params = T,
                       # tests = "Wald",
                       control = NULL) {
@@ -140,8 +140,9 @@ fit_mesdt <- function(discriminability,
 
   if (typeof(correlate_sdt_params) != "logical") stop("'correlate_sdt_params' must be of type 'logical'.")
 
-  distribution <- standardize_dist_input(distribution)
-  if (is.null(distribution)) stop("Distribution must be gaussian, logistic, or gumbel-min.")
+  #distribution <- standardize_dist_input(distribution)
+  #if (is.null(distribution)) stop("Distribution must be gaussian, logistic, gumbel-min, or gumbel-max.")
+  distribution <- match.arg(distribution)
 
   #### Prep & fit model
   mm_all <- construct_modelmatrices(discriminability, bias, data, trial_type_var, distribution)
