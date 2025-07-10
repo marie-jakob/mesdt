@@ -31,7 +31,11 @@ emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
                      dpar == "sensitivity", "mu", "lambda")
   m = object$internal$m_frame[[sdt_par]]
   contr <- attr(object$internal$mm[[sdt_par]], "contrasts")
-  mult <- ifelse(sdt_par == "lambda", -1, 1)
+  if (object$user_input$distribution != "gumbel-min") {
+    mult <- ifelse(sdt_par == "lambda", -1, 1)
+  } else {
+    mult <- 1
+  }
   X <- stats::model.matrix(trms, grid, contrasts.arg = contr)
   if (object$internal$backend == "lme4") {
     bhat <- lme4::fixef(object$fit_obj)[grep(sdt_par, names(lme4::fixef(object$fit_obj)))] * mult
