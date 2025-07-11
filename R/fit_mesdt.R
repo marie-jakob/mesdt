@@ -3,7 +3,7 @@
 #' @param discriminability `formula` specifying fixed and random effects on
 #'  discriminability with the common syntax for mixed-effects models from
 #'  `lme4` (see Details).
-#' @param bias `formula` specifying fixed and random effects on response bias
+#' @param response_bias `formula` specifying fixed and random effects on response bias
 #'  with the common syntax for mixed-effects models from lme4 (see Details).
 #' @param dv `character` string specifying the name of the (binary) dependent
 #'  variable.
@@ -100,7 +100,7 @@
 #' @importFrom stats vcov
 #' @export
 fit_mesdt <- function(discriminability,
-                      bias,
+                      response_bias,
                       dv,
                       trial_type = "trial_type",
                       data,
@@ -108,9 +108,10 @@ fit_mesdt <- function(discriminability,
                       correlate_sdt_params = T,
                       # tests = "Wald",
                       control = NULL) {
+  bias <- response_bias
   #### Check input
   if (typeof(discriminability) != "language") stop("'discriminability' must be a formula'.")
-  if (typeof(bias) != "language") stop("'bias' must be a 'formula'.")
+  if (typeof(bias) != "language") stop("'response_bias' must be a 'formula'.")
 
   forms <- standardize_fit_formulas(discriminability, bias)
   discriminability <- forms[[1]]; bias <- forms[[2]]

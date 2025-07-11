@@ -131,7 +131,8 @@ summary.mesdt_fit <- function(obj) {
 # Taken from lme4
 printmethod <- function(x) {
   distr_pretty <- ifelse(x$user_input$distribution == "gaussian", "Gaussian",
-                         ifelse(x$user_input$distr == "logistic", "logistic", "Gumbel-Min"))
+                         ifelse(x$user_input$distr == "logistic", "logistic",
+                                ifelse(x$user_input$distr == "gumbel-min", "Gumbel-Min", "Gumbel-Max")))
   if (x$user_input$backend != "glm") pr <- "Mixed-effects signal "
   else pr <- "Signal "
   pr <- paste(pr, "detection theory model with ", distr_pretty, " evidence distributions fit by maximum likelihood ", sep = "")

@@ -16,6 +16,7 @@ Post-Processing / Pretty Stuff
   + correct names for the tests
 + df for random effects
 + progress bars PB
++ reformulas
 
 Documentations / Conventions / Naming / Practicality
 + (Tests for customized SDT user output)

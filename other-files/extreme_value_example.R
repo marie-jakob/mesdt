@@ -47,14 +47,8 @@ fit_broeder <- fit_mesdt(discriminability = ~ 1 + (1 | pid),
                  bias = ~ baserate + (baserate || pid),
                  data = d_broeder_bernoulli,
                  dv = "response",
-                 trial_type_var = "old",
+                 trial_type = "old",
                  distribution = "gumbel-min")
-summary(fit_broeder)
-summary(fit_broeder$fit_obj)
-summary(fit_broeder_brms)
-emmeans(fit_broeder, ~baserate, dpar = "response bias")
-summary(fit_broeder_brms)
-
 
 
 # Fit Henrik
@@ -83,6 +77,12 @@ fit_broeder_brms <- brm(
   iter = iter, warmup = warmup,
   control = list(adapt_delta = 0.99, max_treedepth = 20)
 )
+summary(fit_broeder)
+summary(fit_broeder$fit_obj)
+summary(fit_broeder_brms)
+emmeans(fit_broeder, ~baserate, dpar = "response bias")
+summary(fit_broeder_brms)
+
 
 summary(fit_broeder_brms)
 

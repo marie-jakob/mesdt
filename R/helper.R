@@ -84,7 +84,21 @@ which_terms_in <- function(reference_terms, terms_to_check) {
 }
 
 
+normalize_terms <- function(formula) {
+  tl <- attr(terms(formula), "term.labels")
 
+  # Split interaction terms (containing :) and sort components
+  normalized <- sapply(tl, function(term) {
+    if (grepl(":", term)) {
+      parts <- unlist(strsplit(term, ":"))
+      paste(sort(parts), collapse = ":")
+    } else {
+      term
+    }
+  })
+
+  sort(normalized)  # Sort terms for comparison
+}
 
 pchisqmix <- function(q, df, mix, lower.tail = TRUE) {
   df_vec <- rep(df, length(q))
@@ -160,22 +174,22 @@ standardize_fit_formulas <- function(form_disc, form_bias) {
   } else form_disc_std <- form_disc
 
   if (length(as.character(form_bias)) == 3) {
-    if (as.character(form_bias)[2] == "bias") {
+    if (as.character(form_bias)[2] == "response_bias") {
       form_bias_std <- as.formula(paste(as.character(form_bias)[c(1, 3)],
                                         collapse = " "),
                                   env = globalenv())
     } else if (as.character(form_bias)[2] == "discriminability") {
-      if (as.character(form_disc)[2] == "bias") {
+      if (as.character(form_disc)[2] == "response_bias") {
         form_disc_std <- as.formula(paste(as.character(form_bias)[c(1, 3)],
                                           collapse = " "),
                                     env = globalenv())
       } else {
-        stop("Cannot interpret formula input. Please specify formulas as either
-           discriminability = ~ x and bias = ~ x or discriminability ~ x and bias ~ x.")
+        stop("Cannot interpret formula input.\nPlease specify formulas as either
+           discriminability = ~ x and response_bias = ~ x or discriminability ~ x and response_bias ~ x.")
       }
     } else {
-      stop("Cannot interpret formula input. Please specify formulas as either
-           discriminability = ~ x and bias = ~ x or discriminability ~ x and bias ~ x.")
+      stop("Cannot interpret formula input.\nPlease specify formulas as either
+           discriminability = ~ x and response_bias = ~ x or discriminability ~ x and response_bias ~ x.")
     }
   } else form_bias_std <- form_bias
 

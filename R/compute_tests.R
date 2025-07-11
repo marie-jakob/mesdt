@@ -182,8 +182,8 @@ compute_tests <- function(mesdt_fit, tests = "lrt",
       # check that the formula does not contain random effects
       if (lme4::nobars(tests_discriminability) != tests_discriminability) stop("Input 'tests_discriminability' must not contain random effects.")
       else {
-        terms_mod <- attr(terms(lme4::nobars(mesdt_fit$user_input$discriminability)), "term.labels")
-        terms_input <- attr(terms(lme4::nobars(tests_discriminability)), "term.labels")
+        terms_mod <- normalize_terms(lme4::nobars(mesdt_fit$user_input$discriminability))
+        terms_input <- normalize_terms(lme4::nobars(tests_discriminability))
         if (! all(terms_input %in% terms_mod)) stop("Input 'tests_discriminability' contains terms that are not present in the fitted model. Please check your formula again.")
       }
     }
@@ -197,6 +197,8 @@ compute_tests <- function(mesdt_fit, tests = "lrt",
       else {
         terms_mod <- attr(terms(lme4::nobars(mesdt_fit$user_input$bias)), "term.labels")
         terms_input <- attr(terms(lme4::nobars(tests_response_bias)), "term.labels")
+        terms_mod <- normalize_terms(lme4::nobars(mesdt_fit$user_input$bias))
+        terms_input <- normalize_terms(lme4::nobars(tests_response_bias))
         if (! all(terms_input %in% terms_mod)) stop("Input 'tests_response_bias' contains terms that are not present in the fitted model. Please check your formula again.")
       }
     }
@@ -238,7 +240,7 @@ compute_tests <- function(mesdt_fit, tests = "lrt",
   } else {
     backend_cl <- unname(unlist(parallel::clusterEvalQ(cl, options("mesdt.backend"))))[1]
     if (is.null(backend_cl)) {
-      message(paste("No backend was set for the cluster. Setting mesdt.backend on the cluster and locally to", mesdt_fit$user_input$backend, "which was used to fit the supplied model."))
+      message(paste("No backend was set for the cluster.\nSetting mesdt.backend on the cluster and locally to", mesdt_fit$user_input$backend, "which was used to fit the supplied model."))
       throwaway <- parallel::clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
       # print(paste("mesdt.backend: ", mesdt_fit$user_input$backend))
       options("mesdt.backend" = mesdt_fit$user_input$backend)
@@ -246,7 +248,7 @@ compute_tests <- function(mesdt_fit, tests = "lrt",
       if (backend_cl != mesdt_fit$user_input$backend) {
         message(paste("Model was fitted using", mesdt_fit$user_input$backend, "but the current
                   backend on the supplied cluster is ", backend_cl,
-                  ". Setting msldt.backend on the cluster and locally to ", mesdt_fit$user_input$backend))
+                  ".\nSetting msldt.backend on the cluster and locally to ", mesdt_fit$user_input$backend))
         throwaway <- parallel::clusterCall(cl, function() { options("mesdt.backend" = mesdt_fit$user_input$backend) } )
         options("mesdt.backend" = mesdt_fit$user_input$backend)
       }
@@ -717,7 +719,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       if (options("mesdt.backend") == "lme4") reduced_fits <- unlist(reduced_fits)
       names(reduced_fits) <- names(c(reduced_formulas_lambda, reduced_formulas_mu))
     }
-    print(names(reduced_fits))
+    #print(names(reduced_fits))
     return(reduced_fits)
   }
 }

@@ -95,7 +95,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda", {
 
 test_that("compute_tests() works with a standard two-factorial design", {
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(bias =~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(response_bias =~ committee * emp_gender + (1 | id),
                    discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type = "status_fac",
@@ -165,7 +165,7 @@ test_that("compute_tests() Type II works with one predictor on mu and lambda and
 test_that("compute_tests() works for only selected effects", {
   options("mesdt.backend" = "lme4")
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(response_bias = ~ committee * emp_gender + (1 | id),
                    discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type = "status_fac",
@@ -208,7 +208,7 @@ test_that("compute_tests() works for only selected effects", {
 #### compute_tests() works only for mu and lambda ####
 
 test_that("compute_tests() works for only tests on mu", {
-  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(response_bias = ~ committee * emp_gender + (1 | id),
                    discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type = "status_fac",
@@ -234,7 +234,7 @@ test_that("compute_tests() works for only tests on mu", {
 
 
 test_that("compute_tests() works for only tests on lambda", {
-  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(response_bias = ~ committee * emp_gender + (1 | id),
                    discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type = "status_fac",
@@ -300,3 +300,27 @@ test_that("compute_tests() throws an error when the formula contain terms not in
 })
 
 
+
+
+
+test_that("compute_tests() recognizes correct terms in the wrong order", {
+  fit <- fit_mesdt(response_bias = ~ committee * emp_gender + (1 | id),
+                   discriminability = ~ committee * emp_gender + (1 | id),
+                   dv = "assessment",
+                   trial_type = "status_fac",
+                   data = dat_exp_2)
+
+  lrts_test_1 <- compute_tests(fit, tests_response_bias = ~ emp_gender:committee,
+                             tests_discriminability = ~ committee:emp_gender,
+                             test_intercepts = F)
+  lrts_test_2 <- compute_tests(fit, tests_response_bias = ~ committee:emp_gender,
+                             tests_discriminability = ~ emp_gender:committee,
+                             test_intercepts = F)
+
+  # Chisq values
+  # low tolerance because the package function fits with nAGQ = 0 (afex with nAGQ = 1)
+  expect_equal(unname(lrts_test_1$LRT_results[, 2]), unname(lrts_test_2$LRT_results[, 2]))
+  expect_equal(unname(lrts_test_1$LRT_results[, 4]), unname(lrts_test_2$LRT_results[, 4]))
+  expect_equal(unname(lrts_test_1$LRT_results[, 5]), unname(lrts_test_2$LRT_results[, 5]))
+
+})
