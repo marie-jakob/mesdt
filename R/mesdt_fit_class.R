@@ -58,7 +58,7 @@ summary.mesdt_fit <- function(obj) {
     rownames(c_coef) <- substr(rownames(c_coef), 15, nchar(rownames(c_coef)))
   }
   if (obj$user_input$distribution != "gumbel-min") {
-    c_coef[, 1:3] <- (-1) * c_coef[, 1:3]
+    c_coef[, c(1, 3)] <- (-1) * c_coef[, c(1, 3)]
   }
 
   # Prepare random effects
