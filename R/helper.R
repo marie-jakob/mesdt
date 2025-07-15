@@ -1,6 +1,7 @@
 .onLoad <- function(libname, pkgname) {
   options("mesdt.backend" = "lme4")
   packageStartupMessage("Setting backend to lme4.")
+  message("\nThis package is still under development and has not been fully tested!")
 }
 
 

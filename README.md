@@ -1,4 +1,7 @@
 
+***This package is still under development and has not been fully
+tested!***
+
 # mesdt
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -90,7 +93,7 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 
 mod <- fit_mesdt(
   discriminability ~ committee * emp_gender + (1 | id),
-  bias ~ committee * emp_gender + (committee | id),
+  response_bias ~ committee * emp_gender + (committee | id),
   data = debi3_sub,
   trial_type = "status",
   dv = "assessment"
@@ -118,10 +121,10 @@ summary(mod)
 #> 
 #> Fixed effects and Wald tests for response bias: 
 #>                         Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             0.145662  -0.088899   1.639    0.101
-#> committee1             -0.018567  -0.131821  -0.141    0.888
-#> emp_gender1             0.006281  -0.021540   0.292    0.771
-#> committee1:emp_gender1  0.034437  -0.021540   1.599    0.110
+#> (Intercept)             0.145662   0.088899   1.639    0.101
+#> committee1             -0.018567   0.131821  -0.141    0.888
+#> emp_gender1             0.006281   0.021540   0.292    0.771
+#> committee1:emp_gender1  0.034437   0.021540   1.599    0.110
 ```
 
 The `summary()` method prints population-level estimates for the fixed
@@ -175,6 +178,11 @@ get estimated marginal means for response bias and discriminability for
 
 ``` r
 library(emmeans)
+#> 
+#> Attache Paket: 'emmeans'
+#> Das folgende Objekt ist maskiert 'package:devtools':
+#> 
+#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions

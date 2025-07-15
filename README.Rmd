@@ -1,6 +1,10 @@
 ---
 output: github_document
 ---
+
+__*This package is still under development and has not been fully tested!*__
+
+
 # mesdt
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -95,7 +99,7 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 
 mod <- fit_mesdt(
   discriminability ~ committee * emp_gender + (1 | id),
-  bias ~ committee * emp_gender + (committee | id),
+  response_bias ~ committee * emp_gender + (committee | id),
   data = debi3_sub,
   trial_type = "status",
   dv = "assessment"

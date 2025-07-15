@@ -635,6 +635,8 @@ Object.defineProperty(e,"__esModule",{value:!0}),e.mhchemParser=void 0;var r=fun
 
 <body>
 
+<p><em><strong>This package is still under development and has not been
+fully tested!</strong></em></p>
 <h1 id="mesdt">mesdt</h1>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -705,7 +707,7 @@ this:</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a></span>
 <span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">fit_mesdt</span>(</span>
 <span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a>  discriminability <span class="sc">~</span> committee <span class="sc">*</span> emp_gender <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id),</span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  bias <span class="sc">~</span> committee <span class="sc">*</span> emp_gender <span class="sc">+</span> (committee <span class="sc">|</span> id),</span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a>  response_bias <span class="sc">~</span> committee <span class="sc">*</span> emp_gender <span class="sc">+</span> (committee <span class="sc">|</span> id),</span>
 <span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a>  <span class="at">data =</span> debi3_sub,</span>
 <span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a>  <span class="at">trial_type =</span> <span class="st">&quot;status&quot;</span>,</span>
 <span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a>  <span class="at">dv =</span> <span class="st">&quot;assessment&quot;</span></span>
@@ -733,10 +735,10 @@ this:</p>
 <span id="cb5-29"><a href="#cb5-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
 <span id="cb5-30"><a href="#cb5-30" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for response bias: </span></span>
 <span id="cb5-31"><a href="#cb5-31" tabindex="-1"></a><span class="co">#&gt;                         Estimate Std. Error z value Pr(&gt;|z|)</span></span>
-<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; (Intercept)             0.145662  -0.088899   1.639    0.101</span></span>
-<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; committee1             -0.018567  -0.131821  -0.141    0.888</span></span>
-<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; emp_gender1             0.006281  -0.021540   0.292    0.771</span></span>
-<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1  0.034437  -0.021540   1.599    0.110</span></span></code></pre></div>
+<span id="cb5-32"><a href="#cb5-32" tabindex="-1"></a><span class="co">#&gt; (Intercept)             0.145662   0.088899   1.639    0.101</span></span>
+<span id="cb5-33"><a href="#cb5-33" tabindex="-1"></a><span class="co">#&gt; committee1             -0.018567   0.131821  -0.141    0.888</span></span>
+<span id="cb5-34"><a href="#cb5-34" tabindex="-1"></a><span class="co">#&gt; emp_gender1             0.006281   0.021540   0.292    0.771</span></span>
+<span id="cb5-35"><a href="#cb5-35" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1  0.034437   0.021540   1.599    0.110</span></span></code></pre></div>
 <p>The <code>summary()</code> method prints population-level estimates
 for the fixed effects and variances and covariances of the random
 effects separately for discriminability and response bias in a similar
@@ -781,23 +783,28 @@ means for response bias and discriminability. The syntax is the typical
 estimated marginal means for response bias and discriminability for
 “denied” and “granted” decisions like so:</p>
 <div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="fu">library</span>(emmeans)</span>
-<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a></span>
-<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;discriminability&quot;</span>)</span>
-<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
-<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt;  committee emmean   SE  df asymp.LCL asymp.UCL</span></span>
-<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;  true        1.72 0.11 Inf      1.50      1.94</span></span>
-<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a><span class="co">#&gt;  false       1.80 0.11 Inf      1.58      2.01</span></span>
-<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
-<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span>
-<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;response bias&quot;</span>)</span>
-<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
-<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt;  committee emmean    SE  df asymp.LCL asymp.UCL</span></span>
-<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt;  true       0.127 0.170 Inf    -0.207     0.461</span></span>
-<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt;  false      0.164 0.147 Inf    -0.123     0.452</span></span>
-<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
-<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span></code></pre></div>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a><span class="co">#&gt; Attache Paket: &#39;emmeans&#39;</span></span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a><span class="co">#&gt; Das folgende Objekt ist maskiert &#39;package:devtools&#39;:</span></span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a><span class="co">#&gt;     test</span></span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;discriminability&quot;</span>)</span>
+<span id="cb7-9"><a href="#cb7-9" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
+<span id="cb7-10"><a href="#cb7-10" tabindex="-1"></a><span class="co">#&gt;  committee emmean   SE  df asymp.LCL asymp.UCL</span></span>
+<span id="cb7-11"><a href="#cb7-11" tabindex="-1"></a><span class="co">#&gt;  true        1.72 0.11 Inf      1.50      1.94</span></span>
+<span id="cb7-12"><a href="#cb7-12" tabindex="-1"></a><span class="co">#&gt;  false       1.80 0.11 Inf      1.58      2.01</span></span>
+<span id="cb7-13"><a href="#cb7-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-14"><a href="#cb7-14" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
+<span id="cb7-15"><a href="#cb7-15" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span>
+<span id="cb7-16"><a href="#cb7-16" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;response bias&quot;</span>)</span>
+<span id="cb7-17"><a href="#cb7-17" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
+<span id="cb7-18"><a href="#cb7-18" tabindex="-1"></a><span class="co">#&gt;  committee emmean    SE  df asymp.LCL asymp.UCL</span></span>
+<span id="cb7-19"><a href="#cb7-19" tabindex="-1"></a><span class="co">#&gt;  true       0.127 0.170 Inf    -0.207     0.461</span></span>
+<span id="cb7-20"><a href="#cb7-20" tabindex="-1"></a><span class="co">#&gt;  false      0.164 0.147 Inf    -0.123     0.452</span></span>
+<span id="cb7-21"><a href="#cb7-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb7-22"><a href="#cb7-22" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
+<span id="cb7-23"><a href="#cb7-23" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span></code></pre></div>
 <p>The estimated marginal means show that participants’ discriminability
 was descriptively higher in trials where a pay raise was denied (<span class="math inline">\(d&#39; = 1.72\)</span> than for cases where one
 was granted <span class="math inline">\(d&#39; = 1.80\)</span>). We can
