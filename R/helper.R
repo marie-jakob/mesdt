@@ -145,7 +145,7 @@ check_sensitivity <- function(fit_obj) {
   summ_mesdt <- summary(fit_obj)
   mu_mean <- summ_mesdt$d_coef[rownames(summ_mesdt$d_coef) == "(Intercept)", 1]
   if (length(mu_mean) > 0) {
-    if (mu_mean < 0) warning("Mean Population Sensitivity is < 0, indicating that the trial_type variable might be coded reversely.")
+    if (mu_mean < 0) warning("Mean Population Sensitivity is < 0, indicating that the trial_type or response variables might be coded reversely.")
   }
 }
 

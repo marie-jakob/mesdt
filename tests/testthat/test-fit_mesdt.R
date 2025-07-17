@@ -256,3 +256,152 @@ test_that("mesdt throws a message when sensitivity < 0", {
                          ))
   }
 )
+
+
+#------------------------------------------------------------------------------#
+#### Test check input format for dv and trialtype ####
+
+test_that("mesdt_fit() gives the same results with different types of trialtype and dv variables", {
+  options("mesdt.backend" = "glmmTMB")
+
+  debi3subset$status_fac <- factor(debi3subset$status, levels = c(-1, 1))
+  debi3subset$dv_num <- as.numeric(contrasts(debi3subset$assessment)[debi3subset$assessment, , drop = FALSE])
+
+  # both factors
+  fit_1 <- fit_mesdt(~ 1 + (1 | id),
+            ~ 1 + (1 | id),
+            dv = "assessment",
+            data = debi3subset, trial_type = "status_fac")
+  # both numeric
+  fit_2 <- fit_mesdt(~ 1 + (1 | id),
+                     ~ 1 + (1 | id),
+                     dv = "dv_num",
+                     data = debi3subset, trial_type = "status")
+  # dv num, trialtype factor
+  fit_3 <- fit_mesdt(~ 1 + (1 | id),
+                     ~ 1 + (1 | id),
+                     dv = "dv_num",
+                     data = debi3subset, trial_type = "status_fac")
+  # dv factor, trialtype num
+  fit_4 <- fit_mesdt(~ 1 + (1 | id),
+                     ~ 1 + (1 | id),
+                     dv = "assessment",
+                     data = debi3subset, trial_type = "status")
+  s1 <- summary(fit_1)
+  s2 <- summary(fit_2)
+  s3 <- summary(fit_3)
+  s4 <- summary(fit_4)
+  expect_equal(s1$d_coef, s2$d_coef)
+  expect_equal(s1$c_coef, s2$c_coef)
+  expect_equal(s1$d_coef, s3$d_coef)
+  expect_equal(s1$c_coef, s3$c_coef)
+  expect_equal(s1$d_coef, s4$d_coef)
+  expect_equal(s1$c_coef, s4$c_coef)
+
+  options("mesdt.backend" = "lme4")
+  # both factors
+  fit_1 <- fit_mesdt(~ 1 + (1 | id),
+                     ~ 1 + (1 | id),
+                     dv = "assessment",
+                     data = debi3subset, trial_type = "status_fac")
+  # both numeric
+  fit_2 <- fit_mesdt(~ 1 + (1 | id),
+                     ~ 1 + (1 | id),
+                     dv = "dv_num",
+                     data = debi3subset, trial_type = "status")
+  # dv num, trialtype factor
+  fit_3 <- fit_mesdt(~ 1 + (1 | id),
+                     ~ 1 + (1 | id),
+                     dv = "dv_num",
+                     data = debi3subset, trial_type = "status_fac")
+  # dv factor, trialtype num
+  fit_4 <- fit_mesdt(~ 1 + (1 | id),
+                     ~ 1 + (1 | id),
+                     dv = "assessment",
+                     data = debi3subset, trial_type = "status")
+  s1 <- summary(fit_1)
+  s2 <- summary(fit_2)
+  s3 <- summary(fit_3)
+  s4 <- summary(fit_4)
+  expect_equal(s1$d_coef, s2$d_coef)
+  expect_equal(s1$c_coef, s2$c_coef)
+  expect_equal(s1$d_coef, s3$d_coef)
+  expect_equal(s1$c_coef, s3$c_coef)
+  expect_equal(s1$d_coef, s4$d_coef)
+  expect_equal(s1$c_coef, s4$c_coef)
+
+  fit_1 <- fit_mesdt(~ 1,
+                     ~ 1,
+                     dv = "assessment",
+                     data = debi3subset, trial_type = "status_fac")
+  # both numeric
+  fit_2 <- fit_mesdt(~ 1,
+                     ~ 1,
+                     dv = "dv_num",
+                     data = debi3subset, trial_type = "status")
+  # dv num, trialtype factor
+  fit_3 <- fit_mesdt(~ 1,
+                     ~ 1,
+                     dv = "dv_num",
+                     data = debi3subset, trial_type = "status_fac")
+  # dv factor, trialtype num
+  fit_4 <- fit_mesdt(~ 1,
+                     ~ 1,
+                     dv = "assessment",
+                     data = debi3subset, trial_type = "status")
+  s1 <- summary(fit_1)
+  s2 <- summary(fit_2)
+  s3 <- summary(fit_3)
+  s4 <- summary(fit_4)
+  expect_equal(s1$d_coef, s2$d_coef)
+  expect_equal(s1$c_coef, s2$c_coef)
+  expect_equal(s1$d_coef, s3$d_coef)
+  expect_equal(s1$c_coef, s3$c_coef)
+  expect_equal(s1$d_coef, s4$d_coef)
+  expect_equal(s1$c_coef, s4$c_coef)
+  }
+)
+
+test_that("mesdt_fit() gives the same results with different types of trialtype and dv variables", {
+  options("mesdt.backend" = "glmmTMB")
+
+  debi3subset$status_3 <- sample(1:3, nrow(debi3subset), replace = T)
+  debi3subset$dv_3 <- sample(1:3, nrow(debi3subset), replace = T)
+  debi3subset$status_2_3 <- sample(2:3, nrow(debi3subset), replace = T)
+  debi3subset$status_2 <- sample(1:2, nrow(debi3subset), replace = T)
+  debi3subset$dv_2_3 <- sample(2:3, nrow(debi3subset), replace = T)
+
+
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "id",
+                         data = debi3subset, trial_type = "status"),
+               regexp = "dv must be a binary variable")
+
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "assessment",
+                         data = debi3subset, trial_type = "status_3"),
+               regexp = "trial_type must be a binary variable")
+
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "dv_3",
+                         data = debi3subset, trial_type = "status"),
+               regexp = "dv must be a binary variable")
+
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "assessment",
+                         data = debi3subset, trial_type = "status_2_3"),
+               regexp = "it must code signal trials")
+
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "dv_2_3",
+                         data = debi3subset, trial_type = "status"),
+               regexp = "it must code signal responses")
+
+    options("mesdt.backend" = "lme4")
+}
+)

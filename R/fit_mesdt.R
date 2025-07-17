@@ -118,26 +118,64 @@ fit_mesdt <- function(discriminability,
 
   if (typeof(dv) != "character") stop("'dv' must be of type 'character'.")
   if (is.null(data[[dv]])) stop(paste("Given dependent variable", dv, "not in data."))
+
+
+
   if (length(unique(data[[dv]])) != 2) stop("dv must be a binary variable.")
-  if (! all(sort(unique(data[[dv]])) == c(0, 1))) {
-    if (inherits(data[[dv]], "factor") & length(unique(data[[dv]]) == 2)) {
-      data[["dv_num"]] <- as.numeric(data[[dv]]) -1
-      dv <- "dv_num"
+  if (is.numeric(data[[dv]])) {
+    # numeric variable: must be either 0 and 1 or -1 and to
+    if (! all(sort(unique(data[[dv]])) == c(0, 1)) &
+        ! all(sort(unique(data[[dv]])) == c(-1, 1))) {
+      stop("If dv is a numeric variable, it must code signal responses as 1 and
+           noise response as either 0 or -1")
     } else {
-      stop("dv must be coded as 0 ('noise' response) and 1 ('signal' response)")
+      if (all(sort(unique(data[[dv]])) == c(-1, 1))) {
+        data[[dv]] <- ifelse(data[[dv]] == -1, 0, 1)
+      }
     }
+  } else if (inherits(data[[dv]], "factor") &
+             length(unique(data[[dv]]) == 2)) {
+    data[["dv_num"]] <- as.numeric(contrasts(data[[dv]])[data[[dv]], , drop = FALSE])
+    data[["dv_num"]] <- ifelse(data[["dv_num"]] == -1, 0, data[["dv_num"]])
+    dv <- "dv_num"
+  } else {
+    stop("dv must be a binary numeric variable or factor")
   }
+
   trial_type_var <- trial_type
 
   if (typeof(trial_type_var) != "character") stop("'trial_type_var' must be of type 'character'.")
   if (is.null(data[[trial_type_var]])) stop(paste("Given trialtype variable", trial_type_var, "not in data."))
   # TODO: if you have a predictor that only affects sensitivity (such as strength in the context of
   # memory, this won't work) -> maybe allow a ternary variable then (maybe with a warning)
-  if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
-    stop("'trial_type' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
+
+  if (length(unique(data[[trial_type_var]])) != 2) stop("trial_type must be a binary variable.")
+  if (is.numeric(data[[trial_type_var]])) {
+    # numeric variable: must be either 0 and 1 or -1 and to
+    if (! all(sort(unique(data[[trial_type_var]])) == c(0, 1)) &
+        ! all(sort(unique(data[[trial_type_var]])) == c(-1, 1))) {
+      stop("If trial_type is a numeric variable, it must code signal trials as 1 and
+           noise response as either 0 or -1")
+    } else {
+      if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
+        data[["trial_type_num"]] <- ifelse(data[[trial_type_var]] == 0, -1, 1)
+        trial_type_var <- "trial_type_num"
+      }
+    }
+  } else if (inherits(data[[trial_type_var]], "factor") &
+             length(unique(data[[trial_type_var]]) == 2)) {
+    data[["trial_type_num"]] <- as.numeric(contrasts(data[[trial_type_var]])[data[[trial_type_var]], , drop = FALSE])
+    data[["trial_type_num"]] <- ifelse(data[["trial_type_num"]] == 0, -1, 1)
+    trial_type_var <- "trial_type_num"
+  } else {
+    stop("trial_type must be a binary numeric variable or factor")
   }
-  if (class(data[[trial_type_var]]) != "numeric")
-    stop("'trial_type' must be of type numeric.")
+
+  #if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
+  #  stop("'trial_type' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
+  #}
+  #if (class(data[[trial_type_var]]) != "numeric")
+  #  stop("'trial_type' must be of type numeric.")
 
   if (typeof(correlate_sdt_params) != "logical") stop("'correlate_sdt_params' must be of type 'logical'.")
 
