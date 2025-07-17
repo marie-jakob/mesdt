@@ -8,7 +8,7 @@ new_mesdt_fit <- function(input_list) {
 
 #' @export
 print.mesdt_fit <- function(x) {
-  print.summary.mesdt_fit(x)
+  print.summary.mesdt_fit(summary(x))
 }
 
 
@@ -26,6 +26,9 @@ summary.mesdt_fit <- function(obj) {
     d_coef <- summ_lme4$coefficients[grepl("mu", rownames(summ_lme4$coefficients)), ]
     c_coef <- summ_lme4$coefficients[grepl("lambda", rownames(summ_lme4$coefficients)), ]
 
+    ngrps <- summ_lme4$ngrps
+    nobs <- summ_lme4$devcomp$dims[["n"]]
+
     # Get optimizer info
     if (obj$user_input$backend == "lme4") {
       opt_info <- list(
@@ -35,6 +38,8 @@ summary.mesdt_fit <- function(obj) {
 
   } else if (obj$user_input$backend == "glmmTMB") {
     summ_glmmtmb <- summary(obj$fit_obj)
+    ngrps <- summ_glmmtmb$ngrps$cond
+    nobs <- summ_glmmtmb$nobs
 
     d_coef <- summ_glmmtmb$coefficients$cond[grepl("mu", rownames(summ_glmmtmb$coefficients$cond)), ]
     c_coef <- summ_glmmtmb$coefficients$cond[grepl("lambda", rownames(summ_glmmtmb$coefficients$cond)), ]
@@ -73,7 +78,6 @@ summary.mesdt_fit <- function(obj) {
   if (mixed) {
     # if random effects are correlated, print one correlation matrix
     # Remove "mm" stuff from colnames
-
     for (fac in names(cov_mat)) {
       colnames_tmp <- colnames(cov_mat[[fac]])
       if (any(grepl("\\[, *[0-9]+\\]", colnames_tmp))) {
@@ -113,17 +117,21 @@ summary.mesdt_fit <- function(obj) {
     #.prt.warn(x@optinfo,summary=TRUE)
 
   }
+
+
   to_return <- list(
     "d_coef" = d_coef,
     "c_coef" = c_coef,
     "opt_info" = opt_info,
-    "user_input" = obj$user_input
+    "user_input" = obj$user_input,
+    "ngrps" = ngrps,
+    "nobs" = nobs
   )
 
   if (mixed) to_return[["cov_mat"]] <- cov_mat
   if (! is.null(obj$LRTs)) to_return[["LRTs"]] <- obj$LRTs$LRT_results
   else if (! is.null(obj$PB_tests)) to_return[["PB_tests"]] <- obj$LRTs$PB_test_results
-
+  print("done")
   return(structure(to_return, class = "summary.mesdt_fit"))
 }
 
@@ -135,11 +143,11 @@ printmethod <- function(x) {
                                 ifelse(x$user_input$distr == "gumbel-min", "Gumbel-Min", "Gumbel-Max")))
   if (x$user_input$backend != "glm") pr <- "Mixed-effects signal "
   else pr <- "Signal "
-  pr <- paste(pr, "detection theory model with ", distr_pretty, " evidence distributions fit by maximum likelihood ", sep = "")
+  pr <- paste(pr, "detection theory model with ", distr_pretty, " evidence distributions fit by maximum likelihood", sep = "")
   if (! is.null(x$opt_info)) {
     nAGQ <- x$opt_info$nAGQ
-    meth <- ifelse(nAGQ != 1, paste("(Adaptive Gauss-Hermite Quadrature, nAGQ = ", nAGQ, ")", sep = ""),
-                   "(Laplace Approximation)")
+    meth <- ifelse(nAGQ != 1, paste(" (Adaptive Gauss-Hermite Quadrature, nAGQ = ", nAGQ, ")", sep = ""),
+                   " (Laplace Approximation)")
     pr <- paste(pr, meth, sep = "")
   }
   pack <- x$user_input$backend
@@ -168,6 +176,7 @@ print.summary.mesdt_fit <- function(x,
   # Print random effects
   if (! is.null(x$cov_mat)) {
     .prt.VC(x$cov_mat, digits)
+    .prt.grps(x$ngrps, nobs = x$nobs)
     cat("\n")
   }
 
@@ -309,4 +318,10 @@ formatVC <- function(varcor, digits = max(3, getOption("digits") - 2),
       cat("\n")
     }
   }
+}
+
+.prt.grps <- function(ngrps, nobs) {
+  cat(sprintf("Number of obs: %d, groups: ", nobs),
+      paste(paste(names(ngrps), ngrps, sep = ", "), collapse = "; "),
+      fill = TRUE)
 }
