@@ -517,8 +517,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       names(range_mu) <- "mu"
     }
     if (length(range_lambda) == 0 & length(range_mu) == 0) {
-      message("Nothing to test in the model. Returning NULL.")
-      return(NULL)
+      stop("Nothing to test in the model.")
     }
   }
 

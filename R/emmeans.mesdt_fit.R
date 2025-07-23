@@ -26,7 +26,7 @@ recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
 #' @method emm_basis mesdt_fit
 #' @export
 emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
-  dpar <- match.arg(dpar, c("response bias", "discriminability", "sensitivity"))
+  dpar <- match.arg(dpar, c("response bias", "response_bias", "discriminability", "sensitivity"))
   sdt_par = ifelse(dpar == "discriminability" |
                      dpar == "sensitivity", "mu", "lambda")
   m = object$internal$m_frame[[sdt_par]]
@@ -62,3 +62,34 @@ emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
        dffun = dffun, dfargs = dfargs))
 }
 
+
+#' @export
+emmeans_mesdt <- function(fit_obj, specs) {
+  if (! inherits(fit_obj, "mesdt_fit")) {
+    stop("fit_obj must be of class mesdt_fit.")
+  } else {
+    rb <- tryCatch(emmeans(fit_obj, specs, dpar = "response bias"),
+                   error = function(e) {
+                     if (grepl("No variable named", e)) {
+                       error_msg <- paste("Error in computing emmeans for response bias:\n", e, sep = "")
+                       stop(error_msg, call. = FALSE)
+                     } else {
+                       stop(e, call. = FALSE)
+                     }
+                   })
+    sens <- tryCatch(emmeans(fit_obj, specs, dpar = "sensitivity"),
+                   error = function(e) {
+                     if (grepl("No variable named", e)) {
+                       error_msg <- paste("Error in computing emmeans for sensitivity:\n", e, sep = "")
+                       stop(error_msg, call. = FALSE)
+                     } else {
+                       stop(e, call. = FALSE)
+                     }
+                   })
+  }
+  return(list(
+    "sensitivity" = sens,
+    "response_bias" = rb
+  ))
+
+}
