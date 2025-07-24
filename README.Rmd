@@ -48,10 +48,14 @@ devtools::install_github("marie-jakob/mesdt")
 ```
 
 Since `mesdt` uses `lme4` as the default backend, you also need a working 
-installation of `lme4` and, if you want to use it, `glmmTMB`. 
+installation of `lme4` and, if you want to use it, `glmmTMB`. We are also
+loading the `tibble` package for a nicer display of the data. 
 
 ``` {r}
 library(mesdt)
+# install.packages("tibble")
+library(tibble)
+
 ```
 
 Upon loading the package, it tells us that it has set the backend, that is, the
@@ -64,7 +68,7 @@ set_backend("glmmTMB")
 
 ### Step 1: Prepare the Data
 
-We are using the `debi3_sub` dataset provided with this package^[`debi3_sub` 
+We are using the `debi3subset` dataset provided with this package^[`debi3subset` 
 contains a subset of 20 participants. The complete dataset is provided as 
 `debi3`.], where we 
 investigated attributions to gender discrimination using a signal detection 
@@ -74,22 +78,21 @@ and female employees(`emp_gender`), who were either granted or denied a pay rais
 (`committee`). 
 
 ```{r}
-debi3_sub <- mesdt::debi3subset
+debi3subset <- as_tibble(mesdt::debi3subset)
 
 ```
 
 `mesdt` assumes the data to be in the long format, meaning that one row of the 
-data represents one observation. 
+data represents one observation of the binary response variable. 
 
 ```{r}
-head(debi3_sub)
-
+head(debi3subset)
 ```
 
-Fitting an SDT model requires at least two additional columns: A variable 
-representing the binary response variable (`assessment` in `debi3_sub`) and 
-one representing the type of trial (i.e., whether the given trial was a signal
-or a noise trial, `status` in `debi3_sub`). Both can be factors or numeric 
+Fitting an SDT model requires at least two variables: the binary response 
+variable (`assessment` in `debi3subset`) and 
+the type of trial (i.e., whether the given trial was a signal
+or a noise trial, `status` in `debi3subset`). Both can be factors or numeric 
 variables, where 1 (or in case of a factor, the level coded as one in the 
 contrast coding) corresponds to a signal and 0 or -1 corresponds to a noise 
 response or trial. 
@@ -115,7 +118,7 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 mod <- fit_mesdt(
   discriminability ~ committee * emp_gender + (1 | id),
   response_bias ~ committee * emp_gender + (committee | id),
-  data = debi3_sub,
+  data = debi3subset,
   trial_type = "status",
   dv = "assessment"
 )
@@ -135,7 +138,7 @@ tests based on the beta estimates and their standard errors.
 Since Wald tests are often not recommended for inference in GLMM, `mesdt` allows
 the user to compute different types (see the documentation for details) 
 of likelihood ratio tests and parametric bootstrapping tests, that are based on 
-comparisons of nested models. 
+comparisons of nested models via the `compute_tests()` function. 
 
 `mesdt` allows the user to either specify the to-be-tested parameters via 
 formulas (e.g., `~ committee`) or to test all fixed effects (`"all"`). For this
@@ -161,8 +164,8 @@ decision on discriminability, nor on response bias.
 
 `mesdt` additionally provides a custom `emmeans()` function, allowing the user
 to estimate marginal means for response bias and discriminability. The syntax
-is the typical `emmeans` syntax with an additional argument `dpar` specifying 
-the SDT parameter. 
+is the typical [`emmeans`](https://cran.r-project.org/web/packages/emmeans/index.html)
+syntax with an additional argument `dpar` specifying the SDT parameter. 
 Thus, we can get estimated marginal means for response bias and discriminability
 for "denied" and "granted" decisions like so: 
 

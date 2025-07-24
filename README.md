@@ -43,10 +43,13 @@ devtools::install_github("marie-jakob/mesdt")
 ```
 
 Since `mesdt` uses `lme4` as the default backend, you also need a
-working installation of `lme4` and, if you want to use it, `glmmTMB`.
+working installation of `lme4` and, if you want to use it, `glmmTMB`. We
+are also loading the `tibble` package for a nicer display of the data.
 
 ``` r
 library(mesdt)
+# install.packages("tibble")
+library(tibble)
 ```
 
 Upon loading the package, it tells us that it has set the backend, that
@@ -60,7 +63,7 @@ set_backend("glmmTMB")
 
 ### Step 1: Prepare the Data
 
-We are using the `debi3_sub` dataset provided with this package[^1],
+We are using the `debi3subset` dataset provided with this package[^1],
 where we investigated attributions to gender discrimination using a
 signal detection approach. In the experiment, participants had to judge
 256 fictional pay raise decisions as biased or unbiased. The cases
@@ -68,30 +71,32 @@ involved male and female employees(`emp_gender`), who were either
 granted or denied a pay raise (`committee`).
 
 ``` r
-debi3_sub <- mesdt::debi3subset
+debi3subset <- as_tibble(mesdt::debi3subset)
 ```
 
 `mesdt` assumes the data to be in the long format, meaning that one row
-of the data represents one observation.
+of the data represents one observation of the binary response variable.
 
 ``` r
-head(debi3_sub)
-#>   id assessment status objective committee emp_gender      file_name participant_gender age
-#> 1  1       fair     -1      true   granted          m     W_M_20.png                  m  35
-#> 2  1       fair     -1      true   granted          m     W_M_47.png                  m  35
-#> 3  1       fair     -1      true   granted          m    W_M_f_4.jpg                  m  35
-#> 4  1     unfair      1      true    denied          f W_F_o_u_10.jpg                  m  35
-#> 5  1     unfair      1      true    denied          f    W_F_122.png                  m  35
-#> 6  1     unfair      1      true    denied          m     W_M_10.png                  m  35
+head(debi3subset)
+#> # A tibble: 6 × 9
+#>   id    assessment status objective committee emp_gender file_name      participant_gender   age
+#>   <fct> <fct>       <dbl> <chr>     <fct>     <fct>      <fct>          <fct>              <dbl>
+#> 1 1     fair           -1 true      granted   m          W_M_20.png     m                     35
+#> 2 1     fair           -1 true      granted   m          W_M_47.png     m                     35
+#> 3 1     fair           -1 true      granted   m          W_M_f_4.jpg    m                     35
+#> 4 1     unfair          1 true      denied    f          W_F_o_u_10.jpg m                     35
+#> 5 1     unfair          1 true      denied    f          W_F_122.png    m                     35
+#> 6 1     unfair          1 true      denied    m          W_M_10.png     m                     35
 ```
 
-Fitting an SDT model requires at least two additional columns: A
-variable representing the binary response variable (`assessment` in
-`debi3_sub`) and one representing the type of trial (i.e., whether the
-given trial was a signal or a noise trial, `status` in `debi3_sub`).
-Both can be factors or numeric variables, where 1 (or in case of a
-factor, the level coded as one in the contrast coding) corresponds to a
-signal and 0 or -1 corresponds to a noise response or trial.
+Fitting an SDT model requires at least two variables: the binary
+response variable (`assessment` in `debi3subset`) and the type of trial
+(i.e., whether the given trial was a signal or a noise trial, `status`
+in `debi3subset`). Both can be factors or numeric variables, where 1 (or
+in case of a factor, the level coded as one in the contrast coding)
+corresponds to a signal and 0 or -1 corresponds to a noise response or
+trial.
 
 ### Step 2: Specify and Fit a Mixed-Effects SDT Model
 
@@ -113,15 +118,13 @@ Thus, in `mesdt`, we can specify and fit our model like this:
 mod <- fit_mesdt(
   discriminability ~ committee * emp_gender + (1 | id),
   response_bias ~ committee * emp_gender + (committee | id),
-  data = debi3_sub,
+  data = debi3subset,
   trial_type = "status",
   dv = "assessment"
 )
 #> [1] "lme4 was used to fit the model."
-#> [1] "done"
 
 summary(mod)
-#> [1] "done"
 #> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. 
 #>  
 #> Discriminability:  ~committee * emp_gender + (1 | id) 
@@ -132,7 +135,6 @@ summary(mod)
 #>  id     (Intercept)(Response Bias)    0.3848              
 #>         committee1(Response Bias)     0.5801   -0.17      
 #>         (Intercept)(Discriminability) 0.3902   -0.39 -0.18
-#> Number of obs: 5120, groups:  id, 20
 #> 
 #> Fixed effects and Wald tests for discriminability: 
 #>                        Estimate Std. Error z value Pr(>|z|)
@@ -160,7 +162,8 @@ based on the beta estimates and their standard errors.
 Since Wald tests are often not recommended for inference in GLMM,
 `mesdt` allows the user to compute different types (see the
 documentation for details) of likelihood ratio tests and parametric
-bootstrapping tests, that are based on comparisons of nested models.
+bootstrapping tests, that are based on comparisons of nested models via
+the `compute_tests()` function.
 
 `mesdt` allows the user to either specify the to-be-tested parameters
 via formulas (e.g., `~ committee`) or to test all fixed effects
@@ -193,10 +196,11 @@ committee decision on discriminability, nor on response bias.
 
 `mesdt` additionally provides a custom `emmeans()` function, allowing
 the user to estimate marginal means for response bias and
-discriminability. The syntax is the typical `emmeans` syntax with an
-additional argument `dpar` specifying the SDT parameter. Thus, we can
-get estimated marginal means for response bias and discriminability for
-“denied” and “granted” decisions like so:
+discriminability. The syntax is the typical
+[`emmeans`](https://cran.r-project.org/web/packages/emmeans/index.html)
+syntax with an additional argument `dpar` specifying the SDT parameter.
+Thus, we can get estimated marginal means for response bias and
+discriminability for “denied” and “granted” decisions like so:
 
 ``` r
 library(emmeans)
@@ -231,5 +235,5 @@ significantly different from zero in this subset of the data.
 
 TODO
 
-[^1]: `debi3_sub` contains a subset of 20 participants. The complete
+[^1]: `debi3subset` contains a subset of 20 participants. The complete
     dataset is provided as `debi3`.

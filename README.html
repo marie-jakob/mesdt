@@ -670,40 +670,45 @@ Setup</h3>
 <span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>devtools<span class="sc">::</span><span class="fu">install_github</span>(<span class="st">&quot;marie-jakob/mesdt&quot;</span>)</span></code></pre></div>
 <p>Since <code>mesdt</code> uses <code>lme4</code> as the default
 backend, you also need a working installation of <code>lme4</code> and,
-if you want to use it, <code>glmmTMB</code>.</p>
-<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(mesdt)</span></code></pre></div>
+if you want to use it, <code>glmmTMB</code>. We are also loading the
+<code>tibble</code> package for a nicer display of the data.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="fu">library</span>(mesdt)</span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="co"># install.packages(&quot;tibble&quot;)</span></span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">library</span>(tibble)</span></code></pre></div>
 <p>Upon loading the package, it tells us that it has set the backend,
 that is, the package used to estimate the GLMMs, to <code>lme4</code>.
 If <code>glmmTMB</code> (which can be significantly faster) is
 installed, the backend can be changed like so:</p>
 <div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="fu">set_backend</span>(<span class="st">&quot;glmmTMB&quot;</span>)</span></code></pre></div>
 <h3 id="step-1-prepare-the-data">Step 1: Prepare the Data</h3>
-<p>We are using the <code>debi3_sub</code> dataset provided with this
+<p>We are using the <code>debi3subset</code> dataset provided with this
 package<a href="#fn1" class="footnote-ref" id="fnref1"><sup>1</sup></a>,
 where we investigated attributions to gender discrimination using a
 signal detection approach. In the experiment, participants had to judge
 256 fictional pay raise decisions as biased or unbiased. The cases
 involved male and female employees(<code>emp_gender</code>), who were
 either granted or denied a pay raise (<code>committee</code>).</p>
-<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>debi3_sub <span class="ot">&lt;-</span> mesdt<span class="sc">::</span>debi3subset</span></code></pre></div>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a>debi3subset <span class="ot">&lt;-</span> <span class="fu">as_tibble</span>(mesdt<span class="sc">::</span>debi3subset)</span></code></pre></div>
 <p><code>mesdt</code> assumes the data to be in the long format, meaning
-that one row of the data represents one observation.</p>
-<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">head</span>(debi3_sub)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt;   id assessment status objective committee emp_gender      file_name participant_gender age</span></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt; 1  1       fair     -1      true   granted          m     W_M_20.png                  m  35</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt; 2  1       fair     -1      true   granted          m     W_M_47.png                  m  35</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 3  1       fair     -1      true   granted          m    W_M_f_4.jpg                  m  35</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 4  1     unfair      1      true    denied          f W_F_o_u_10.jpg                  m  35</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 5  1     unfair      1      true    denied          f    W_F_122.png                  m  35</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 6  1     unfair      1      true    denied          m     W_M_10.png                  m  35</span></span></code></pre></div>
-<p>Fitting an SDT model requires at least two additional columns: A
-variable representing the binary response variable
-(<code>assessment</code> in <code>debi3_sub</code>) and one representing
-the type of trial (i.e., whether the given trial was a signal or a noise
-trial, <code>status</code> in <code>debi3_sub</code>). Both can be
-factors or numeric variables, where 1 (or in case of a factor, the level
-coded as one in the contrast coding) corresponds to a signal and 0 or -1
-corresponds to a noise response or trial.</p>
+that one row of the data represents one observation of the binary
+response variable.</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">head</span>(debi3subset)</span>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 9</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;   id    assessment status objective committee emp_gender file_name      participant_gender   age</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   &lt;fct&gt; &lt;fct&gt;       &lt;dbl&gt; &lt;chr&gt;     &lt;fct&gt;     &lt;fct&gt;      &lt;fct&gt;          &lt;fct&gt;              &lt;dbl&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 1 1     fair           -1 true      granted   m          W_M_20.png     m                     35</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 2 1     fair           -1 true      granted   m          W_M_47.png     m                     35</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 3 1     fair           -1 true      granted   m          W_M_f_4.jpg    m                     35</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 4 1     unfair          1 true      denied    f          W_F_o_u_10.jpg m                     35</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 5 1     unfair          1 true      denied    f          W_F_122.png    m                     35</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 6 1     unfair          1 true      denied    m          W_M_10.png     m                     35</span></span></code></pre></div>
+<p>Fitting an SDT model requires at least two variables: the binary
+response variable (<code>assessment</code> in <code>debi3subset</code>)
+and the type of trial (i.e., whether the given trial was a signal or a
+noise trial, <code>status</code> in <code>debi3subset</code>). Both can
+be factors or numeric variables, where 1 (or in case of a factor, the
+level coded as one in the contrast coding) corresponds to a signal and 0
+or -1 corresponds to a noise response or trial.</p>
 <h3 id="step-2-specify-and-fit-a-mixed-effects-sdt-model">Step 2:
 Specify and Fit a Mixed-Effects SDT Model</h3>
 <p>To estimate effects of the employee’s gender and the decision of the
@@ -722,40 +727,37 @@ this:</p>
 <span id="cb6-2"><a href="#cb6-2" tabindex="-1"></a>mod <span class="ot">&lt;-</span> <span class="fu">fit_mesdt</span>(</span>
 <span id="cb6-3"><a href="#cb6-3" tabindex="-1"></a>  discriminability <span class="sc">~</span> committee <span class="sc">*</span> emp_gender <span class="sc">+</span> (<span class="dv">1</span> <span class="sc">|</span> id),</span>
 <span id="cb6-4"><a href="#cb6-4" tabindex="-1"></a>  response_bias <span class="sc">~</span> committee <span class="sc">*</span> emp_gender <span class="sc">+</span> (committee <span class="sc">|</span> id),</span>
-<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">data =</span> debi3_sub,</span>
+<span id="cb6-5"><a href="#cb6-5" tabindex="-1"></a>  <span class="at">data =</span> debi3subset,</span>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">trial_type =</span> <span class="st">&quot;status&quot;</span>,</span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">dv =</span> <span class="st">&quot;assessment&quot;</span></span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>)</span>
 <span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;lme4 was used to fit the model.&quot;</span></span>
-<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a><span class="co">#&gt; [1] &quot;done&quot;</span></span>
-<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a></span>
-<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="fu">summary</span>(mod)</span>
-<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt; [1] &quot;done&quot;</span></span>
-<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. </span></span>
-<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt;  </span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; Discriminability:  ~committee * emp_gender + (1 | id) </span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; Response Bias:     ~committee * emp_gender + (committee | id) </span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt; Random effects:</span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;  Groups Name                          Std.Dev. Corr       </span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;  id     (Intercept)(Response Bias)    0.3848              </span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;         committee1(Response Bias)     0.5801   -0.17      </span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt;         (Intercept)(Discriminability) 0.3902   -0.39 -0.18</span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt; Number of obs: 5120, groups:  id, 20</span></span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for discriminability: </span></span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; (Intercept)             1.75932    0.09974  17.638   &lt;2e-16</span></span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; committee1              0.04001    0.04671   0.857    0.392</span></span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; emp_gender1            -0.01419    0.04308  -0.329    0.742</span></span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.03843    0.04308  -0.892    0.372</span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for response bias: </span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt;                         Estimate Std. Error z value Pr(&gt;|z|)</span></span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; (Intercept)             0.145662   0.088898   1.639    0.101</span></span>
-<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt; committee1              0.018567   0.131822   0.141    0.888</span></span>
-<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; emp_gender1             0.006281   0.021540   0.292    0.771</span></span>
-<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.034437   0.021540  -1.599    0.110</span></span></code></pre></div>
+<span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
+<span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">summary</span>(mod)</span>
+<span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. </span></span>
+<span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  </span></span>
+<span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Discriminability:  ~committee * emp_gender + (1 | id) </span></span>
+<span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Response Bias:     ~committee * emp_gender + (committee | id) </span></span>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; Random effects:</span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;  Groups Name                          Std.Dev. Corr       </span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;  id     (Intercept)(Response Bias)    0.3848              </span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;         committee1(Response Bias)     0.5801   -0.17      </span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;         (Intercept)(Discriminability) 0.3902   -0.39 -0.18</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for discriminability: </span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; (Intercept)             1.75932    0.09974  17.638   &lt;2e-16</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; committee1              0.04001    0.04671   0.857    0.392</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; emp_gender1            -0.01419    0.04308  -0.329    0.742</span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.03843    0.04308  -0.892    0.372</span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for response bias: </span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt;                         Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; (Intercept)             0.145662   0.088898   1.639    0.101</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; committee1              0.018567   0.131822   0.141    0.888</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; emp_gender1             0.006281   0.021540   0.292    0.771</span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.034437   0.021540  -1.599    0.110</span></span></code></pre></div>
 <p>The <code>summary()</code> method prints population-level estimates
 for the fixed effects and variances and covariances of the random
 effects separately for discriminability and response bias in a similar
@@ -767,7 +769,8 @@ Compute Hypothesis Tests for Selected Parameters</h3>
 <p>Since Wald tests are often not recommended for inference in GLMM,
 <code>mesdt</code> allows the user to compute different types (see the
 documentation for details) of likelihood ratio tests and parametric
-bootstrapping tests, that are based on comparisons of nested models.</p>
+bootstrapping tests, that are based on comparisons of nested models via
+the <code>compute_tests()</code> function.</p>
 <p><code>mesdt</code> allows the user to either specify the to-be-tested
 parameters via formulas (e.g., <code>~ committee</code>) or to test all
 fixed effects (<code>&quot;all&quot;</code>). For this experiment, we were
@@ -795,10 +798,10 @@ means</h3>
 <p><code>mesdt</code> additionally provides a custom
 <code>emmeans()</code> function, allowing the user to estimate marginal
 means for response bias and discriminability. The syntax is the typical
-<code>emmeans</code> syntax with an additional argument
-<code>dpar</code> specifying the SDT parameter. Thus, we can get
-estimated marginal means for response bias and discriminability for
-“denied” and “granted” decisions like so:</p>
+<a href="https://cran.r-project.org/web/packages/emmeans/index.html"><code>emmeans</code></a>
+syntax with an additional argument <code>dpar</code> specifying the SDT
+parameter. Thus, we can get estimated marginal means for response bias
+and discriminability for “denied” and “granted” decisions like so:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">library</span>(emmeans)</span>
 <span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
 <span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;discriminability&quot;</span>)</span>
@@ -830,7 +833,7 @@ data.</p>
 <div class="footnotes footnotes-end-of-document">
 <hr />
 <ol>
-<li id="fn1"><p><code>debi3_sub</code> contains a subset of 20
+<li id="fn1"><p><code>debi3subset</code> contains a subset of 20
 participants. The complete dataset is provided as <code>debi3</code>.<a href="#fnref1" class="footnote-back">↩︎</a></p></li>
 </ol>
 </div>
