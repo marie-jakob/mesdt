@@ -155,17 +155,17 @@ fit_mesdt <- function(discriminability,
     if (! all(sort(unique(data[[trial_type_var]])) == c(0, 1)) &
         ! all(sort(unique(data[[trial_type_var]])) == c(-1, 1))) {
       stop("If trial_type is a numeric variable, it must code signal trials as 1 and
-           noise response as either 0 or -1")
+           noise trials as either 0 or -1")
     } else {
       if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
-        data[["trial_type_num"]] <- ifelse(data[[trial_type_var]] == 0, -1, 1)
+        data[["trial_type_num"]] <- ifelse(data[[trial_type_var]] == 1, 1, -1)
         trial_type_var <- "trial_type_num"
       }
     }
   } else if (inherits(data[[trial_type_var]], "factor") &
              length(unique(data[[trial_type_var]]) == 2)) {
     data[["trial_type_num"]] <- as.numeric(contrasts(data[[trial_type_var]])[data[[trial_type_var]], , drop = FALSE])
-    data[["trial_type_num"]] <- ifelse(data[["trial_type_num"]] == 0, -1, 1)
+    data[["trial_type_num"]] <- ifelse(data[["trial_type_num"]] == 1, 1, -1)
     trial_type_var <- "trial_type_num"
   } else {
     stop("trial_type must be a binary numeric variable or factor")
