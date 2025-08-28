@@ -28,13 +28,6 @@ fit_glmm <- function(glmer_formula,
   lnk_fun <- ifelse(distribution == "gaussian", "probit",
                     ifelse(distribution == "logistic", "logit", "cloglog"))
 
-  # reverse-code dv for gumbel-min distribution
-  if (distribution == "gumbel-min") {
-    print("reversing dv")
-    data[["dv_rev"]] <- ifelse(data[[dv]] == 0, 1, 0)
-    #data[[dv]] <- ifelse(data[[dv]] == 0, 1, 0)
-  }
-
   # Fit a GLM if there are no random effects
   #print(glmer_formula)
   if (is.null(lme4::findbars(glmer_formula))) {
@@ -46,33 +39,69 @@ fit_glmm <- function(glmer_formula,
     if (is.null(control) |
         ! "glmerControl" %in% attr(control, "class")) {
       if (! is.null(control)) message("Invalid control argument for lme4. Using the default settings.")
-      fit_obj <- lme4::glmer(glmer_formula,
-                             data = data,
-                             family = binomial(link = lnk_fun),
-                             # this is only for testing speed -> changed for actual use
-                             nAGQ = 0)
-    } else {
-      fit_obj <- lme4::glmer(glmer_formula,
-                             data = data,
-                             family = binomial(link = lnk_fun),
-                             # this is only for testing speed -> changed for actual use
-                             nAGQ = 0,
-                             control = control)
-    }
+      if (dv == "dv_agg") {
+        fit_obj <- lme4::glmer(glmer_formula,
+                               data = data,
+                               family = binomial(link = lnk_fun),
+                               # this is only for testing speed -> changed for actual use
+                               nAGQ = 0,
+                               weights = data$weight)
+      } else {
+        fit_obj <- lme4::glmer(glmer_formula,
+                               data = data,
+                               family = binomial(link = lnk_fun),
+                               # this is only for testing speed -> changed for actual use
+                               nAGQ = 0)
+      }
 
+    } else {
+      if (dv == "dv_agg") {
+        fit_obj <- lme4::glmer(glmer_formula,
+                               data = data,
+                               family = binomial(link = lnk_fun),
+                               # this is only for testing speed -> changed for actual use
+                               nAGQ = 0,
+                               weights = data$weight,
+                               control = control)
+      } else {
+        fit_obj <- lme4::glmer(glmer_formula,
+                               data = data,
+                               family = binomial(link = lnk_fun),
+                               # this is only for testing speed -> changed for actual use
+                               nAGQ = 0,
+                               control = control)
+      }
+    }
   } else if ((options("mesdt.backend") == "glmmTMB")) {
     #print("fitting with glmmTMB")
     if (is.null(control) |
         "glmerControl" %in% attr(control, "class")) {
       if (! is.null(control)) message("Invalid control argument for glmmTMB. Using the default settings.")
-      fit_obj <- glmmTMB::glmmTMB(glmer_formula,
-                                  data = data,
-                                  family = binomial(link = lnk_fun))
+
+      if (dv == "dv_agg") {
+        fit_obj <- glmmTMB::glmmTMB(glmer_formula,
+                                    data = data,
+                                    family = binomial(link = lnk_fun),
+                                    weights = data$weight)
+      } else {
+        fit_obj <- glmmTMB::glmmTMB(glmer_formula,
+                                    data = data,
+                                    family = binomial(link = lnk_fun))
+      }
+
     } else {
-      fit_obj <- glmmTMB::glmmTMB(glmer_formula,
-                                  data = data,
-                                  family = binomial(link = lnk_fun),
-                                  control = control)
+      if (dv == "dv_agg") {
+        fit_obj <- glmmTMB::glmmTMB(glmer_formula,
+                                    data = data,
+                                    family = binomial(link = lnk_fun),
+                                    weights = data$weight,
+                                    control = control)
+      } else {
+        fit_obj <- glmmTMB::glmmTMB(glmer_formula,
+                                    data = data,
+                                    family = binomial(link = lnk_fun),
+                                    control = control)
+      }
     }
   }
 

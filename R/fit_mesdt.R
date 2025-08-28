@@ -16,6 +16,9 @@
 #'  or "gumbel-min").
 #' @param correlate_sdt_params `boolean` indicating whether correlations between
 #'  SDT parameters should be modeled (see Details).
+#' @param aggregate (experimental) `boolean` indicating whether the given long
+#'  data frame should be aggregated. Can significantly speed up estimation,
+#'  especially for lme4
 #' @param control list containing optional control arguments that are included
 #' in the `glmmTMB()` or `glmer()` call (see Details).
 #'
@@ -105,7 +108,8 @@ fit_mesdt <- function(discriminability,
                       trial_type = "trial_type",
                       data,
                       distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
-                      correlate_sdt_params = T,
+                      correlate_sdt_params = TRUE,
+                      aggregate = FALSE,
                       # tests = "Wald",
                       control = NULL) {
   bias <- response_bias
@@ -116,9 +120,12 @@ fit_mesdt <- function(discriminability,
   forms <- standardize_fit_formulas(discriminability, bias)
   discriminability <- forms[[1]]; bias <- forms[[2]]
 
+  data_input <- data
+  dv_input <- dv
+  trial_type_input <- trial_type
+
   if (typeof(dv) != "character") stop("'dv' must be of type 'character'.")
   if (is.null(data[[dv]])) stop(paste("Given dependent variable", dv, "not in data."))
-
 
 
   if (length(unique(data[[dv]])) != 2) stop("dv must be a binary variable.")
@@ -130,17 +137,19 @@ fit_mesdt <- function(discriminability,
            noise response as either 0 or -1")
     } else {
       if (all(sort(unique(data[[dv]])) == c(-1, 1))) {
-        data[[dv]] <- ifelse(data[[dv]] == -1, 0, 1)
+        data[["dv_num"]] <- ifelse(data[[dv]] == -1, 0, 1)
+      } else {
+        data[["dv_num"]] <- data[[dv]]
       }
     }
   } else if (inherits(data[[dv]], "factor") &
              length(unique(data[[dv]]) == 2)) {
     data[["dv_num"]] <- as.numeric(contrasts(data[[dv]])[data[[dv]], , drop = FALSE])
     data[["dv_num"]] <- ifelse(data[["dv_num"]] == -1, 0, data[["dv_num"]])
-    dv <- "dv_num"
   } else {
     stop("dv must be a binary numeric variable or factor")
   }
+  dv <- "dv_num"
 
   trial_type_var <- trial_type
 
@@ -166,6 +175,7 @@ fit_mesdt <- function(discriminability,
              length(unique(data[[trial_type_var]]) == 2)) {
     data[["trial_type_num"]] <- as.numeric(contrasts(data[[trial_type_var]])[data[[trial_type_var]], , drop = FALSE])
     data[["trial_type_num"]] <- ifelse(data[["trial_type_num"]] == 1, 1, -1)
+
     trial_type_var <- "trial_type_num"
   } else {
     stop("trial_type must be a binary numeric variable or factor")
@@ -175,7 +185,6 @@ fit_mesdt <- function(discriminability,
   #  stop("'trial_type' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
   #}
   #if (class(data[[trial_type_var]]) != "numeric")
-  #  stop("'trial_type' must be of type numeric.")
 
   if (typeof(correlate_sdt_params) != "logical") stop("'correlate_sdt_params' must be of type 'logical'.")
 
@@ -183,18 +192,34 @@ fit_mesdt <- function(discriminability,
   #if (is.null(distribution)) stop("Distribution must be gaussian, logistic, gumbel-min, or gumbel-max.")
   distribution <- match.arg(distribution)
 
+
+  # reverse-code dv for gumbel-min distribution
+  if (distribution == "gumbel-min") {
+    print("reversing dv")
+    data[["dv_rev"]] <- ifelse(data[[dv]] == 0, 1, 0)
+    #data[[dv]] <- ifelse(data[[dv]] == 0, 1, 0)
+  }
+
+  if (aggregate) {
+    data_orig <- data
+    if (distribution != "gumbel-min") {
+      data <- aggregate_data(data, discriminability, response_bias, "dv_num", "trial_type_num")
+    } else {
+      data <- aggregate_data(data, discriminability, response_bias, "dv_rev", "trial_type_num")
+    }
+  }
+
+  dv <- ifelse(aggregate, "dv_agg",
+               ifelse(distribution == "gumbel-min", "dv_rev", dv))
+
+
   #### Prep & fit model
   mm_all <- construct_modelmatrices(discriminability, bias, data, trial_type_var, distribution)
   m_frames <- mm_all[["m_frames"]]
   mm <- mm_all[["mm"]]
 
-  if (distribution == "gumbel-min") {
-    glmer_formula <- construct_glmer_formula(discriminability, bias, dv = "dv_rev", mm = mm,
-                                             correlate_sdt_params = correlate_sdt_params)
-  } else {
-    glmer_formula <- construct_glmer_formula(discriminability, bias, dv = dv, mm = mm,
-                                             correlate_sdt_params = correlate_sdt_params)
-  }
+  glmer_formula <- construct_glmer_formula(discriminability, bias, dv = dv, mm = mm,
+                                           correlate_sdt_params = correlate_sdt_params)
 
   # glmer() call consists of a mix of model matrices (model_data) and variables in "data"
   # (y, ID)
@@ -220,18 +245,22 @@ fit_mesdt <- function(discriminability,
     "user_input" = list(
       "discriminability" = discriminability,
       "bias" = bias,
-      "dv" = dv,
+      "dv_input" = dv_input,
+      "data_input" = data_input,
       "distribution" = distribution,
       "backend" = backend,
-      "trial_type_var" = trial_type_var,
-      "correlate_sdt_params" = correlate_sdt_params
+      "trial_type_input" = trial_type_input,
+      "correlate_sdt_params" = correlate_sdt_params,
+      "aggregate" = aggregate
     ),
     "internal" = list(
       "mm" = mm,
       "m_frames" = m_frames,
       "glmer_formula" = glmer_formula,
-      "data" = data,
-      "backend" = backend
+      "data_mod" = data,
+      "backend" = backend,
+      "dv" = dv,
+      "trial_type" = trial_type
     )
     ))
   # Give a warning if mean sensitivity is < 0

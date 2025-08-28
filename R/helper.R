@@ -199,3 +199,26 @@ standardize_fit_formulas <- function(form_disc, form_bias) {
 
 }
 
+
+aggregate_data <- function(data, form_disc, form_bias, dv, trial_type) {
+  grouping_vars <- c(unique(c(all.vars(form_disc), all.vars(form_bias))),
+                     trial_type, dv)
+  by_all <- data[, which(names(data) %in% grouping_vars )]
+  dat_agg <- aggregate(data[[dv]], by = by_all, FUN = length)
+  id_vars <- c(unique(c(all.vars(form_disc), all.vars(form_bias))), trial_type)
+  dat_agg_wide <- reshape(
+    dat_agg,
+    idvar = id_vars,          # column(s) identifying unique rows
+    timevar = dv,    # column whose values become new columns
+    direction = "wide"
+  )
+  new_names <- c("x.0", "x.1")
+
+  dat_agg_wide[[new_names[1]]][is.na(dat_agg_wide[[new_names[1]]])] <- 0
+  dat_agg_wide[[new_names[2]]][is.na(dat_agg_wide[[new_names[2]]])] <- 0
+
+
+  dat_agg_wide$weight <- dat_agg_wide[[new_names[1]]] + dat_agg_wide[[new_names[2]]]
+  dat_agg_wide$dv_agg <- dat_agg_wide[[new_names[2]]] / dat_agg_wide$weight
+  return(dat_agg_wide)
+}
