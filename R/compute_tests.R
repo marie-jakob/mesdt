@@ -161,7 +161,6 @@ compute_tests <- function(mesdt_fit, tests = "lrt",
                           tests_response_bias = "all",
                           nsim = 1000, cl = NULL, control = NULL, seed = NULL) {
   ##### Check Input
-  # TODO: give data as argument or take the data from the fitted model?
   # -> could lead to issues with extreme value
   test_ran_ef <- F
 
@@ -209,7 +208,9 @@ compute_tests <- function(mesdt_fit, tests = "lrt",
   formula_mu <- mesdt_fit$user_input$discriminability
   formula_lambda <- mesdt_fit$user_input$bias
   dv <- mesdt_fit$user_input$dv
-  trial_type_var <- mesdt_fit$user_input$trial_type_var
+  dv <- mesdt_fit$internal$dv
+  trial_type_var <- mesdt_fit$user_input$trial_type_input
+  trial_type_var <- mesdt_fit$internal$trial_type
   correlate_sdt_params <- mesdt_fit$user_input$correlate_sdt_params
   distribution <- mesdt_fit$user_input$distribution
 

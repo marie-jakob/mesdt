@@ -154,7 +154,7 @@ printmethod <- function(x) {
   if (pack != "glm") {
     pr <- paste(pr, " with the ", pack, " package. \n \n", sep = "")
   } else {
-    pr <- paste(pr, "with glm(). \n\n", sep = "")
+    pr <- paste(pr, " with glm(). \n\n", sep = "")
   }
   cat(pr)
   return()
@@ -205,6 +205,30 @@ simulate.mesdt_fit <- function(obj, ...) {
   #else if (mesdt_obj$backend == "glmmTMB") pred <- glmmTMB::simulate(mesdt_obj$fit_obj, ...)
   pred <- stats::simulate(obj$fit_obj, ...)
   return(pred)
+}
+
+
+#' @export
+AIC.mesdt_fit <- function(obj, ...) {
+  return(AIC(obj$fit_obj))
+}
+
+
+#' @export
+BIC.mesdt_fit <- function(obj, ...) {
+  return(BIC(obj$fit_obj))
+}
+
+
+#' @export
+logLik.mesdt_fit <- function(obj, ...) {
+  return(logLik(obj$fit_obj))
+}
+
+
+#' @export
+df.resisual.mesdt_fit <- function(obj, ...) {
+  return(df.resisual(obj$fit_obj))
 }
 
 #------------------------------------------------------------------------------#
