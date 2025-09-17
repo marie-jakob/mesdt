@@ -33,7 +33,7 @@ test_that("compute_tests() throws a message when there is nothing to test in the
   # Case 1: no predictors & test_intercepts = F
   fit <- fit_mesdt(~ 1 + (x1 || ID), ~ 1 + (x1 || ID), dv = "y",
                    trial_type = "trial_type_fac", data = internal_sdt_data)
-  expect_message(compute_tests(fit, test_intercepts = F))
+  expect_error(compute_tests(fit, test_intercepts = F))
 
   # TODO: this does not throw the expected message
 })

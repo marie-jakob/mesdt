@@ -37,8 +37,8 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
 
   # Discriminability
   emm_lme <- data.frame(contrast(emmeans(test_mod_lme, ~ status_fac * committee),
-                      list("denied" = c(-1, 1, 0, 0),
-                           "granted" = c(0, 0, -1, 1))))
+                      list("denied" = c(1, -1, 0, 0),
+                           "granted" = c(0, 0, 1, -1))))
   emm_mesdt <- data.frame(emmeans(test_mod_mesdt, ~ committee, dpar = "sensitivity"))
   expect_equal(emm_lme$estimate, emm_mesdt$emmean, tolerance = 1e-4)
 
@@ -65,9 +65,9 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
 
   # Sensitivity:
   emm_lme <- data.frame(contrast(emmeans(test_mod_lme, ~ status_fac * contingencies),
-                      list("regular" = c(-1, 1, 0, 0, 0, 0),
-                           "balanced" = c(0, 0, -1, 1, 0, 0),
-                           "reversed" = c(0, 0, 0, 0, -1, 1))))
+                      list("regular" = c(1, -1, 0, 0, 0, 0),
+                           "balanced" = c(0, 0, 1, -1, 0, 0),
+                           "reversed" = c(0, 0, 0, 0, 1, -1))))
   emm_mesdt <- data.frame(emmeans(test_mod_mesdt, ~ contingencies, dpar = "sensitivity"))
   expect_equal(emm_lme$estimate, emm_mesdt$emmean, tolerance = 1e-4)
   expect_equal(emm_lme$SE, emm_mesdt$SE, tolerance = 1e-4)
@@ -95,12 +95,12 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
 
   # Sensitivity:
   emm_lme <- data.frame(contrast(emmeans(test_mod_lme, ~ status_fac * contingencies * emp_gender),
-                                 list("1" = c(-1, 1, rep(0, 10)),
-                                      "2" = c(rep(0, 2), -1, 1, rep(0, 8)),
-                                      "3" = c(rep(0, 4), -1, 1, rep(0, 6)),
-                                      "4" = c(rep(0, 6), -1, 1, rep(0, 4)),
-                                      "5" = c(rep(0, 8), -1, 1, rep(0, 2)),
-                                      "6" = c(rep(0, 10), -1, 1))))
+                                 list("1" = c(1, -1, rep(0, 10)),
+                                      "2" = c(rep(0, 2), 1, -1, rep(0, 8)),
+                                      "3" = c(rep(0, 4), 1, -1, rep(0, 6)),
+                                      "4" = c(rep(0, 6), 1, -1, rep(0, 4)),
+                                      "5" = c(rep(0, 8), 1, -1, rep(0, 2)),
+                                      "6" = c(rep(0, 10), 1, -1))))
   emm_mesdt <- data.frame(emmeans(test_mod_mesdt, ~ contingencies * emp_gender, dpar = "sensitivity"))
   expect_equal(emm_lme$estimate, emm_mesdt$emmean, tolerance = 1e-4)
   expect_equal(emm_lme$SE, emm_mesdt$SE, tolerance = 1e-4)
@@ -134,12 +134,12 @@ test_that("emmeans.mesdt_fit() works for glmmTMB", {
 
   # Sensitivity:
   emm_tmb <- data.frame(contrast(emmeans(test_mod_tmb, ~ status_fac * contingencies * emp_gender),
-                                 list("1" = c(-1, 1, rep(0, 10)),
-                                      "2" = c(rep(0, 2), -1, 1, rep(0, 8)),
-                                      "3" = c(rep(0, 4), -1, 1, rep(0, 6)),
-                                      "4" = c(rep(0, 6), -1, 1, rep(0, 4)),
-                                      "5" = c(rep(0, 8), -1, 1, rep(0, 2)),
-                                      "6" = c(rep(0, 10), -1, 1))))
+                                 list("1" = c(1, -1, rep(0, 10)),
+                                      "2" = c(rep(0, 2), 1, -1, rep(0, 8)),
+                                      "3" = c(rep(0, 4), 1, -1, rep(0, 6)),
+                                      "4" = c(rep(0, 6), 1, -1, rep(0, 4)),
+                                      "5" = c(rep(0, 8), 1, -1, rep(0, 2)),
+                                      "6" = c(rep(0, 10), 1, -1))))
   emm_mesdt <- data.frame(emmeans(test_mod_mesdt, ~ contingencies * emp_gender, dpar = "sensitivity"))
   expect_equal(emm_tmb$estimate, emm_mesdt$emmean, tolerance = 1e-2)
   expect_equal(emm_tmb$SE, emm_mesdt$SE, tolerance = 1e-2)
@@ -169,12 +169,12 @@ test_that("emmeans.mesdt_fit() works for a single-level model fit with glm()", {
 
   # Sensitivity:
   emm_glm <- data.frame(contrast(emmeans(test_mod_glm, ~ status_fac * contingencies * emp_gender),
-                                 list("1" = c(-1, 1, rep(0, 10)),
-                                      "2" = c(rep(0, 2), -1, 1, rep(0, 8)),
-                                      "3" = c(rep(0, 4), -1, 1, rep(0, 6)),
-                                      "4" = c(rep(0, 6), -1, 1, rep(0, 4)),
-                                      "5" = c(rep(0, 8), -1, 1, rep(0, 2)),
-                                      "6" = c(rep(0, 10), -1, 1))))
+                                 list("1" = c(1, -1, rep(0, 10)),
+                                      "2" = c(rep(0, 2), 1, -1, rep(0, 8)),
+                                      "3" = c(rep(0, 4), 1, -1, rep(0, 6)),
+                                      "4" = c(rep(0, 6), 1, -1, rep(0, 4)),
+                                      "5" = c(rep(0, 8), 1, -1, rep(0, 2)),
+                                      "6" = c(rep(0, 10), 1, -1))))
   emm_mesdt <- data.frame(emmeans(test_mod_mesdt, ~ contingencies * emp_gender, dpar = "sensitivity"))
   expect_equal(emm_glm$estimate, emm_mesdt$emmean, tolerance = 1e-2)
   expect_equal(emm_glm$SE, emm_mesdt$SE, tolerance = 1e-2)

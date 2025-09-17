@@ -21,8 +21,8 @@ test_that("gumbel-min implementation through cloglog gives correct results", {
     mutate(n = fair + unfair) %>%
     mutate(fair_rel = fair / n,
            unfair_rel = unfair / n) -> dat_agg
-  ht <- dat_agg$unfair_rel[2]
-  fa <- dat_agg$unfair_rel[1]
+  ht <- dat_agg$unfair_rel[1]
+  fa <- dat_agg$unfair_rel[2]
   # taken from Meyer-Grant et al. (2025)
   g <- -log(-log(ht)) + log(-log(fa))
   kappa <- log(-log(fa)) - g / 2
@@ -40,7 +40,8 @@ test_that("gumbel-min implementation works with response variable with -1 and 1"
   library(tidyr)
   library(dplyr)
 
-  dat_exp_2$dv_fac <- factor(ifelse(dat_exp_2$assessment == 0, -1, 1))
+  dat_exp_2$dv_fac <- factor(ifelse(dat_exp_2$assessment == 0, 0, 1))
+  contrasts(dat_exp_2$dv_fac) <- contr.treatment(2)
 
   gumbel_min_mod <- fit_mesdt(~ 1,
                               ~ 1,
@@ -54,8 +55,8 @@ test_that("gumbel-min implementation works with response variable with -1 and 1"
     mutate(n = x0 + x1) %>%
     mutate(fair_rel = x0 / n,
            unfair_rel = x1 / n) -> dat_agg
-  ht <- dat_agg$unfair_rel[2]
-  fa <- dat_agg$unfair_rel[1]
+  ht <- dat_agg$unfair_rel[1]
+  fa <- dat_agg$unfair_rel[2]
 
   # taken from Meyer-Grant et al. (2025)
   g <- -log(-log(ht)) + log(-log(fa))
@@ -71,9 +72,11 @@ test_that("gumbel-min implementation works with predictors.", {
   skip_if_not_installed("janitor")
   skip_if_not_installed("tidyr")
   skip_if_not_installed("dplyr")
+  skip_if_not_installed("emmeans")
   library(janitor)
   library(tidyr)
   library(dplyr)
+  library(emmeans)
 
   gumbel_min_mod <- fit_mesdt(~ 1 + committee,
                               ~ 1 + committee,
@@ -92,8 +95,8 @@ test_that("gumbel-min implementation works with predictors.", {
     mutate(fair_rel = fair / n,
            unfair_rel = unfair / n) -> dat_agg
 
-  ht <- dat_agg$unfair_rel[2]
-  fa <- dat_agg$unfair_rel[1]
+  ht <- dat_agg$unfair_rel[1]
+  fa <- dat_agg$unfair_rel[2]
   # taken from Meyer-Grant et al. (2025)
   g <- -log(-log(ht)) + log(-log(fa))
   kappa <- log(-log(fa)) - g / 2
@@ -101,8 +104,8 @@ test_that("gumbel-min implementation works with predictors.", {
   expect_equal(g, em_d[1, 2])
   expect_equal(kappa, em_c[1, 2])
 
-  ht <- dat_agg$unfair_rel[4]
-  fa <- dat_agg$unfair_rel[3]
+  ht <- dat_agg$unfair_rel[3]
+  fa <- dat_agg$unfair_rel[4]
   # taken from Meyer-Grant et al. (2025)
   g <- -log(-log(ht)) + log(-log(fa))
   kappa <- log(-log(fa)) - g / 2
@@ -116,8 +119,6 @@ test_that("gumbel-min implementation works with predictors.", {
 #### Gumbel Max ####
 
 test_that("gumbel-max produces reasonable results.", {
-  skip_if_not_installed("ordinal")
-  library(ordinal)
   skip_if_not_installed("janitor")
   skip_if_not_installed("tidyr")
   skip_if_not_installed("dplyr")
@@ -139,8 +140,8 @@ test_that("gumbel-max produces reasonable results.", {
     mutate(fair_rel = fair / n,
            unfair_rel = unfair / n) -> dat_agg
 
-  ht <- dat_agg$unfair_rel[2]
-  fa <- dat_agg$unfair_rel[1]
+  ht <- dat_agg$unfair_rel[1]
+  fa <- dat_agg$unfair_rel[2]
 
   cloglog = function(x) log(-log(1-x))
 
@@ -162,8 +163,6 @@ test_that("gumbel-max produces reasonable results.", {
 
 
 test_that("gumbel-max works with predictors.", {
-  skip_if_not_installed("ordinal")
-  library(ordinal)
   skip_if_not_installed("janitor")
   skip_if_not_installed("tidyr")
   skip_if_not_installed("dplyr")
@@ -190,8 +189,8 @@ test_that("gumbel-max works with predictors.", {
 
   cloglog = function(x) log(-log(1-x))
 
-  ht <- dat_agg$unfair_rel[2]
-  fa <- dat_agg$unfair_rel[1]
+  ht <- dat_agg$unfair_rel[1]
+  fa <- dat_agg$unfair_rel[2]
 
   sens <- cloglog(ht) - cloglog(fa)
   bias <- -cloglog(fa) - (sens / 2)
@@ -199,8 +198,8 @@ test_that("gumbel-max works with predictors.", {
   expect_equal(sens, em_d[1, 2])
   expect_equal(bias, em_c[1, 2])
 
-  ht <- dat_agg$unfair_rel[4]
-  fa <- dat_agg$unfair_rel[3]
+  ht <- dat_agg$unfair_rel[3]
+  fa <- dat_agg$unfair_rel[4]
 
   sens <- cloglog(ht) - cloglog(fa)
   bias <- -cloglog(fa) - (sens / 2)

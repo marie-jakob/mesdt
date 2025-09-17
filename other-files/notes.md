@@ -3,18 +3,14 @@
 ### TODOs
 
 Functionality / Technical stuff:
-(+ gumbel-max + tests)
 + Aggregation
 + tests continuous predictors
 + tests bootstrap with many samples / compare with afex
-+ gumbel-max
 
 Post-Processing / Pretty Stuff
 + apa_print_mlsdt() method
   + can have a dependency for papaja
-+ pretty output
   + correct names for the tests
-+ df for random effects
 + progress bars PB
 + reformulas
 

@@ -20,8 +20,8 @@ test_that("a basic equal-variance gaussian model works", {
     mutate(fair_rel = fair / n,
            unfair_rel =unfair / n) -> dat_agg
 
-  ht <- dat_agg$unfair_rel[2]
-  fa <- dat_agg$unfair_rel[1]
+  ht <- dat_agg$unfair_rel[1]
+  fa <- dat_agg$unfair_rel[2]
   # taken from Meyer-Grant et al. (2025)
   d <- qnorm(ht) - qnorm(fa)
   c <- -qnorm(fa) - d / 2
@@ -58,16 +58,16 @@ test_that("a basic equal-variance gaussian model with a predictor works", {
     mutate(fair_rel = fair / n,
            unfair_rel =unfair / n) -> dat_agg
 
-  ht <- dat_agg$unfair_rel[2]
-  fa <- dat_agg$unfair_rel[1]
+  ht <- dat_agg$unfair_rel[1]
+  fa <- dat_agg$unfair_rel[2]
   d <- qnorm(ht) - qnorm(fa)
   c <- -qnorm(fa) - d / 2
 
   expect_equal(d, em_d[1, 2])
   expect_equal(c, em_c[1, 2])
 
-  ht <- dat_agg$unfair_rel[4]
-  fa <- dat_agg$unfair_rel[3]
+  ht <- dat_agg$unfair_rel[3]
+  fa <- dat_agg$unfair_rel[4]
   d <- qnorm(ht) - qnorm(fa)
   c <- -qnorm(fa) - d / 2
 

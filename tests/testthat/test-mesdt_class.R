@@ -26,3 +26,23 @@ test_that("simulate() does something sensible", {
 
   options("mesdt.backend" = "lme4")
 })
+
+
+
+
+test_that("summary() works for factors with > 2 levels", {
+  form_mu <- ~ contingencies + (1 | id)
+  form_lambda <- ~ contingencies + (1 | id)
+  # Same for the uncorrelated model
+  fit <- fit_mesdt(form_mu, form_lambda,
+                   dv = "assessment",
+                   trial_type = "status_fac",
+                   data = dat_exp_2)
+  s <- summary(fit)
+
+
+  expect_equal(unname(s$c_coef[, 1]), unname(fixef(fit$fit_obj)[1:3] * -1))
+  expect_equal(unname(s$d_coef[, 1]), unname(fixef(fit$fit_obj)[4:6]))
+
+})
+

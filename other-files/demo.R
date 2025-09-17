@@ -30,11 +30,11 @@ contrasts(dat_exp_1$status_fac) <- contr.sum(2)
 # set backend to lme4
 options("mesdt.backend" = "lme4")
 
-fit_sdt <- fit_mesdt(formula_mu = ~ emp_gender + (1 | id),
-                     formula_lambda = ~ committee + (committee | id),
+fit_sdt <- fit_mesdt(~ emp_gender + (1 | id),
+                     ~ committee + (committee | id),
                      data = dat_exp_1,
                      dv = "response",
-                     trial_type_var = "status_fac")
+                     trial_type = "status_fac")
 summary(fit_sdt$fit_obj)
 # Model object now contains every information from the fitted model (including Wald tests)
 # Summary method prints coefficients and Wald tests for the parameters

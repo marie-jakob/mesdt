@@ -6,11 +6,11 @@
 \usage{
 fit_mesdt(
   discriminability,
-  bias,
+  response_bias,
   dv,
   trial_type = "trial_type",
   data,
-  distribution = "gaussian",
+  distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
   correlate_sdt_params = T,
   control = NULL
 )
@@ -20,7 +20,7 @@ fit_mesdt(
 discriminability with the common syntax for mixed-effects models from
 \code{lme4} (see Details).}
 
-\item{bias}{\code{formula} specifying fixed and random effects on response bias
+\item{response_bias}{\code{formula} specifying fixed and random effects on response bias
 with the common syntax for mixed-effects models from lme4 (see Details).}
 
 \item{dv}{\code{character} string specifying the name of the (binary) dependent

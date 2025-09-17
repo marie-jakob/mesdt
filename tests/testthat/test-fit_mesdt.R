@@ -264,7 +264,8 @@ test_that("mesdt throws a message when sensitivity < 0", {
 test_that("mesdt_fit() gives the same results with different types of trialtype and dv variables", {
   options("mesdt.backend" = "glmmTMB")
 
-  debi3subset$status_fac <- factor(debi3subset$status, levels = c(-1, 1))
+  debi3subset$status_fac <- factor(ifelse(debi3subset$status == "signal", 1, -1), levels = c(1, -1))
+  contrasts(debi3subset$status_fac) <- contr.sum(2)
   debi3subset$dv_num <- as.numeric(contrasts(debi3subset$assessment)[debi3subset$assessment, , drop = FALSE])
 
   # both factors
@@ -272,16 +273,18 @@ test_that("mesdt_fit() gives the same results with different types of trialtype 
             ~ 1 + (1 | id),
             dv = "assessment",
             data = debi3subset, trial_type = "status_fac")
+
   # both numeric
   fit_2 <- fit_mesdt(~ 1 + (1 | id),
                      ~ 1 + (1 | id),
                      dv = "dv_num",
-                     data = debi3subset, trial_type = "status")
+                     data = debi3subset, trial_type = "status_num")
   # dv num, trialtype factor
   fit_3 <- fit_mesdt(~ 1 + (1 | id),
                      ~ 1 + (1 | id),
                      dv = "dv_num",
                      data = debi3subset, trial_type = "status_fac")
+
   # dv factor, trialtype num
   fit_4 <- fit_mesdt(~ 1 + (1 | id),
                      ~ 1 + (1 | id),
@@ -405,3 +408,4 @@ test_that("mesdt_fit() gives the same results with different types of trialtype 
     options("mesdt.backend" = "lme4")
 }
 )
+

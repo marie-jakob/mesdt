@@ -210,25 +210,25 @@ simulate.mesdt_fit <- function(obj, ...) {
 
 #' @export
 AIC.mesdt_fit <- function(obj, ...) {
-  return(AIC(obj$fit_obj))
+  return(AIC(obj$fit_obj, ...))
 }
 
 
 #' @export
 BIC.mesdt_fit <- function(obj, ...) {
-  return(BIC(obj$fit_obj))
+  return(BIC(obj$fit_obj, ...))
 }
 
 
 #' @export
 logLik.mesdt_fit <- function(obj, ...) {
-  return(logLik(obj$fit_obj))
+  return(logLik(obj$fit_obj, ...))
 }
 
 
 #' @export
 df.resisual.mesdt_fit <- function(obj, ...) {
-  return(df.resisual(obj$fit_obj))
+  return(df.resisual(obj$fit_obj, ...))
 }
 
 #------------------------------------------------------------------------------#

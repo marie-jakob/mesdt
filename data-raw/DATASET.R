@@ -96,39 +96,41 @@ sim_data <- data.frame(sim3)
 
 names(sim_data) <- c("y", "trial_type", "x1", "ID")
 
-sim_data$y <- factor(sim_data$y)
-sim_data$trial_type_fac <- sim_data$trial_type * 2
-#sim_data$x1 <- factor(sim_data$x1)
+# sim_data$y <- factor(ifelse(sim_data$y == 1, 1, -1), levels = c(1, -1))
+sim_data$trial_type_fac <- factor(sim_data$trial_type * 2, levels = c(1, -1))
+
+
+sim_data$x1_num <- sim_data$x1
+sim_data$x1 <- factor(sim_data$x1)
+contrasts(sim_data$x1) <- c(-1, 1)
 sim_data$ID <- factor(sim_data$ID)
-
-
 internal_sdt_data <- sim_data
+
 
 
 #------------------------------------------------------------------------------#
 #### GLMM for sim data ####
 
 
-model_test <- glmer(y ~ x1 * trial_type + (x1 * trial_type | ID),
+model_test <- glmer(y ~ x1_num* trial_type + (x1_num * trial_type | ID),
                     family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 0)
 
-
-model_test_afex <- afex::mixed(y ~ x1 * trial_type + (x1 * trial_type | ID),
+model_test_afex <- afex::mixed(y ~ x1 * trial_type + (x1_num * trial_type | ID),
                                 family = binomial(link = "probit"), data = internal_sdt_data,
                                 method = "LRT", test_intercept = T)
 
-model_test_uncor <- glmer(y ~ x1 * trial_type + (x1 * trial_type || ID),
+model_test_uncor <- glmer(y ~ x1_num * trial_type + (x1_num * trial_type || ID),
                           family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 0)
 
-model_test_uncor_afex <- afex::mixed(y ~ x1 * trial_type + (x1 * trial_type || ID),
+model_test_uncor_afex <- afex::mixed(y ~ x1_num* trial_type + (x1_num * trial_type || ID),
                                family = binomial(link = "probit"), data = internal_sdt_data,
                                method = "LRT", test_intercept = T)
 
 # same with glmmTMB
-model_test_tmb <- glmmTMB(y ~ x1 * trial_type + (x1 * trial_type | ID),
+model_test_tmb <- glmmTMB(y ~ x1_num * trial_type + (x1_num * trial_type | ID),
                     family = binomial(link = "probit"), data = internal_sdt_data)
 
-model_test_uncor_tmb <- glmmTMB(y ~ x1 * trial_type + (x1 * trial_type | ID),
+model_test_uncor_tmb <- glmmTMB(y ~ x1_num * trial_type + (x1_num * trial_type | ID),
                     family = binomial(link = "probit"), data = internal_sdt_data)
 
 
@@ -168,7 +170,7 @@ dat_exp_2 %>%
   dplyr::mutate(committee = factor(ifelse(committee_ef == 1, "granted", "denied")),
                 emp_gender = factor(ifelse(emp_gender_ef == 1, "f", "m")),
                 # status_fac = factor(status_ef),
-                status_fac = status_ef,
+                status_fac = factor(status_ef, levels = c(1, -1)),
                 status_ef = status_ef / 2,
                 contingencies = factor(contingencies),
                 stimulus = sample(c("stim-1", "stim-2", "stim-3",
@@ -178,7 +180,7 @@ dat_exp_2 %>%
                                   replace = T),
                 assessment = ifelse(assessment == "fair", 0, 1)) -> dat_exp_2
 
-# contrasts(dat_exp_2$status_fac) <- contr.sum(2)
+contrasts(dat_exp_2$status_fac) <- contr.sum(2)
 contrasts(dat_exp_2$committee) <- contr.sum(2)
 contrasts(dat_exp_2$emp_gender) <- contr.sum(2)
 contrasts(dat_exp_2$contingencies) <- contr.sum(3)
