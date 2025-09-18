@@ -120,6 +120,8 @@ fit_mesdt <- function(discriminability,
   forms <- standardize_fit_formulas(discriminability, bias)
   discriminability <- forms[[1]]; bias <- forms[[2]]
 
+  data_name <- deparse(substitute(data))
+
   data_input <- data
   dv_input <- dv
   trial_type_input <- trial_type
@@ -180,6 +182,7 @@ fit_mesdt <- function(discriminability,
   } else {
     stop("trial_type must be a binary numeric variable or factor")
   }
+  # print(data_name)
 
   #if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
   #  stop("'trial_type' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
@@ -229,15 +232,16 @@ fit_mesdt <- function(discriminability,
 
   # Check backend stuff
   if (! is.null(summary(fit_obj)$objClass[1])) {
-    print("lme4 was used to fit the model.")
+    print("Model was estimated with lme4.")
     backend <- "lme4"
   } else if (any(inherits(fit_obj, "glm"))) {
-    print("glm() was used to fit the model.")
+    print("Model was estimated with glm().")
     backend <- "glm"
   } else {
-    print("glmmTMB was used to fit the model.")
+    print("Model was estimated with glmmTMB.")
     backend <- "glmmTMB"
   }
+
 
 
   obj <- new_mesdt_fit(list(
@@ -246,6 +250,7 @@ fit_mesdt <- function(discriminability,
       "discriminability" = discriminability,
       "bias" = bias,
       "dv_input" = dv_input,
+      "data_name" = data_name,
       "data_input" = data_input,
       "distribution" = distribution,
       "backend" = backend,

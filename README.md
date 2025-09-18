@@ -79,15 +79,15 @@ of the data represents one observation of the binary response variable.
 
 ``` r
 head(debi3subset)
-#> # A tibble: 6 × 9
-#>   id    assessment status objective committee emp_gender file_name      participant_gender   age
-#>   <fct> <fct>       <dbl> <chr>     <fct>     <fct>      <fct>          <fct>              <dbl>
-#> 1 1     fair           -1 true      granted   m          W_M_20.png     m                     35
-#> 2 1     fair           -1 true      granted   m          W_M_47.png     m                     35
-#> 3 1     fair           -1 true      granted   m          W_M_f_4.jpg    m                     35
-#> 4 1     unfair          1 true      denied    f          W_F_o_u_10.jpg m                     35
-#> 5 1     unfair          1 true      denied    f          W_F_122.png    m                     35
-#> 6 1     unfair          1 true      denied    m          W_M_10.png     m                     35
+#> # A tibble: 6 × 10
+#>   id    assessment status objective committee emp_gender file_name      participant_gender   age status_num
+#>   <fct> <fct>      <fct>  <chr>     <fct>     <fct>      <fct>          <fct>              <dbl>      <dbl>
+#> 1 1     unbiased   noise  true      granted   m          W_M_20.png     m                     35         -1
+#> 2 1     unbiased   noise  true      granted   m          W_M_47.png     m                     35         -1
+#> 3 1     unbiased   noise  true      granted   m          W_M_f_4.jpg    m                     35         -1
+#> 4 1     biased     signal true      denied    f          W_F_o_u_10.jpg m                     35          1
+#> 5 1     biased     signal true      denied    f          W_F_122.png    m                     35          1
+#> 6 1     biased     signal true      denied    m          W_M_10.png     m                     35          1
 ```
 
 Fitting an SDT model requires at least two variables: the binary
@@ -122,19 +122,24 @@ mod <- fit_mesdt(
   trial_type = "status",
   dv = "assessment"
 )
-#> [1] "lme4 was used to fit the model."
+#> [1] "Model was estimated with lme4."
 
 summary(mod)
 #> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. 
 #>  
 #> Discriminability:  ~committee * emp_gender + (1 | id) 
 #> Response Bias:     ~committee * emp_gender + (committee | id) 
+#> Data:  debi3subset 
+#> 
+#>       AIC       BIC    logLik -2*log(L)  df.resid 
+#>    4746.8    4838.4   -2359.4    4718.8      5106 
 #> 
 #> Random effects:
 #>  Groups Name                          Std.Dev. Corr       
 #>  id     (Intercept)(Response Bias)    0.3848              
 #>         committee1(Response Bias)     0.5801   -0.17      
 #>         (Intercept)(Discriminability) 0.3902   -0.39 -0.18
+#> Number of obs: 5120, groups:  id, 20
 #> 
 #> Fixed effects and Wald tests for discriminability: 
 #>                        Estimate Std. Error z value Pr(>|z|)

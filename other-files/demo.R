@@ -41,12 +41,12 @@ summary(fit_sdt$fit_obj)
 
 
 # backend glmmTMB
-options("mesdt.backend" = "glmmTMB")
-fit_sdt_glmmTMB <- fit_mesdt(formula_mu = ~ emp_gender * participant_gender + (1 | id),
-                             formula_lambda = ~ committee * emp_gender * participant_gender + (committee | id),
+set_backend("glmmTMB")
+fit_sdt_glmmTMB <- fit_mesdt(~ emp_gender * participant_gender + (1 | id),
+                             ~ committee * emp_gender * participant_gender + (committee | id),
                              data = dat_exp_1,
                              dv = "response",
-                             trial_type_var = "status_fac")
+                             trial_type = "status_fac")
 summary(fit_sdt_glmmTMB)
 
 
@@ -55,13 +55,11 @@ summary(fit_sdt_glmmTMB)
 CL <- makeCluster(4, type = "SOCK")
 
 fit_sdt_glmmTMB <- compute_tests(fit_sdt_glmmTMB,
-                        data = dat_exp_1,
-                        type = 3,
-                        cl = CL,
+                        #cl = CL,
                         test_intercepts = T,
-                        test_params_mu = "all",
-                        test_params_lambda = ~ committee,
-                        test_ran_ef = F)
+                        tests_discriminability = "all",
+                        tests_response_bias = ~ committee)
+
 # -> Method returns the modified fit object with the added tests
 # Summary method prints coefficients and all tests that are stored in the model
 
@@ -82,7 +80,8 @@ stopCluster(CL)
 summary(fit_sdt_glmmTMB)
 # Summary method now also prints PB tests
 
-# (2b. Tests for random effects -> only Type 3)
+
+
 
 # 3. Post-processing with emmeans()
 

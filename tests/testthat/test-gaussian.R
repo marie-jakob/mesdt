@@ -16,9 +16,9 @@ test_that("a basic equal-variance gaussian model works", {
     summarize(n = n()) %>%
     pivot_wider(names_from = c(assessment), values_from = n) %>%
     clean_names() %>%
-    mutate(n = fair + unfair) %>%
-    mutate(fair_rel = fair / n,
-           unfair_rel =unfair / n) -> dat_agg
+    mutate(n = biased + unbiased) %>%
+    mutate(fair_rel = unbiased / n,
+           unfair_rel = biased / n) -> dat_agg
 
   ht <- dat_agg$unfair_rel[1]
   fa <- dat_agg$unfair_rel[2]
@@ -54,9 +54,9 @@ test_that("a basic equal-variance gaussian model with a predictor works", {
     summarize(n = n()) %>%
     pivot_wider(names_from = c(assessment), values_from = n) %>%
     clean_names() %>%
-    mutate(n = fair + unfair) %>%
-    mutate(fair_rel = fair / n,
-           unfair_rel =unfair / n) -> dat_agg
+    mutate(n = biased + unbiased) %>%
+    mutate(fair_rel = unbiased / n,
+           unfair_rel = biased / n) -> dat_agg
 
   ht <- dat_agg$unfair_rel[1]
   fa <- dat_agg$unfair_rel[2]

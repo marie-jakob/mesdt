@@ -1,6 +1,5 @@
 test_that("gumbel-min implementation through cloglog gives correct results", {
 
-
   skip_if_not_installed("janitor")
   skip_if_not_installed("tidyr")
   skip_if_not_installed("dplyr")
@@ -18,9 +17,9 @@ test_that("gumbel-min implementation through cloglog gives correct results", {
     summarize(n = n()) %>%
     pivot_wider(names_from = c(assessment), values_from = n) %>%
     clean_names() %>%
-    mutate(n = fair + unfair) %>%
-    mutate(fair_rel = fair / n,
-           unfair_rel = unfair / n) -> dat_agg
+    mutate(n = biased + unbiased) %>%
+    mutate(fair_rel = unbiased / n,
+           unfair_rel = biased / n) -> dat_agg
   ht <- dat_agg$unfair_rel[1]
   fa <- dat_agg$unfair_rel[2]
   # taken from Meyer-Grant et al. (2025)
@@ -40,21 +39,23 @@ test_that("gumbel-min implementation works with response variable with -1 and 1"
   library(tidyr)
   library(dplyr)
 
-  dat_exp_2$dv_fac <- factor(ifelse(dat_exp_2$assessment == 0, 0, 1))
-  contrasts(dat_exp_2$dv_fac) <- contr.treatment(2)
+  debi3$dv_1_1 <- ifelse(debi3$assessment == "unbiased", -1, 1)
+  # contrasts(dat_exp_2$dv_fac) <- contr.treatment(2)
 
   gumbel_min_mod <- fit_mesdt(~ 1,
                               ~ 1,
-                              dv = "dv_fac", trial_type = "status_fac",
-                              data = dat_exp_2, distribution = "gumbel-min")
-  dat_exp_2 %>%
-    group_by(assessment, status_fac) %>%
+                              dv = "dv_1_1", trial_type = "status",
+                              data = debi3, distribution = "gumbel-min")
+  debi3 %>%
+    group_by(assessment, status) %>%
     summarize(n = n()) %>%
     pivot_wider(names_from = c(assessment), values_from = n) %>%
     clean_names() %>%
-    mutate(n = x0 + x1) %>%
-    mutate(fair_rel = x0 / n,
-           unfair_rel = x1 / n) -> dat_agg
+    mutate(n = biased + unbiased) %>%
+    mutate(fair_rel = unbiased / n,
+           unfair_rel = biased / n) -> dat_agg
+
+
   ht <- dat_agg$unfair_rel[1]
   fa <- dat_agg$unfair_rel[2]
 
@@ -87,13 +88,13 @@ test_that("gumbel-min implementation works with predictors.", {
   em_d <- data.frame(emmeans(gumbel_min_mod, ~ committee, dpar = "sensitivity"))
 
   debi3 %>%
-    group_by(committee, assessment, status) %>%
+    group_by(assessment, committee, status) %>%
     summarize(n = n()) %>%
     pivot_wider(names_from = c(assessment), values_from = n) %>%
     clean_names() %>%
-    mutate(n = fair + unfair) %>%
-    mutate(fair_rel = fair / n,
-           unfair_rel = unfair / n) -> dat_agg
+    mutate(n = biased + unbiased) %>%
+    mutate(fair_rel = unbiased / n,
+           unfair_rel = biased / n) -> dat_agg
 
   ht <- dat_agg$unfair_rel[1]
   fa <- dat_agg$unfair_rel[2]
@@ -136,9 +137,9 @@ test_that("gumbel-max produces reasonable results.", {
     summarize(n = n()) %>%
     pivot_wider(names_from = c(assessment), values_from = n) %>%
     clean_names() %>%
-    mutate(n = fair + unfair) %>%
-    mutate(fair_rel = fair / n,
-           unfair_rel = unfair / n) -> dat_agg
+    mutate(n = biased + unbiased) %>%
+    mutate(fair_rel = unbiased / n,
+           unfair_rel = biased / n) -> dat_agg
 
   ht <- dat_agg$unfair_rel[1]
   fa <- dat_agg$unfair_rel[2]
@@ -179,13 +180,13 @@ test_that("gumbel-max works with predictors.", {
   em_d <- data.frame(emmeans(gumbel_max_mod, ~ committee, dpar = "sensitivity"))
 
   debi3 %>%
-    group_by(committee, assessment, status) %>%
+    group_by(assessment, committee, status) %>%
     summarize(n = n()) %>%
     pivot_wider(names_from = c(assessment), values_from = n) %>%
     clean_names() %>%
-    mutate(n = fair + unfair) %>%
-    mutate(fair_rel = fair / n,
-           unfair_rel = unfair / n) -> dat_agg
+    mutate(n = biased + unbiased) %>%
+    mutate(fair_rel = unbiased / n,
+           unfair_rel = biased / n) -> dat_agg
 
   cloglog = function(x) log(-log(1-x))
 

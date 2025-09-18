@@ -18,7 +18,6 @@ print.mesdt_fit <- function(x) {
 #' @export
 summary.mesdt_fit <- function(obj) {
 
-
   if (obj$user_input$backend == "lme4" | obj$user_input$backend == "glm") {
 
     # Get coefficients
@@ -110,14 +109,10 @@ summary.mesdt_fit <- function(obj) {
       }
     }
 
-    #fitMsgs <- lme4::.merMod.msgs(obj$fit_obj)
-    #if(any(nchar(fitMsgs) > 0)) {
-    #  cat("fit warnings:\n"); writeLines(fitMsgs)
-    #}
-    #.prt.warn(x@optinfo,summary=TRUE)
-
   }
 
+
+  llAIC <- llikAIC(obj$fit_obj)
 
   to_return <- list(
     "d_coef" = d_coef,
@@ -125,13 +120,26 @@ summary.mesdt_fit <- function(obj) {
     "opt_info" = opt_info,
     "user_input" = obj$user_input,
     "ngrps" = ngrps,
-    "nobs" = nobs
+    "nobs" = nobs,
+    "AICtab" = llAIC[["AICtab"]]
   )
+
+  if (obj$user_input$backend == "lme4") {
+    fitMsgs <- .merMod.msgs(obj$fit_obj)
+    # fitMsgs <- summ_lme4$fitMsgs
+    if (any(nchar(fitMsgs) > 0)) {
+      cat("fit warnings:\n"); writeLines(fitMsgs)
+    }
+    #.prt.warn(obj$fit_obj@optinfo, summary=FALSE)
+    to_return[["fitMsgs"]] <- fitMsgs
+    to_return[["optinfo"]] <- obj$fit_obj@optinfo
+  } else if (obj$user_input$backend == "glmmTMB") {
+    to_return[["fit"]] <- obj$fit_obj$fit
+  }
 
   if (mixed) to_return[["cov_mat"]] <- cov_mat
   if (! is.null(obj$LRTs)) to_return[["LRTs"]] <- obj$LRTs$LRT_results
   else if (! is.null(obj$PB_tests)) to_return[["PB_tests"]] <- obj$LRTs$PB_test_results
-  print("done")
   return(structure(to_return, class = "summary.mesdt_fit"))
 }
 
@@ -171,7 +179,10 @@ print.summary.mesdt_fit <- function(x,
   printmethod(x)
 
   cat("Discriminability: ", deparse(x$user_input$discriminability), "\n")
-  cat("Response Bias:    ", deparse(x$user_input$bias), "\n\n")
+  cat("Response Bias:    ", deparse(x$user_input$bias), "\n")
+  cat("Data: ", x$user_input$data_name, "\n\n")
+
+  .prt.aictab(x$AICtab); cat("\n")
 
   # Print random effects
   if (! is.null(x$cov_mat)) {
@@ -180,18 +191,26 @@ print.summary.mesdt_fit <- function(x,
     cat("\n")
   }
 
-
   # Print fixed effects
   cat("Fixed effects and Wald tests for discriminability: \n")
   stats::printCoefmat(x$d_coef, digits = digits, signif.stars = signif.stars)
   cat("\nFixed effects and Wald tests for response bias: \n")
   stats::printCoefmat(x$c_coef, digits = digits, signif.stars = signif.stars)
-
-  if(length(x$fitMsgs) && any(nchar(x$fitMsgs) > 0)) {
-    cat("fit warnings:\n"); writeLines(x$fitMsgs)
+  cat("\n")
+  if (x$user_input$backend == "lme4") {
+    if(any(nchar(fitMsgs) > 0)) {
+      cat("\nfit warnings:\n"); writeLines(x$fitMsgs)
+    }
+    .prt.warn(x$optinfo, summary=FALSE)
+    invisible(x)
+  } else if (x$user_input$backend == "glmmTMB") {
+    # print convergence warnings for glmmTMB, even though it does not do that by itself
+    if (x$fit$convergence != 0) {
+      cat(paste0("\nModel convergence problem; ", x$fit$message, ". ",
+                   "See glmmTMB vignette 'troubleshooting'."))
+    }
   }
-  #.prt.warn(x$optinfo,summary=FALSE)
-  #invisible(x)
+
 }
 
 
@@ -200,7 +219,6 @@ print.summary.mesdt_fit <- function(x,
 #' @export
 simulate.mesdt_fit <- function(obj, ...) {
   # get method for correct backend
-  #print(mesdt_obj$backend)
   #if (mesdt_obj$backend == "lme4") pred <- lme4::simulate.merMod(mesdt_obj$fit_obj, ...)
   #else if (mesdt_obj$backend == "glmmTMB") pred <- glmmTMB::simulate(mesdt_obj$fit_obj, ...)
   pred <- stats::simulate(obj$fit_obj, ...)
@@ -344,8 +362,76 @@ formatVC <- function(varcor, digits = max(3, getOption("digits") - 2),
   }
 }
 
+
 .prt.grps <- function(ngrps, nobs) {
   cat(sprintf("Number of obs: %d, groups: ", nobs),
       paste(paste(names(ngrps), ngrps, sep = ", "), collapse = "; "),
       fill = TRUE)
+}
+
+
+.prt.warn <- function(optinfo, summary=FALSE, ...) {
+  if(length(optinfo) == 0) return() # currently, e.g., from refitML()
+  ## check all warning slots: print numbers of warnings (if any)
+  cc <- optinfo$conv$opt
+  msgs <- unlist(optinfo$conv$lme4$messages)
+  ## can't put nmsgs/nwarnings compactly into || expression
+  ##   because of short-circuiting
+  nmsgs <- length(msgs)
+  warnings <- optinfo$warnings
+  nwarnings <- length(warnings)
+  if (cc > 0 || nmsgs > 0 || nwarnings > 0) {
+    m <- if (cc==0) {
+      "(OK)"
+    } else if (!is.null(optinfo$message)) {
+      sprintf("(%s)",optinfo$message)
+    } else ""
+    convmsg <- sprintf("optimizer (%s) convergence code: %d %s",
+                       optinfo$optimizer, cc, m)
+    if (summary) {
+      cat(convmsg,sprintf("; %d optimizer warnings; %d lme4 warnings",
+                          nwarnings,nmsgs),"\n")
+    } else {
+      cat(convmsg,
+          msgs,
+          unlist(warnings),
+          sep="\n")
+      cat("\n")
+    }
+  }
+}
+
+
+##' Extract all warning msgs from a merMod object
+.merMod.msgs <- function(x) {
+  ## currently only those found with 'X' :
+  aX <- attributes(x@pp$X)
+  wmsgs <- grep("^msg", names(aX))
+  if(any(has.msg <- nchar(Xwmsgs <- unlist(aX[wmsgs])) > 0))
+    Xwmsgs[has.msg]
+  else
+    character()
+}
+
+
+llikAIC <- function(object) {
+  llik <- logLik(object)
+  AICstats <-
+    c(AIC = AIC(llik), BIC = BIC(llik), logLik = c(llik),
+      `-2*log(L)` = -2*llik,
+      df.resid = df.residual(object))
+  list(logLik = llik, AICtab = AICstats)
+}
+
+
+.prt.aictab <- function(aictab, digits = 1) {
+  t.4 <- round(aictab, digits)
+  if (length(aictab) == 1 && names(aictab) == "REML")
+    cat.f("REML criterion at convergence:", t.4)
+  else {
+    ## slight hack to get residual df formatted as an integer
+    t.4F <- format(t.4)
+    t.4F["df.resid"] <- format(t.4["df.resid"])
+    print(t.4F, quote = FALSE)
+  }
 }

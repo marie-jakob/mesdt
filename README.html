@@ -693,15 +693,15 @@ either granted or denied a pay raise (<code>committee</code>).</p>
 that one row of the data represents one observation of the binary
 response variable.</p>
 <div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a><span class="fu">head</span>(debi3subset)</span>
-<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 9</span></span>
-<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;   id    assessment status objective committee emp_gender file_name      participant_gender   age</span></span>
-<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   &lt;fct&gt; &lt;fct&gt;       &lt;dbl&gt; &lt;chr&gt;     &lt;fct&gt;     &lt;fct&gt;      &lt;fct&gt;          &lt;fct&gt;              &lt;dbl&gt;</span></span>
-<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 1 1     fair           -1 true      granted   m          W_M_20.png     m                     35</span></span>
-<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 2 1     fair           -1 true      granted   m          W_M_47.png     m                     35</span></span>
-<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 3 1     fair           -1 true      granted   m          W_M_f_4.jpg    m                     35</span></span>
-<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 4 1     unfair          1 true      denied    f          W_F_o_u_10.jpg m                     35</span></span>
-<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 5 1     unfair          1 true      denied    f          W_F_122.png    m                     35</span></span>
-<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 6 1     unfair          1 true      denied    m          W_M_10.png     m                     35</span></span></code></pre></div>
+<span id="cb5-2"><a href="#cb5-2" tabindex="-1"></a><span class="co">#&gt; # A tibble: 6 × 10</span></span>
+<span id="cb5-3"><a href="#cb5-3" tabindex="-1"></a><span class="co">#&gt;   id    assessment status objective committee emp_gender file_name      participant_gender   age status_num</span></span>
+<span id="cb5-4"><a href="#cb5-4" tabindex="-1"></a><span class="co">#&gt;   &lt;fct&gt; &lt;fct&gt;      &lt;fct&gt;  &lt;chr&gt;     &lt;fct&gt;     &lt;fct&gt;      &lt;fct&gt;          &lt;fct&gt;              &lt;dbl&gt;      &lt;dbl&gt;</span></span>
+<span id="cb5-5"><a href="#cb5-5" tabindex="-1"></a><span class="co">#&gt; 1 1     unbiased   noise  true      granted   m          W_M_20.png     m                     35         -1</span></span>
+<span id="cb5-6"><a href="#cb5-6" tabindex="-1"></a><span class="co">#&gt; 2 1     unbiased   noise  true      granted   m          W_M_47.png     m                     35         -1</span></span>
+<span id="cb5-7"><a href="#cb5-7" tabindex="-1"></a><span class="co">#&gt; 3 1     unbiased   noise  true      granted   m          W_M_f_4.jpg    m                     35         -1</span></span>
+<span id="cb5-8"><a href="#cb5-8" tabindex="-1"></a><span class="co">#&gt; 4 1     biased     signal true      denied    f          W_F_o_u_10.jpg m                     35          1</span></span>
+<span id="cb5-9"><a href="#cb5-9" tabindex="-1"></a><span class="co">#&gt; 5 1     biased     signal true      denied    f          W_F_122.png    m                     35          1</span></span>
+<span id="cb5-10"><a href="#cb5-10" tabindex="-1"></a><span class="co">#&gt; 6 1     biased     signal true      denied    m          W_M_10.png     m                     35          1</span></span></code></pre></div>
 <p>Fitting an SDT model requires at least two variables: the binary
 response variable (<code>assessment</code> in <code>debi3subset</code>)
 and the type of trial (i.e., whether the given trial was a signal or a
@@ -731,33 +731,38 @@ this:</p>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">trial_type =</span> <span class="st">&quot;status&quot;</span>,</span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">dv =</span> <span class="st">&quot;assessment&quot;</span></span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;lme4 was used to fit the model.&quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Model was estimated with lme4.&quot;</span></span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
 <span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">summary</span>(mod)</span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. </span></span>
 <span id="cb6-13"><a href="#cb6-13" tabindex="-1"></a><span class="co">#&gt;  </span></span>
 <span id="cb6-14"><a href="#cb6-14" tabindex="-1"></a><span class="co">#&gt; Discriminability:  ~committee * emp_gender + (1 | id) </span></span>
 <span id="cb6-15"><a href="#cb6-15" tabindex="-1"></a><span class="co">#&gt; Response Bias:     ~committee * emp_gender + (committee | id) </span></span>
-<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; Random effects:</span></span>
-<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;  Groups Name                          Std.Dev. Corr       </span></span>
-<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;  id     (Intercept)(Response Bias)    0.3848              </span></span>
-<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt;         committee1(Response Bias)     0.5801   -0.17      </span></span>
-<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt;         (Intercept)(Discriminability) 0.3902   -0.39 -0.18</span></span>
-<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for discriminability: </span></span>
-<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
-<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt; (Intercept)             1.75932    0.09974  17.638   &lt;2e-16</span></span>
-<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; committee1              0.04001    0.04671   0.857    0.392</span></span>
-<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; emp_gender1            -0.01419    0.04308  -0.329    0.742</span></span>
-<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.03843    0.04308  -0.892    0.372</span></span>
-<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for response bias: </span></span>
-<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt;                         Estimate Std. Error z value Pr(&gt;|z|)</span></span>
-<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; (Intercept)             0.145662   0.088898   1.639    0.101</span></span>
-<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; committee1              0.018567   0.131822   0.141    0.888</span></span>
-<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; emp_gender1             0.006281   0.021540   0.292    0.771</span></span>
-<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.034437   0.021540  -1.599    0.110</span></span></code></pre></div>
+<span id="cb6-16"><a href="#cb6-16" tabindex="-1"></a><span class="co">#&gt; Data:  debi3subset </span></span>
+<span id="cb6-17"><a href="#cb6-17" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-18"><a href="#cb6-18" tabindex="-1"></a><span class="co">#&gt;       AIC       BIC    logLik -2*log(L)  df.resid </span></span>
+<span id="cb6-19"><a href="#cb6-19" tabindex="-1"></a><span class="co">#&gt;    4746.8    4838.4   -2359.4    4718.8      5106 </span></span>
+<span id="cb6-20"><a href="#cb6-20" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-21"><a href="#cb6-21" tabindex="-1"></a><span class="co">#&gt; Random effects:</span></span>
+<span id="cb6-22"><a href="#cb6-22" tabindex="-1"></a><span class="co">#&gt;  Groups Name                          Std.Dev. Corr       </span></span>
+<span id="cb6-23"><a href="#cb6-23" tabindex="-1"></a><span class="co">#&gt;  id     (Intercept)(Response Bias)    0.3848              </span></span>
+<span id="cb6-24"><a href="#cb6-24" tabindex="-1"></a><span class="co">#&gt;         committee1(Response Bias)     0.5801   -0.17      </span></span>
+<span id="cb6-25"><a href="#cb6-25" tabindex="-1"></a><span class="co">#&gt;         (Intercept)(Discriminability) 0.3902   -0.39 -0.18</span></span>
+<span id="cb6-26"><a href="#cb6-26" tabindex="-1"></a><span class="co">#&gt; Number of obs: 5120, groups:  id, 20</span></span>
+<span id="cb6-27"><a href="#cb6-27" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-28"><a href="#cb6-28" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for discriminability: </span></span>
+<span id="cb6-29"><a href="#cb6-29" tabindex="-1"></a><span class="co">#&gt;                        Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb6-30"><a href="#cb6-30" tabindex="-1"></a><span class="co">#&gt; (Intercept)             1.75932    0.09974  17.638   &lt;2e-16</span></span>
+<span id="cb6-31"><a href="#cb6-31" tabindex="-1"></a><span class="co">#&gt; committee1              0.04001    0.04671   0.857    0.392</span></span>
+<span id="cb6-32"><a href="#cb6-32" tabindex="-1"></a><span class="co">#&gt; emp_gender1            -0.01419    0.04308  -0.329    0.742</span></span>
+<span id="cb6-33"><a href="#cb6-33" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.03843    0.04308  -0.892    0.372</span></span>
+<span id="cb6-34"><a href="#cb6-34" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb6-35"><a href="#cb6-35" tabindex="-1"></a><span class="co">#&gt; Fixed effects and Wald tests for response bias: </span></span>
+<span id="cb6-36"><a href="#cb6-36" tabindex="-1"></a><span class="co">#&gt;                         Estimate Std. Error z value Pr(&gt;|z|)</span></span>
+<span id="cb6-37"><a href="#cb6-37" tabindex="-1"></a><span class="co">#&gt; (Intercept)             0.145662   0.088898   1.639    0.101</span></span>
+<span id="cb6-38"><a href="#cb6-38" tabindex="-1"></a><span class="co">#&gt; committee1              0.018567   0.131822   0.141    0.888</span></span>
+<span id="cb6-39"><a href="#cb6-39" tabindex="-1"></a><span class="co">#&gt; emp_gender1             0.006281   0.021540   0.292    0.771</span></span>
+<span id="cb6-40"><a href="#cb6-40" tabindex="-1"></a><span class="co">#&gt; committee1:emp_gender1 -0.034437   0.021540  -1.599    0.110</span></span></code></pre></div>
 <p>The <code>summary()</code> method prints population-level estimates
 for the fixed effects and variances and covariances of the random
 effects separately for discriminability and response bias in a similar
