@@ -33,7 +33,6 @@
 #'
 #' @name emmeans.mesdt_fit
 #' @method emmeans mesdt_fit
-#' @export
 NULL
 
 
