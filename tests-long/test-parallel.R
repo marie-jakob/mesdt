@@ -6,8 +6,8 @@ test_that("compute_tests() works with bootstraps on multiple cores", {
   skip_if_not_installed("parallel")
   library(parallel)
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
-                   discriminability = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(~ committee * emp_gender + (1 | id),
+                   ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
                    trial_type = "status_fac",
                    data = dat_exp_2)
@@ -29,18 +29,22 @@ test_that("compute_tests() works with bootstraps on multiple cores", {
 test_that("compute_tests() works with LRTs type 3 on multiple cores", {
   library(parallel)
   # Type II, test_intercepts = T
-  fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
+  fit <- fit_mesdt(~ committee * emp_gender + (1 | id),
                    discriminability = ~ committee * emp_gender + (1 | id),
                    dv = "assessment",
-                   trial_type_var = "status_fac",
+                   trial_type = "status_fac",
                    data = dat_exp_2)
   cl <- parallel::makeCluster(6, "SOCK")
   parallel::clusterEvalQ(cl = cl, {options("mesdt.backend" = "lme4")})
+
+
   LRTs_par <- compute_tests(fit,
                             type = 3,
                             tests = "LRT",
                             test_intercepts = T,
                             cl = cl)
+
+
   parallel::stopCluster(cl)
   options("mesdt.backend" = "lme4")
   LRTs_seq <- compute_tests(fit,

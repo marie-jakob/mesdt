@@ -659,7 +659,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       })
       all_fits <- c(full_fits, reduced_fits)
     } else {
-      print("cluster")
+      #print("cluster")
       throwaway <- parallel::clusterExport(cl = cl,
                                            varlist = c("data", "mm", "fit_glmm"),
                                            env = environment())
@@ -701,13 +701,14 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
 
   else {
     if (is.null(cl)) {
+
       #print("No cluster")
       reduced_fits <- lapply(c(reduced_formulas_lambda, reduced_formulas_mu), fit_glmm,
                              data = data, mm = mm, distribution = distribution, dv = dv,
                              control = control)
       #print("reduced_fits done")
     } else {
-      #print("cluster")
+
       throwaway <- parallel::clusterExport(cl = cl,
                                            varlist = c("data", "mm", "fit_glmm", "control"),
                                            env = environment())
@@ -715,7 +716,9 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
                                                c(reduced_formulas_lambda, reduced_formulas_mu),
                                                fit_glmm,
                                                data = data, mm = mm, distribution = distribution,
-                                               control = control)
+                                               dv = dv,
+                                               control = control
+                                               )
       if (options("mesdt.backend") == "lme4") reduced_fits <- unlist(reduced_fits)
       names(reduced_fits) <- names(c(reduced_formulas_lambda, reduced_formulas_mu))
     }

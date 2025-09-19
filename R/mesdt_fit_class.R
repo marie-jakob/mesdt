@@ -198,7 +198,7 @@ print.summary.mesdt_fit <- function(x,
   stats::printCoefmat(x$c_coef, digits = digits, signif.stars = signif.stars)
   cat("\n")
   if (x$user_input$backend == "lme4") {
-    if(any(nchar(fitMsgs) > 0)) {
+    if(any(nchar(x$fitMsgs) > 0)) {
       cat("\nfit warnings:\n"); writeLines(x$fitMsgs)
     }
     .prt.warn(x$optinfo, summary=FALSE)
@@ -212,7 +212,6 @@ print.summary.mesdt_fit <- function(x,
   }
 
 }
-
 
 
 #' @importFrom stats simulate

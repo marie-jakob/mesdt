@@ -8,8 +8,8 @@ for (backend in c("glmmTMB", "lme4")) {
 
   test_that("compute_tests() compares the correct models for bootstrap tests of fixed effects", {
 
-    fit <- fit_mesdt(bias = ~ committee * emp_gender + (1 | id),
-                     discriminability = ~ committee * emp_gender_ef + (1 | id),
+    fit <- fit_mesdt(~ committee * emp_gender + (1 | id),
+                     ~ committee * emp_gender_ef + (1 | id),
                      dv = "assessment",
                      trial_type = "status_fac",
                      data = dat_exp_2)
@@ -43,30 +43,12 @@ for (backend in c("glmmTMB", "lme4")) {
         print(type_tmp)
         suppressWarnings(boot <- compute_tests(fit,
                               test_intercepts = inter_tmp,
-                              test_ran_ef = F,
                               type = type_tmp,
                               tests = "bootstrap",
                               nsim = 1))
         print(boot)
         expect_equal(boot$pb_test_results[, 1], boot$LRT_results[, 4])
       }
-    }
-  })
-
-
-  test_that("compute_tests() compares the correct models for bootstrap tests of random effects", {
-
-    fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name), ~ committee + (committee | id), dv = "assessment", data = dat_exp_2,
-                     trial_type = "status_fac")
-    for (inter_tmp in c(T, F)) {
-      print(inter_tmp)
-      suppressWarnings(boot <- compute_tests(fit,
-                           test_intercepts = T,
-                           test_ran_ef = inter_tmp,
-                           type = 3,
-                           tests = "bootstrap",
-                           nsim = 1))
-      expect_equal(boot$pb_test_results[, 1], boot$LRT_results[, 4])
     }
   })
 
@@ -80,9 +62,8 @@ for (backend in c("glmmTMB", "lme4")) {
     cl <- makeCluster(8, type = "SOCK")
     suppressWarnings(boot <- compute_tests(fit,
                                            test_intercepts = T,
-                                           test_ran_ef = T,
                                            type = 3,
-                                           tests = "LRT",
+                                           tests = "bootstrap",
                                            nsim = 8,
                                            cl = cl))
 
@@ -108,7 +89,6 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
   cl <- makeCluster(8, type = "SOCK")
   suppressWarnings(boot_1 <- compute_tests(fit,
                                          test_intercepts = T,
-                                         test_ran_ef = F,
                                          type = 3,
                                          tests = "bootstrap",
                                          nsim = 20,
@@ -116,7 +96,6 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
                                          seed = 12))
   suppressWarnings(boot_2 <- compute_tests(fit,
                                            test_intercepts = T,
-                                           test_ran_ef = F,
                                            type = 3,
                                            tests = "bootstrap",
                                            nsim = 20,
@@ -132,31 +111,3 @@ test_that("compute_tests() uses the correct seed for bootstrapping", {
   expect_equal(boot_1$pb_objects[[4]]$ref, boot_2$pb_objects[[4]]$ref)
   stopCluster(cl)
 })
-
-#------------------------------------------------------------------------------#
-#### Comparison afex ####
-
-options("mesdt.backend" = "glmmTMB")
-fit <- fit_mesdt(~ committee + (1 | id),
-                 ~ committee + (committee | id),
-                 dv = "assessment", data = dat_exp_2,
-                 trial_type = "status_fac")
-cl <- makeCluster(20, type = "SOCK")
-suppressWarnings(boot_1 <- compute_tests(fit,
-                                         test_intercepts = T,
-                                         test_ran_ef = F,
-                                         type = 3,
-                                         tests = "bootstrap",
-                                         nsim = 1000,
-                                         cl = cl,
-                                         seed = 27))
-
-mixed_1 <- mixed(assessment ~ committee * status_ef + (committee | id),
-                 family = binomial("probit"),
-                 data = dat_exp_2,
-                 method = "PB",
-                 args_test = list("cl" = cl,
-                               "nsim" = 100))
-
-
-

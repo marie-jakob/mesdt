@@ -232,13 +232,13 @@ fit_mesdt <- function(discriminability,
 
   # Check backend stuff
   if (! is.null(summary(fit_obj)$objClass[1])) {
-    print("Model was estimated with lme4.")
+    cat("Model was estimated with lme4.")
     backend <- "lme4"
   } else if (any(inherits(fit_obj, "glm"))) {
-    print("Model was estimated with glm().")
+    cat("Model was estimated with glm().")
     backend <- "glm"
   } else {
-    print("Model was estimated with glmmTMB.")
+    cat("Model was estimated with glmmTMB.")
     backend <- "glmmTMB"
   }
 
