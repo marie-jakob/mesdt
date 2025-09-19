@@ -97,7 +97,8 @@ sim_data <- data.frame(sim3)
 names(sim_data) <- c("y", "trial_type", "x1", "ID")
 
 # sim_data$y <- factor(ifelse(sim_data$y == 1, 1, -1), levels = c(1, -1))
-sim_data$trial_type_fac <- factor(sim_data$trial_type * 2, levels = c(1, -1))
+sim_data$trial_type_fac <- factor(sim_data$trial_type * 2, levels = c(1, -1), labels = c(1, -1))
+contrasts(sim_data$trial_type_fac) <- contr.sum(2)
 
 
 sim_data$x1_num <- sim_data$x1

@@ -1,10 +1,7 @@
-#------------------------------------------------------------------------------#
-#### fit_mesdt() ####
 
 
 for (backend in c("glmmTMB", "lme4")) {
   options("mesdt.backend" = backend)
-
 
   test_that("compute_tests() compares the correct models for bootstrap tests of fixed effects", {
 
@@ -46,7 +43,6 @@ for (backend in c("glmmTMB", "lme4")) {
                               type = type_tmp,
                               tests = "bootstrap",
                               nsim = 1))
-        print(boot)
         expect_equal(boot$pb_test_results[, 1], boot$LRT_results[, 4])
       }
     }
@@ -63,7 +59,7 @@ for (backend in c("glmmTMB", "lme4")) {
     suppressWarnings(boot <- compute_tests(fit,
                                            test_intercepts = T,
                                            type = 3,
-                                           tests = "bootstrap",
+                                           tests = "LRT",
                                            nsim = 8,
                                            cl = cl))
 

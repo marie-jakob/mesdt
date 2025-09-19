@@ -1,3 +1,42 @@
+#' Estimated Marginal Means for mesdt_fit Objects
+#'
+#' Compute estimated marginal means (EMMs) for objects of class \code{mymodel}
+#' for discriminability or response bias.
+#'
+#' @param object A \code{mesdt_fit} object.
+#' @param specs A \code{character} vector specifying the names of the predictors
+#'   over which EMMs are desired. specs may also be a \code{formula} or a \code{list}
+#'  (optionally named) of valid specs. Use of formulas is described in the
+#'  Overview section below. Note: We recommend against using two-sided formulas;
+#'  see the note below for contr.
+#' @param dpar Character string specifying the distributional parameter
+#'   (e.g., \code{"mu"}, \code{"sigma"}) for which the EMMs are computed.
+#'   If \code{NULL} (the default), the location/mean parameter is used.
+#' @param ... Additional arguments passed to \code{emmeans}. See ?emmeans for
+#'   details on additional arguments to emmeans.
+#'
+#' @return An object of class \code{emmGrid}, containing the estimated marginal means
+#'   for the specified SDT parameter.
+#'
+#' @examples
+#' \dontrun{
+#' mod_mixed <- fit_mesdt(
+#'   discriminability ~ committee * emp_gender + (1 | id),
+#'   response_bias ~ committee * emp_gender + (committee | id),
+#'   data = debi3subset,
+#'   trial_type = "status",
+#'   dv = "assessment"
+#' )
+#' em_response_bias <- emmeans(mod_mixed, specs = ~ committee, dpar = "response bias")
+#' em_discriminability <- emmeans(mod_mixed, specs = ~ committee, dpar = "discriminability")
+#' }
+#'
+#' @name emmeans.mesdt_fit
+#' @method emmeans mesdt_fit
+#' @export
+NULL
+
+
 #' @importFrom emmeans emm_basis recover_data
 #' @method recover_data mesdt_fit
 #' @export

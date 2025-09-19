@@ -21,7 +21,9 @@
 #' @param cl name of a cluster to distribute computation across multiple cores
 #' @param control list containing optional control arguments that are included
 #'  in the `glmmTMB()` or `glmer()` call (see Details).
-
+#' @param seed `integer` specifying an optional random seed for parametric
+#'  bootstrapping.
+#'
 #'
 #' @return An object of class `mesdt_test`, containing the fitted model
 #' (`$fit_obj`), fit objects for the reduced fits (`$reduced_fits`), fit objects
@@ -67,7 +69,7 @@
 #'  models is a likelihood ratio, which asymptotically follows a Chi^2
 #'  distribution, with degrees of freedom equal to the difference in the
 #'  numbers of parameters of both models. LRTs thus use this Chi^2 distribution
-#'  as the reference distribution. However, because this is an _asymmetric_
+#'  as the reference distribution. However, because this is an _asymptotic_
 #'  property of the likelihood ratio, it is usually only recommended for models
 #'  and data with a sufficiently high number of levels for the random-effects
 #'  grouping factors (e.g., > 50, as recommended in the afex package). For
@@ -121,7 +123,7 @@
 #' \dontrun{
 #' mod <- fit_mesdt(
 #' discriminability ~ committee * emp_gender + (1 | id),
-#' bias ~ committee * emp_gender + (committee | id),
+#' response_bias ~ committee * emp_gender + (committee | id),
 #' data = debi3_sub,
 #' trial_type = "status",
 #' dv = "assessment"
@@ -155,8 +157,10 @@
 #' @importFrom parallel clusterApplyLB
 #' @importFrom parallel clusterExport
 #' @export
-compute_tests <- function(mesdt_fit, tests = "lrt",
-                          type = 3, test_intercepts = F,
+compute_tests <- function(mesdt_fit,
+                          tests = "lrt",
+                          type = 3,
+                          test_intercepts = FALSE,
                           tests_discriminability = "all",
                           tests_response_bias = "all",
                           nsim = 1000, cl = NULL, control = NULL, seed = NULL) {

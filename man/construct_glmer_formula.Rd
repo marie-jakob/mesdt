@@ -8,10 +8,10 @@ construct_glmer_formula(
   formula_mu,
   formula_lambda,
   dv,
-  correlate_sdt_params = T,
+  correlate_sdt_params = TRUE,
   mm = NULL,
   to_remove = NULL,
-  remove_correlations = F,
+  remove_correlations = FALSE,
   test_params_mu = "all",
   test_params_lambda = "all"
 )

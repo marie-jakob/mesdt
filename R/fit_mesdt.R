@@ -80,7 +80,7 @@
 #' # correlations between all random effects
 #' mod_mixed <- fit_mesdt(
 #'   discriminability ~ committee * emp_gender + (1 | id),
-#'    bias ~ committee * emp_gender + (committee | id),
+#'    response_bias ~ committee * emp_gender + (committee | id),
 #'    data = debi3_sub,
 #'    trial_type = "status",
 #'    dv = "assessment"
@@ -90,7 +90,7 @@
 #' # Fixed-effects model (not recommended for this type of nested data structure!):
 #' mod_fixed_only <- fit_mesdt(
 #'   discriminability ~ committee * emp_gender,
-#'    bias ~ committee * emp_gender,
+#'   response_bias ~ committee * emp_gender,
 #'    data = debi3_sub,
 #'    trial_type = "status",
 #'    dv = "assessment"
@@ -105,7 +105,7 @@
 fit_mesdt <- function(discriminability,
                       response_bias,
                       dv,
-                      trial_type = "trial_type",
+                      trial_type,
                       data,
                       distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
                       correlate_sdt_params = TRUE,
@@ -198,7 +198,7 @@ fit_mesdt <- function(discriminability,
 
   # reverse-code dv for gumbel-min distribution
   if (distribution == "gumbel-min") {
-    print("reversing dv")
+    #print("reversing dv")
     data[["dv_rev"]] <- ifelse(data[[dv]] == 0, 1, 0)
     #data[[dv]] <- ifelse(data[[dv]] == 0, 1, 0)
   }

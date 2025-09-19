@@ -9,7 +9,7 @@ compute_tests(
   mesdt_fit,
   tests = "lrt",
   type = 3,
-  test_intercepts = F,
+  test_intercepts = FALSE,
   tests_discriminability = "all",
   tests_response_bias = "all",
   nsim = 1000,
@@ -36,6 +36,9 @@ bootstrapping.}
 
 \item{control}{list containing optional control arguments that are included
 in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
+
+\item{seed}{\code{integer} specifying an optional random seed for parametric
+bootstrapping.}
 
 \item{fit_obj}{\code{mesdt_fit} object containing the full fit and the
 coefficients that should be tested.}
@@ -92,7 +95,7 @@ interest is set to zero. The resulting difference in the deviance of both
 models is a likelihood ratio, which asymptotically follows a Chi^2
 distribution, with degrees of freedom equal to the difference in the
 numbers of parameters of both models. LRTs thus use this Chi^2 distribution
-as the reference distribution. However, because this is an \emph{asymmetric}
+as the reference distribution. However, because this is an \emph{asymptotic}
 property of the likelihood ratio, it is usually only recommended for models
 and data with a sufficiently high number of levels for the random-effects
 grouping factors (e.g., > 50, as recommended in the afex package). For
@@ -150,7 +153,7 @@ documentation for details).
 \dontrun{
 mod <- fit_mesdt(
 discriminability ~ committee * emp_gender + (1 | id),
-bias ~ committee * emp_gender + (committee | id),
+response_bias ~ committee * emp_gender + (committee | id),
 data = debi3_sub,
 trial_type = "status",
 dv = "assessment"

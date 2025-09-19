@@ -8,10 +8,11 @@ fit_mesdt(
   discriminability,
   response_bias,
   dv,
-  trial_type = "trial_type",
+  trial_type,
   data,
   distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
-  correlate_sdt_params = T,
+  correlate_sdt_params = TRUE,
+  aggregate = FALSE,
   control = NULL
 )
 }
@@ -38,6 +39,10 @@ or "gumbel-min").}
 
 \item{correlate_sdt_params}{\code{boolean} indicating whether correlations between
 SDT parameters should be modeled (see Details).}
+
+\item{aggregate}{(experimental) \code{boolean} indicating whether the given long
+data frame should be aggregated. Can significantly speed up estimation,
+especially for lme4}
 
 \item{control}{list containing optional control arguments that are included
 in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
@@ -97,7 +102,7 @@ documentation for details).
 # correlations between all random effects
 mod_mixed <- fit_mesdt(
   discriminability ~ committee * emp_gender + (1 | id),
-   bias ~ committee * emp_gender + (committee | id),
+   response_bias ~ committee * emp_gender + (committee | id),
    data = debi3_sub,
    trial_type = "status",
    dv = "assessment"
@@ -107,7 +112,7 @@ summary(mod_mixed)
 # Fixed-effects model (not recommended for this type of nested data structure!):
 mod_fixed_only <- fit_mesdt(
   discriminability ~ committee * emp_gender,
-   bias ~ committee * emp_gender,
+  response_bias ~ committee * emp_gender,
    data = debi3_sub,
    trial_type = "status",
    dv = "assessment"
