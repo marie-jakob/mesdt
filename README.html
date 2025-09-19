@@ -640,18 +640,16 @@ fully tested!</strong></em></p>
 <h1 id="mesdt">mesdt</h1>
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-<p>Estimate and test (mixed-effects) signal detection theory models for
-binary data with maximum likelihood estimation. This package leverages
-the equivalence between a subclass of SDT and a subclass of generalized
-linear models first shown by DeCarlo (1998) to estimate SDT models using
-software for generalized linear mixed models (GLMM), that is, the
-<code>lme4</code> or <code>glmmTMB</code> package (for mixed-effects SDT
-models) and the <code>glm()</code> function (for single-level SDT
-models). SDT models can be specified on the level of the SDT parameters
-discriminability and response bias using the typical R formula
-syntax:</p>
+<p>This package leverages the equivalence between a subclass of SDT and
+a subclass of generalized linear models first shown by DeCarlo (1998) to
+estimate SDT models using software for (generalized) linear mixed models
+(GLMM), that is, the <code>lme4</code> or <code>glmmTMB</code> package
+(for mixed-effects SDT models) and the <code>glm()</code> function (for
+single-level SDT models). SDT models can be specified on the level of
+the SDT parameters discriminability and response bias using the typical
+R formula syntax:</p>
 <p><code>discriminability = ~ X + (X | ID)</code></p>
-<p><code>bias = ~ X + (X | ID)</code></p>
+<p><code>response_bias = ~ X + (X | ID)</code></p>
 <p><code>mesdt</code> translates the given model formulas to a
 generalized linear (mixed) model, uses either <code>lme4</code>,
 <code>glmmTMB</code> or <code>glm()</code> to estimate the model (based
@@ -731,7 +729,7 @@ this:</p>
 <span id="cb6-6"><a href="#cb6-6" tabindex="-1"></a>  <span class="at">trial_type =</span> <span class="st">&quot;status&quot;</span>,</span>
 <span id="cb6-7"><a href="#cb6-7" tabindex="-1"></a>  <span class="at">dv =</span> <span class="st">&quot;assessment&quot;</span></span>
 <span id="cb6-8"><a href="#cb6-8" tabindex="-1"></a>)</span>
-<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; [1] &quot;Model was estimated with lme4.&quot;</span></span>
+<span id="cb6-9"><a href="#cb6-9" tabindex="-1"></a><span class="co">#&gt; Model was estimated with lme4.</span></span>
 <span id="cb6-10"><a href="#cb6-10" tabindex="-1"></a></span>
 <span id="cb6-11"><a href="#cb6-11" tabindex="-1"></a><span class="fu">summary</span>(mod)</span>
 <span id="cb6-12"><a href="#cb6-12" tabindex="-1"></a><span class="co">#&gt; Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. </span></span>
@@ -808,28 +806,33 @@ syntax with an additional argument <code>dpar</code> specifying the SDT
 parameter. Thus, we can get estimated marginal means for response bias
 and discriminability for “denied” and “granted” decisions like so:</p>
 <div class="sourceCode" id="cb8"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" tabindex="-1"></a><span class="fu">library</span>(emmeans)</span>
-<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;discriminability&quot;</span>)</span>
-<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
-<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt;  committee emmean   SE  df asymp.LCL asymp.UCL</span></span>
-<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;  denied      1.80 0.11 Inf      1.58      2.01</span></span>
-<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a><span class="co">#&gt;  granted     1.72 0.11 Inf      1.50      1.94</span></span>
-<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
-<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span>
-<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;response bias&quot;</span>)</span>
-<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
-<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt;  committee emmean    SE  df asymp.LCL asymp.UCL</span></span>
-<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt;  denied     0.164 0.147 Inf    -0.123     0.452</span></span>
-<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt;  granted    0.127 0.170 Inf    -0.207     0.461</span></span>
-<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
-<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span></code></pre></div>
+<span id="cb8-2"><a href="#cb8-2" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-3"><a href="#cb8-3" tabindex="-1"></a><span class="co">#&gt; Attache Paket: &#39;emmeans&#39;</span></span>
+<span id="cb8-4"><a href="#cb8-4" tabindex="-1"></a><span class="co">#&gt; Das folgende Objekt ist maskiert &#39;package:devtools&#39;:</span></span>
+<span id="cb8-5"><a href="#cb8-5" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-6"><a href="#cb8-6" tabindex="-1"></a><span class="co">#&gt;     test</span></span>
+<span id="cb8-7"><a href="#cb8-7" tabindex="-1"></a></span>
+<span id="cb8-8"><a href="#cb8-8" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;discriminability&quot;</span>)</span>
+<span id="cb8-9"><a href="#cb8-9" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
+<span id="cb8-10"><a href="#cb8-10" tabindex="-1"></a><span class="co">#&gt;  committee emmean   SE  df asymp.LCL asymp.UCL</span></span>
+<span id="cb8-11"><a href="#cb8-11" tabindex="-1"></a><span class="co">#&gt;  denied      1.80 0.11 Inf      1.58      2.01</span></span>
+<span id="cb8-12"><a href="#cb8-12" tabindex="-1"></a><span class="co">#&gt;  granted     1.72 0.11 Inf      1.50      1.94</span></span>
+<span id="cb8-13"><a href="#cb8-13" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-14"><a href="#cb8-14" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
+<span id="cb8-15"><a href="#cb8-15" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span>
+<span id="cb8-16"><a href="#cb8-16" tabindex="-1"></a><span class="fu">emmeans</span>(mod, <span class="sc">~</span> committee, <span class="at">dpar =</span> <span class="st">&quot;response bias&quot;</span>)</span>
+<span id="cb8-17"><a href="#cb8-17" tabindex="-1"></a><span class="co">#&gt; </span><span class="al">NOTE</span><span class="co">: Results may be misleading due to involvement in interactions</span></span>
+<span id="cb8-18"><a href="#cb8-18" tabindex="-1"></a><span class="co">#&gt;  committee emmean    SE  df asymp.LCL asymp.UCL</span></span>
+<span id="cb8-19"><a href="#cb8-19" tabindex="-1"></a><span class="co">#&gt;  denied     0.164 0.147 Inf    -0.123     0.452</span></span>
+<span id="cb8-20"><a href="#cb8-20" tabindex="-1"></a><span class="co">#&gt;  granted    0.127 0.170 Inf    -0.207     0.461</span></span>
+<span id="cb8-21"><a href="#cb8-21" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb8-22"><a href="#cb8-22" tabindex="-1"></a><span class="co">#&gt; Results are averaged over the levels of: emp_gender </span></span>
+<span id="cb8-23"><a href="#cb8-23" tabindex="-1"></a><span class="co">#&gt; Confidence level used: 0.95</span></span></code></pre></div>
 <p>The estimated marginal means show that participants’ discriminability
-was descriptively higher in trials where a pay raise was denied (<span class="math inline">\(d&#39; = 1.72\)</span> than for cases where one
-was granted <span class="math inline">\(d&#39; = 1.80\)</span>). We can
+was descriptively higher in trials where a pay raise was denied (<span class="math inline">\(d&#39; = 1.72\)</span>) than for cases where one
+was granted (<span class="math inline">\(d&#39; = 1.80\)</span>). We can
 see a similar pattern for response bias, with a smaller, that is, more
-liberal response criterion in “denied” cases (<span class="math inline">\(\lambda = 0.12\)</span>) than in “granted” cases
+liberal response criterion in “denied” cases (<span class="math inline">\(\lambda = 0.127\)</span>) than in “granted” cases
 (<span class="math inline">\(\lambda = 0.164\)</span>). However, both
 effects were not significantly different from zero in this subset of the
 data.</p>

@@ -6,19 +6,17 @@ tested!***
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-Estimate and test (mixed-effects) signal detection theory models for
-binary data with maximum likelihood estimation. This package leverages
-the equivalence between a subclass of SDT and a subclass of generalized
-linear models first shown by DeCarlo (1998) to estimate SDT models using
-software for generalized linear mixed models (GLMM), that is, the `lme4`
-or `glmmTMB` package (for mixed-effects SDT models) and the `glm()`
-function (for single-level SDT models). SDT models can be specified on
-the level of the SDT parameters discriminability and response bias using
-the typical R formula syntax:
+This package leverages the equivalence between a subclass of SDT and a
+subclass of generalized linear models first shown by DeCarlo (1998) to
+estimate SDT models using software for (generalized) linear mixed models
+(GLMM), that is, the `lme4` or `glmmTMB` package (for mixed-effects SDT
+models) and the `glm()` function (for single-level SDT models). SDT
+models can be specified on the level of the SDT parameters
+discriminability and response bias using the typical R formula syntax:
 
 `discriminability = ~ X + (X | ID)`
 
-`bias = ~ X + (X | ID)`
+`response_bias = ~ X + (X | ID)`
 
 `mesdt` translates the given model formulas to a generalized linear
 (mixed) model, uses either `lme4`, `glmmTMB` or `glm()` to estimate the
@@ -122,7 +120,7 @@ mod <- fit_mesdt(
   trial_type = "status",
   dv = "assessment"
 )
-#> [1] "Model was estimated with lme4."
+#> Model was estimated with lme4.
 
 summary(mod)
 #> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. 
@@ -209,6 +207,11 @@ discriminability for “denied” and “granted” decisions like so:
 
 ``` r
 library(emmeans)
+#> 
+#> Attache Paket: 'emmeans'
+#> Das folgende Objekt ist maskiert 'package:devtools':
+#> 
+#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions
@@ -230,9 +233,9 @@ emmeans(mod, ~ committee, dpar = "response bias")
 
 The estimated marginal means show that participants’ discriminability
 was descriptively higher in trials where a pay raise was denied
-($d' = 1.72$ than for cases where one was granted $d' = 1.80$). We can
+($d' = 1.72$) than for cases where one was granted ($d' = 1.80$). We can
 see a similar pattern for response bias, with a smaller, that is, more
-liberal response criterion in “denied” cases ($\lambda = 0.12$) than in
+liberal response criterion in “denied” cases ($\lambda = 0.127$) than in
 “granted” cases ($\lambda = 0.164$). However, both effects were not
 significantly different from zero in this subset of the data.
 
