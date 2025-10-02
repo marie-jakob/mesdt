@@ -18,7 +18,8 @@
 #'  SDT parameters should be modeled (see Details).
 #' @param aggregate (experimental) `boolean` indicating whether the given long
 #'  data frame should be aggregated. Can significantly speed up estimation,
-#'  especially for lme4
+#'  especially for lme4, but has the disadvantage that additional methods based
+#'  on the fitted model (e.g., bootstrapping) might not work as expected.
 #' @param control list containing optional control arguments that are included
 #' in the `glmmTMB()` or `glmer()` call (see Details).
 #'
@@ -195,6 +196,8 @@ fit_mesdt <- function(discriminability,
   #if (is.null(distribution)) stop("Distribution must be gaussian, logistic, gumbel-min, or gumbel-max.")
   distribution <- match.arg(distribution)
 
+  # Check datatypes of predictors
+  check_predictors(data, discriminability, response_bias)
 
   # reverse-code dv for gumbel-min distribution
   if (distribution == "gumbel-min") {

@@ -75,6 +75,14 @@ debi3subset <- as_tibble(mesdt::debi3subset)
 `mesdt` assumes the data to be in the long format, meaning that one row
 of the data represents one observation of the binary response variable.
 
+Fitting an SDT model requires at least two variables: the binary
+response variable (`assessment` in `debi3subset`) and the type of trial
+(i.e., whether the given trial was a signal or a noise trial, `status`
+in `debi3subset`). Both can be factors or numeric variables, where 1 (or
+in case of a factor, the level coded as one in the contrast coding)
+corresponds to a signal and 0 or -1 corresponds to a noise response or
+trial.
+
 ``` r
 head(debi3subset)
 #> # A tibble: 6 × 10
@@ -88,13 +96,15 @@ head(debi3subset)
 #> 6 1     biased     signal true      denied    m          W_M_10.png     m                     35          1
 ```
 
-Fitting an SDT model requires at least two variables: the binary
-response variable (`assessment` in `debi3subset`) and the type of trial
-(i.e., whether the given trial was a signal or a noise trial, `status`
-in `debi3subset`). Both can be factors or numeric variables, where 1 (or
-in case of a factor, the level coded as one in the contrast coding)
-corresponds to a signal and 0 or -1 corresponds to a noise response or
-trial.
+For categorical predictor variables, we strongly recommend using sum
+contrasts for a more straightforward interpretation of lower-order
+effects in the presence of higher-order terms. We also strongly
+recommend centering continuous variables.
+
+``` r
+contrasts(debi3subset$committee) <- contr.sum(2)
+contrasts(debi3subset$emp_gender) <- contr.sum(2)
+```
 
 ### Step 2: Specify and Fit a Mixed-Effects SDT Model
 
@@ -207,11 +217,6 @@ discriminability for “denied” and “granted” decisions like so:
 
 ``` r
 library(emmeans)
-#> 
-#> Attache Paket: 'emmeans'
-#> Das folgende Objekt ist maskiert 'package:devtools':
-#> 
-#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions
@@ -232,7 +237,7 @@ emmeans(mod, ~ committee, dpar = "response bias")
 ```
 
 The estimated marginal means show that participants’ discriminability
-was descriptively higher in trials where a pay raise was denied
+was descriptively lower in trials where a pay raise was denied
 ($d' = 1.72$) than for cases where one was granted ($d' = 1.80$). We can
 see a similar pattern for response bias, with a smaller, that is, more
 liberal response criterion in “denied” cases ($\lambda = 0.127$) than in
