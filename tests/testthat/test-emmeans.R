@@ -182,3 +182,27 @@ test_that("emmeans.mesdt_fit() works for a single-level model fit with glm()", {
 
 })
 
+
+test_that("emmeans.mesdt_fit() works with aggregate = TRUE", {
+  test_mod <- fit_mesdt(~ contingencies * emp_gender + (1 | id),
+                            ~ contingencies * emp_gender + (1 | id),
+                            data = dat_exp_2,
+                            trial_type = "status_fac",
+                            dv = "assessment",
+                            correlate_sdt_params = T)
+
+  test_mod_agg <- fit_mesdt(~ contingencies * emp_gender + (1 | id),
+                              ~ contingencies * emp_gender + (1 | id),
+                              data = dat_exp_2,
+                              trial_type = "status_fac",
+                              dv = "assessment",
+                              correlate_sdt_params = T,
+                              aggregate = TRUE)
+
+  emm <- emmeans(test_mod, ~ emp_gender, dpar = "response bias")
+  emm_agg <- emmeans(test_mod_agg, ~ emp_gender, dpar = "response bias")
+
+  expect_equal(data.frame(emm), data.frame(emm_agg), tolerance = 1e-4)
+
+})
+

@@ -46,7 +46,7 @@ recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
     form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv, paste(as.character(object$user_input$discriminability), collapse = ""))))
   }
 
-  glm_tmp <- glm(form_tmp, data = object$internal$data, family = binomial("probit"))
+  glm_tmp <- glm(form_tmp, data = object$user_input$data_input, family = binomial("probit"))
 
   res <- recover_data(glm_tmp)
   return(res)
