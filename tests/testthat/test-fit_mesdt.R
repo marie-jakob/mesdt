@@ -248,6 +248,7 @@ test_that("Setting control arguments in fit_mesdt() works", {
 #### Test check_sensitivity ####
 
 test_that("mesdt throws a message when sensitivity < 0", {
+  skip_if_not_installed("glmmTMB")
   options("mesdt.backend" = "glmmTMB")
   dat_exp_2$status_rev <- ifelse(dat_exp_2$status_fac == 1, -1, 1)
   expect_warning(fit_mesdt(~ committee + (1 | id),
@@ -262,6 +263,7 @@ test_that("mesdt throws a message when sensitivity < 0", {
 #### Test check input format for dv and trialtype ####
 
 test_that("mesdt_fit() gives the same results with different types of trialtype and dv variables", {
+  skip_if_not_installed("glmmTMB")
   options("mesdt.backend" = "glmmTMB")
 
   debi3subset$status_fac <- factor(ifelse(debi3subset$status == "signal", 1, -1), levels = c(1, -1))
@@ -366,6 +368,7 @@ test_that("mesdt_fit() gives the same results with different types of trialtype 
 )
 
 test_that("mesdt_fit() gives the same results with different types of trialtype and dv variables", {
+  skip_if_not_installed("glmmTMB")
   options("mesdt.backend" = "glmmTMB")
 
   debi3subset$status_3 <- sample(1:3, nrow(debi3subset), replace = T)

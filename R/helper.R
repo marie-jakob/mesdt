@@ -222,3 +222,61 @@ aggregate_data <- function(data, form_disc, form_bias, dv, trial_type) {
   dat_agg_wide$dv_agg <- dat_agg_wide[[new_names[2]]] / dat_agg_wide$weight
   return(dat_agg_wide)
 }
+
+
+check_predictors <- function(data, form_disc, form_bias) {
+  all_preds <- unique(all.vars(lme4::nobars(form_disc)), all.vars(lme4::nobars(form_bias)))
+  not_sum_contrasts <- c()
+  not_centered <- c()
+  not_num_or_fac <- c()
+  for (pred in all_preds) {
+    if (is.numeric(data[[pred]])) {
+      if (abs(mean(data[[pred]])) > 1e-5) {
+        not_centered <- c(not_centered, pred)
+      }
+    } else if (inherits(data[[pred]], "factor")) {
+      if (! all(contrasts(data[[pred]]) == contr.sum(nlevels(data[[pred]])))) {
+        not_sum_contrasts <- c(not_sum_contrasts, pred)
+      }
+    } else {
+      not_num_or_fac <- c(not_num_or_fac, pred)
+    }
+  }
+  if (length(not_sum_contrasts > 0)) {
+    warning(
+      paste0(
+        "The following categorical predictors do not use sum contrasts: ",
+        paste(not_sum_contrasts, collapse = ", "),
+        "\nWe strongly recommend using sum contrasts for a straightforward interpretation ",
+        "of lower-order effects in the presence of higher-order terms."
+      )
+    )
+  }
+
+  if (length(not_centered > 0)) {
+    warning(
+      paste0(
+        "The following numerical predictors are not centered at zero: ",
+        paste(not_centered, collapse = ", "),
+        "\nWe strongly recommend centering predictors to simplify interpretation."
+      )
+    )
+  }
+  if (length(not_num_or_fac > 0)) {
+    warning(
+      paste0(
+        "The following predictors are neither numeric nor factors: ",
+        paste(not_num_or_fac, collapse = ", "),
+        "\nPlease set the datatype of all predictors explicitly to prevent
+        unexpected behavior of the fitting functions."
+      )
+    )
+  }
+  return()
+}
+
+
+
+
+
+

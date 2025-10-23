@@ -109,6 +109,7 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
 
 
 test_that("emmeans.mesdt_fit() works for glmmTMB", {
+  skip_if_not_installed("glmmTMB")
   library(emmeans)
   library(glmmTMB)
   options("mesdt.backend" = "glmmTMB")
@@ -148,6 +149,7 @@ test_that("emmeans.mesdt_fit() works for glmmTMB", {
 
 test_that("emmeans.mesdt_fit() works for a single-level model fit with glm()", {
   library(emmeans)
+  skip_if_not_installed("glmmTMB")
   test_mod_glm <- glmmTMB(assessment ~ status_fac * contingencies * emp_gender,
                           data = dat_exp_2,
                           family = binomial("probit"))

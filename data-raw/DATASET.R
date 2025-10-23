@@ -102,8 +102,8 @@ contrasts(sim_data$trial_type_fac) <- contr.sum(2)
 
 
 sim_data$x1_num <- sim_data$x1
-sim_data$x1 <- factor(sim_data$x1)
-contrasts(sim_data$x1) <- c(-1, 1)
+sim_data$x1 <- factor(sim_data$x1, levels = c(1, -1))
+contrasts(sim_data$x1) <- contr.sum(2)
 sim_data$ID <- factor(sim_data$ID)
 internal_sdt_data <- sim_data
 
