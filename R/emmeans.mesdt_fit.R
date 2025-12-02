@@ -37,6 +37,7 @@ NULL
 
 
 #' @importFrom emmeans emm_basis recover_data
+#' @importFrom emmeans emmeans
 #' @method recover_data mesdt_fit
 #' @export
 recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
@@ -61,6 +62,7 @@ recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
 #' @importFrom emmeans emm_basis recover_data
 #' @importFrom emmeans .my.vcov
 #' @importFrom stats model.matrix
+#' @importFrom emmeans emmeans
 #' @method emm_basis mesdt_fit
 #' @export
 emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
@@ -101,7 +103,7 @@ emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
 }
 
 
-#' @export
+# @export
 emmeans_mesdt <- function(fit_obj, specs) {
   if (! inherits(fit_obj, "mesdt_fit")) {
     stop("fit_obj must be of class mesdt_fit.")

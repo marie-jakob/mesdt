@@ -2,12 +2,39 @@
 % Please edit documentation in R/mesdt_fit_class.R
 \name{summary.mesdt_fit}
 \alias{summary.mesdt_fit}
-\title{summary method
-TODO}
+\alias{print.summary.mesdt_fit}
+\title{Summary Method for mesdt_fit Objects}
 \usage{
-\method{summary}{mesdt_fit}(obj)
+\method{summary}{mesdt_fit}(object, ...)
+
+\method{print}{summary.mesdt_fit}(x, digits = max(3, getOption("digits") - 3), signif.stars = FALSE, ...)
+}
+\arguments{
+\item{object}{An object of class \code{mesdt_fit}, typically returned by a
+model fitting function such as \code{mesdt()}.}
+
+\item{...}{Additional arguments passed to or from other methods. Currently unused.}
+
+\item{x}{An object of class \code{summary.mesdt_fit}.}
+
+\item{digits}{Integer specifying the number of significant digits to print.
+Defaults to \code{max(3, getOption("digits") - 3)}.}
+
+\item{signif.stars}{Logical; if \code{TRUE}, significance stars are displayed
+next to p-values. Defaults to \code{FALSE}.}
+}
+\value{
+A summary object for \code{mesdt_fit} similar to the summary provided
+by lme4.
+
+Invisibly returns \code{NULL}. The function prints results to the console.
 }
 \description{
-summary method
-TODO
+Provides a summary of a \code{mesdt_fit} object. Currently, this function
+is a placeholder and can be extended to include likelihood ratio tests,
+bootstrap results, or other relevant summary statistics.
+
+Prints a structured summary of a \code{summary.mesdt_fit} object.
+This method allows formatting options such as the number of significant
+digits and whether to show significance stars.
 }

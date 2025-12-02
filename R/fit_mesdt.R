@@ -47,11 +47,16 @@
 #' tests or parametric bootstrapping tests (in case of few levels of the
 #' random-effects grouping factor) for statistical inference with GLMM, which
 #' are provided in the \link{compute_tests} function.
+#'
+#' In addition, the returned `mesdt_fit` object contains the fitted GLMM,
+#' (`$fit_obj`, a `glmerfit`), allowing users to do additional processing that is not (yet)
+#' implemented within this package, such as post-processing of random effect
+#' conditional modes.
 
 
 #'
 #' @details
-#' + Formulas for sensitivity and response bias can be two-sided, specifying the
+#' + Formulas for discriminability and response bias can be two-sided, specifying the
 #'  SDT parameter on the left-hand-side (e.g., `discriminability ~ 1 + (1 | id)`)
 #'  or one-sided (e.g., `~ 1 + (1 | id)`). In the latter case, the corresponding
 #'  SDT parameter is extracted from the name of the function argument.
@@ -69,7 +74,6 @@
 #'  + The `control` argument allows to pass all control arguments taken by
 #'  `lme4` or `glmmTMB` (depending on the backend used; see the relevant
 #'  documentation for details).
-#'  + TODO: correlations between random effects
 #'
 #'
 #' @examples
@@ -102,6 +106,7 @@
 #' @importFrom lme4 ranef
 #' @importFrom lme4 VarCorr
 #' @importFrom stats vcov
+#' @importFrom stats contrasts
 #' @export
 fit_mesdt <- function(discriminability,
                       response_bias,
@@ -235,13 +240,13 @@ fit_mesdt <- function(discriminability,
 
   # Check backend stuff
   if (! is.null(summary(fit_obj)$objClass[1])) {
-    cat("Model was estimated with lme4.")
+    #cat("Model was estimated with lme4.")
     backend <- "lme4"
   } else if (any(inherits(fit_obj, "glm"))) {
-    cat("Model was estimated with glm().")
+    #cat("Model was estimated with glm().")
     backend <- "glm"
   } else {
-    cat("Model was estimated with glmmTMB.")
+    #cat("Model was estimated with glmmTMB.")
     backend <- "glmmTMB"
   }
 

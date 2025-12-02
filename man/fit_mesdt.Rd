@@ -42,7 +42,8 @@ SDT parameters should be modeled (see Details).}
 
 \item{aggregate}{(experimental) \code{boolean} indicating whether the given long
 data frame should be aggregated. Can significantly speed up estimation,
-especially for lme4}
+especially for lme4, but has the disadvantage that additional methods based
+on the fitted model (e.g., bootstrapping) might not work as expected.}
 
 \item{control}{list containing optional control arguments that are included
 in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
@@ -72,10 +73,15 @@ standard errors and results of Wald tests (as returned by \code{lme4} and
 tests or parametric bootstrapping tests (in case of few levels of the
 random-effects grouping factor) for statistical inference with GLMM, which
 are provided in the \link{compute_tests} function.
+
+In addition, the returned \code{mesdt_fit} object contains the fitted GLMM,
+(\verb{$fit_obj}, a \code{glmerfit}), allowing users to do additional processing that is not (yet)
+implemented within this package, such as post-processing of random effect
+conditional modes.
 }
 \details{
 \itemize{
-\item Formulas for sensitivity and response bias can be two-sided, specifying the
+\item Formulas for discriminability and response bias can be two-sided, specifying the
 SDT parameter on the left-hand-side (e.g., \code{discriminability ~ 1 + (1 | id)})
 or one-sided (e.g., \code{~ 1 + (1 | id)}). In the latter case, the corresponding
 SDT parameter is extracted from the name of the function argument.
@@ -90,7 +96,6 @@ two separate covariance matrices for discriminability and response bias
 \item The \code{control} argument allows to pass all control arguments taken by
 \code{lme4} or \code{glmmTMB} (depending on the backend used; see the relevant
 documentation for details).
-\item TODO: correlations between random effects
 }
 }
 \examples{

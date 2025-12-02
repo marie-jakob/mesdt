@@ -6,22 +6,50 @@ new_mesdt_fit <- function(input_list) {
 }
 
 
+#' Print Method for Summary of mesdt_fit Objects
+#'
+#' Prints a structured summary of a \code{summary.mesdt_fit} object.
+#' This method allows formatting options such as the number of significant
+#' digits and whether to show significance stars.
+#' Alias for print.summary.mesdt_fit
+#'
+#' @param x An object of class \code{summary.mesdt_fit}, typically returned by
+#'   \code{summary.mesdt_fit()}.
+#' @param ... Additional arguments passed to or from other methods. Currently unused.
+#'
+#' @return Invisibly returns \code{NULL}. The function prints results to the console.
+#'
+#'
+#' @method print summary.mesdt_fit
 #' @export
-print.mesdt_fit <- function(x) {
-  print.summary.mesdt_fit(summary(x))
+#'
+print.mesdt_fit <- function(x, ...) {
+  print.summary.mesdt_fit(summary(x, ...))
 }
 
 
 
-#' summary method
-#' TODO
+#' Summary Method for mesdt_fit Objects
+#'
+#' Provides a summary of a \code{mesdt_fit} object. Currently, this function
+#' is a placeholder and can be extended to include likelihood ratio tests,
+#' bootstrap results, or other relevant summary statistics.
+#'
+#' @param object An object of class \code{mesdt_fit}, typically returned by a
+#'   model fitting function such as \code{mesdt()}.
+#' @param ... Additional arguments passed to or from other methods. Currently unused.
+#'
+#' @return A summary object for \code{mesdt_fit} similar to the summary provided
+#' by lme4.
+#'
+#' @method summary mesdt_fit
 #' @export
-summary.mesdt_fit <- function(obj) {
-
+summary.mesdt_fit <- function(object, ...) {
+  obj <- object
   if (obj$user_input$backend == "lme4" | obj$user_input$backend == "glm") {
 
     # Get coefficients
-    summ_lme4 <- summary(obj$fit_obj)
+    summ_lme4 <- summary(obj$fit_obj, ...)
     d_coef <- summ_lme4$coefficients[grepl("mu", rownames(summ_lme4$coefficients)), ]
     c_coef <- summ_lme4$coefficients[grepl("lambda", rownames(summ_lme4$coefficients)), ]
 
@@ -169,8 +197,25 @@ printmethod <- function(x) {
 }
 
 
-# print summary method
+#' Print Method for Summary of mesdt_fit Objects
+#'
+#' Prints a structured summary of a \code{summary.mesdt_fit} object.
+#' This method allows formatting options such as the number of significant
+#' digits and whether to show significance stars.
+#'
+#' @rdname summary.mesdt_fit
+#' @aliases print.summary.mesdt_fit
+#' @param x An object of class \code{summary.mesdt_fit}.
+#' @param digits Integer specifying the number of significant digits to print.
+#'   Defaults to \code{max(3, getOption("digits") - 3)}.
+#' @param signif.stars Logical; if \code{TRUE}, significance stars are displayed
+#'   next to p-values. Defaults to \code{FALSE}.
+#' @param ... Additional arguments passed to or from other methods. Currently unused.
+#'
+#' @return Invisibly returns \code{NULL}. The function prints results to the console.
+#'
 #' @export
+#'
 print.summary.mesdt_fit <- function(x,
                                     digits = max(3, getOption("digits") - 3),
                                     signif.stars = FALSE,
@@ -216,36 +261,37 @@ print.summary.mesdt_fit <- function(x,
 
 #' @importFrom stats simulate
 #' @export
-simulate.mesdt_fit <- function(obj, ...) {
+simulate.mesdt_fit <- function(object, nsim = 1, seed = NULL, ...) {
   # get method for correct backend
   #if (mesdt_obj$backend == "lme4") pred <- lme4::simulate.merMod(mesdt_obj$fit_obj, ...)
   #else if (mesdt_obj$backend == "glmmTMB") pred <- glmmTMB::simulate(mesdt_obj$fit_obj, ...)
-  pred <- stats::simulate(obj$fit_obj, ...)
+  pred <- stats::simulate(object$fit_obj, nsim = nsim, seed = NULL, ...)
   return(pred)
 }
 
 
 #' @export
-AIC.mesdt_fit <- function(obj, ...) {
-  return(AIC(obj$fit_obj, ...))
+AIC.mesdt_fit <- function(obj, k = 2, ...) {
+  return(stats::AIC(obj$fit_obj, k = k, ...))
 }
 
-
+#' @importFrom stats BIC
 #' @export
-BIC.mesdt_fit <- function(obj, ...) {
-  return(BIC(obj$fit_obj, ...))
+BIC.mesdt_fit <- function(object, ...) {
+  return(stats::BIC(object$fit_obj, ...))
 }
 
 
 #' @export
 logLik.mesdt_fit <- function(obj, ...) {
-  return(logLik(obj$fit_obj, ...))
+  return(stats::logLik(obj$fit_obj, ...))
 }
 
 
+#' @importFrom stats df.residual
 #' @export
-df.resisual.mesdt_fit <- function(obj, ...) {
-  return(df.resisual(obj$fit_obj, ...))
+df.residual.mesdt_fit <- function(object, ...) {
+  return(df.residual(object$fit_obj, ...))
 }
 
 #------------------------------------------------------------------------------#
@@ -253,22 +299,22 @@ df.resisual.mesdt_fit <- function(obj, ...) {
 # -> All of the following functions are taken from the lme4 package
 
 
-##' "format()" the 'VarCorr' matrix of the random effects -- for
-##' print()ing and show()ing
-##'
-##' @title Format the 'VarCorr' Matrix of Random Effects
-##' @param varc a \code{\link{VarCorr}} (-like) matrix with attributes.
-##' @param digits the number of significant digits.
-##' @param comp character vector of length one or two indicating which
-##' columns out of "Variance" and "Std.Dev." should be shown in the
-##' formatted output.
-##' @param formatter the \code{\link{function}} to be used for
-##' formatting the standard deviations and or variances (but
-##' \emph{not} the correlations which (currently) are always formatted
-##' as "0.nnn"
-##' @param ... optional arguments for \code{formatter(*)} in addition
-##' to the first (numeric vector) and \code{digits}.
-##' @return a character matrix of formatted VarCorr entries from \code{varc}.
+## "format()" the 'VarCorr' matrix of the random effects -- for
+## print()ing and show()ing
+##
+## @title Format the 'VarCorr' Matrix of Random Effects
+## @param varc a \code{\link{VarCorr}} (-like) matrix with attributes.
+## @param digits the number of significant digits.
+## @param comp character vector of length one or two indicating which
+## columns out of "Variance" and "Std.Dev." should be shown in the
+## formatted output.
+## @param formatter the \code{\link{function}} to be used for
+## formatting the standard deviations and or variances (but
+## \emph{not} the correlations which (currently) are always formatted
+## as "0.nnn"
+## @param ... optional arguments for \code{formatter(*)} in addition
+## to the first (numeric vector) and \code{digits}.
+## @return a character matrix of formatted VarCorr entries from \code{varc}.
 formatVC <- function(varcor, digits = max(3, getOption("digits") - 2),
                      comp = "Std.Dev.", corr = any(comp == "Std.Dev."),
                      formatter = format,
@@ -401,7 +447,7 @@ formatVC <- function(varcor, digits = max(3, getOption("digits") - 2),
 }
 
 
-##' Extract all warning msgs from a merMod object
+## Extract all warning msgs from a merMod object
 .merMod.msgs <- function(x) {
   ## currently only those found with 'X' :
   aX <- attributes(x@pp$X)
@@ -412,11 +458,11 @@ formatVC <- function(varcor, digits = max(3, getOption("digits") - 2),
     character()
 }
 
-
+#' @importFrom stats BIC
 llikAIC <- function(object) {
-  llik <- logLik(object)
+  llik <- stats::logLik(object)
   AICstats <-
-    c(AIC = AIC(llik), BIC = BIC(llik), logLik = c(llik),
+    c(AIC = stats::AIC(llik), BIC = stats::BIC(llik), logLik = c(llik),
       `-2*log(L)` = -2*llik,
       df.resid = df.residual(object))
   list(logLik = llik, AICtab = AICstats)
@@ -425,12 +471,8 @@ llikAIC <- function(object) {
 
 .prt.aictab <- function(aictab, digits = 1) {
   t.4 <- round(aictab, digits)
-  if (length(aictab) == 1 && names(aictab) == "REML")
-    cat.f("REML criterion at convergence:", t.4)
-  else {
-    ## slight hack to get residual df formatted as an integer
-    t.4F <- format(t.4)
-    t.4F["df.resid"] <- format(t.4["df.resid"])
-    print(t.4F, quote = FALSE)
-  }
+  # slight hack to get residual df formatted as an integer
+  t.4F <- format(t.4)
+  t.4F["df.resid"] <- format(t.4["df.resid"])
+  print(t.4F, quote = FALSE)
 }

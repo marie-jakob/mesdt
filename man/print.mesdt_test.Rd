@@ -2,12 +2,21 @@
 % Please edit documentation in R/mesdt_test_class.R
 \name{print.mesdt_test}
 \alias{print.mesdt_test}
-\title{print method
-TODO}
+\title{Print Method for mesdt_test Objects}
 \usage{
 \method{print}{mesdt_test}(x, ...)
 }
+\arguments{
+\item{x}{An object of class \code{mesdt_test}, typically returned by
+model comparison functions such as \code{mesdt()}.}
+
+\item{...}{Additional arguments passed to or from other methods. Currently
+unused.}
+}
+\value{
+Invisibly returns \code{NULL}. The function prints results to the console.
+}
 \description{
-print method
-TODO
+Prints a \code{mesdt_test} object by calling
+\code{print.summary.mesdt_test()}.
 }

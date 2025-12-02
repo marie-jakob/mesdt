@@ -1,11 +1,11 @@
-#' Construct Model Matrices From the Given Data to give to glmer()
-#'
-#' @param formula_mu formula for sensitivity (mu)
-#' @param formula_lambda formula for response bias (lambda)
-#' @param data dataset used to construct the model data
-#' @param trial_type_var name of variable coding the type of trial (signal vs. noise)
-#'
-#' @return list of model matrices (fixed and random for mu and lambda)
+# Construct Model Matrices From the Given Data to give to glmer()
+#
+# @param formula_mu formula for sensitivity (mu)
+# @param formula_lambda formula for response bias (lambda)
+# @param data dataset used to construct the model data
+# @param trial_type_var name of variable coding the type of trial (signal vs. noise)
+#
+# @return list of model matrices (fixed and random for mu and lambda)
 construct_modelmatrices <- function(formula_mu,
                                     formula_lambda,
                                     data,

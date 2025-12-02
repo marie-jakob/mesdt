@@ -19,6 +19,9 @@ compute_tests(
 )
 }
 \arguments{
+\item{mesdt_fit}{\code{mesdt_fit} object containing the full fit and the
+coefficients that should be tested.}
+
 \item{tests}{\code{character} specifying the type of tests that should be
 computed ("LRT" for likelihood ratio tests, "bootstrap" for parametric
 bootstrapping tests, see Details).}
@@ -28,6 +31,14 @@ bootstrapping tests, see Details).}
 
 \item{test_intercepts}{\code{boolean} indicating if intercepts for
 discriminability and response bias should be tested.}
+
+\item{tests_discriminability}{\code{formula} or \code{character} indicating which
+coefficients on discriminability should be tested (default is "all").
+See Details.}
+
+\item{tests_response_bias}{\code{formula} or \code{character} indicating which
+coefficients on response bias should be tested (default is "all").
+See Details.}
 
 \item{nsim}{\code{integer} specifying the number of simulated datasets for
 bootstrapping.}
@@ -39,17 +50,6 @@ in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
 
 \item{seed}{\code{integer} specifying an optional random seed for parametric
 bootstrapping.}
-
-\item{fit_obj}{\code{mesdt_fit} object containing the full fit and the
-coefficients that should be tested.}
-
-\item{test_discriminability}{\code{formula} or \code{character} indicating which
-coefficients on discriminability should be tested (default is "all").
-See Details.}
-
-\item{test_response_bias}{\code{formula} or \code{character} indicating which
-coefficients on response bias should be tested (default is "all").
-See Details.}
 }
 \value{
 An object of class \code{mesdt_test}, containing the fitted model

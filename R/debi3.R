@@ -16,7 +16,7 @@
 #' denied or a male employee was granted a pay raise.
 #'
 #' @format
-#' A data frame with 124672 rows and 9 columns.
+#' A data frame with 124672 rows and 10 columns.
 #' \describe{
 #'   \item{id}{Factor indicating the participant ID}
 #'   \item{assessment}{Factor indicating participants' judgments whether the
@@ -33,6 +33,8 @@
 #'   that gave the response in the trial}
 #'   \item{age}{Numerical value indicating the age of the participant that gave
 #'   the response in the trial}
+#'   \item{status_num}{Numerical variable indicating whether the trial was s
+#'   signal (1) or a noise (-1) trial}
 #'   ...
 #' }
 #' @source TODO (once we have updated the preprint)

@@ -12,14 +12,19 @@ URL: https://github.com/marie-jakob/mesdt
 BugReports: https://github.com/marie-jakob/mesdt/issues
 Imports: 
     lme4,
-    withr,
     stats,
     parallel,
     emmeans
 Suggests: 
     glmmTMB,
-    testthat (>= 3.0.0)
+    knitr,
+    rmarkdown,
+    testthat (>= 3.0.0),
+    dplyr,
+    janitor,
+    tidyr
 Config/testthat/edition: 3
 Depends: 
     R (>= 3.5)
 LazyData: true
+VignetteBuilder: knitr

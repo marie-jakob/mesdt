@@ -1,7 +1,9 @@
-.onLoad <- function(libname, pkgname) {
+.onAttach <- function(libname, pkgname) {
+  ver <- utils::packageVersion(pkgname)
   options("mesdt.backend" = "lme4")
-  packageStartupMessage("mesdt beta 0.1.\nSetting backend to lme4.")
-  message("\nThis package is still under development and has not been fully tested!")
+  packageStartupMessage(
+    sprintf("mesdt version %s\nSetting backend to lme4.\n\nThis package is still under development and has not been fully tested!", ver)
+  )
 }
 
 
@@ -199,12 +201,13 @@ standardize_fit_formulas <- function(form_disc, form_bias) {
 
 }
 
-
+#' @importFrom stats aggregate
+#' @importFrom stats reshape
 aggregate_data <- function(data, form_disc, form_bias, dv, trial_type) {
   grouping_vars <- c(unique(c(all.vars(form_disc), all.vars(form_bias))),
                      trial_type, dv)
   by_all <- data[, which(names(data) %in% grouping_vars )]
-  dat_agg <- aggregate(data[[dv]], by = by_all, FUN = length)
+  dat_agg <- stats::aggregate(data[[dv]], by = by_all, FUN = length)
   id_vars <- c(unique(c(all.vars(form_disc), all.vars(form_bias))), trial_type)
   dat_agg_wide <- reshape(
     dat_agg,
@@ -223,7 +226,8 @@ aggregate_data <- function(data, form_disc, form_bias, dv, trial_type) {
   return(dat_agg_wide)
 }
 
-
+#' @importFrom stats contrasts
+#' @importFrom stats contr.sum
 check_predictors <- function(data, form_disc, form_bias) {
   all_preds <- unique(all.vars(lme4::nobars(form_disc)), all.vars(lme4::nobars(form_bias)))
   not_sum_contrasts <- c()
@@ -235,7 +239,7 @@ check_predictors <- function(data, form_disc, form_bias) {
         not_centered <- c(not_centered, pred)
       }
     } else if (inherits(data[[pred]], "factor")) {
-      if (! all(contrasts(data[[pred]]) == contr.sum(nlevels(data[[pred]])))) {
+      if (! all(sort(contrasts(data[[pred]])) == sort(contr.sum(nlevels(data[[pred]]))))) {
         not_sum_contrasts <- c(not_sum_contrasts, pred)
       }
     } else {

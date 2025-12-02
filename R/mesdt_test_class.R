@@ -3,17 +3,52 @@ new_mesdt_test <- function(input_list) {
   structure(input_list, class = "mesdt_test")
 }
 
-#' print method
-#' TODO
+#' Print Method for mesdt_test Objects
+#'
+#' Prints a \code{mesdt_test} object by calling
+#' \code{print.summary.mesdt_test()}.
+#' @param x An object of class \code{mesdt_test}, typically returned by
+#'   model comparison functions such as \code{mesdt()}.
+#' @param ... Additional arguments passed to or from other methods. Currently
+#'   unused.
+#'
+#' @return Invisibly returns \code{NULL}. The function prints results to the console.
+#'
+#' @method print mesdt_test
 #' @export
+#'
 print.mesdt_test <- function(x, ...) {
   print.summary.mesdt_test(x)
 }
 
 
+
+#' Summary Method for mesdt_test Objects
+#'
+#' Provides a structured summary of a \code{mesdt_test} object, including
+#' likelihood ratio test (LRT) results, the type of test performed, and (if
+#' available) parametric bootstrap test results.
+#'
+#' @param object An object of class \code{mesdt_test}, typically returned by
+#'   \code{mesdt_test()} or a related model comparison function.
+#' @param ... Additional arguments passed to or from other methods. Currently
+#'   unused.
+#'
+#' @return
+#' A list of class \code{summary.mesdt_test} containing:
+#' \describe{
+#'   \item{\code{LRT_results}}{A table or list containing likelihood ratio
+#'   test results.}
+#'   \item{\code{type}}{A character string indicating the test type.}
+#'   \item{\code{pb_test_results}}{Parametric bootstrap test results, if
+#'   available.}
+#' }
+#'
+#' @method summary mesdt_test
 #' @export
-summary.mesdt_test <- function(x, ...) {
-  obj <- x
+#'
+summary.mesdt_test <- function(object, ...) {
+  obj <- object
   to_return <- list()
   to_return[["LRT_results"]] <- obj$LRT_results
   to_return[["type"]] <- obj$type
@@ -24,7 +59,18 @@ summary.mesdt_test <- function(x, ...) {
 }
 
 
-#' @export
+#' Print Method for Summary of mesdt_test Objects
+#'
+#' Prints a structured summary of a \code{summary.mesdt_test} object to the console.
+#' Depending on whether parametric bootstrap results are available, it prints
+#' either the parametric bootstrap tests or likelihood ratio test (LRT) results.
+#'
+#' @param x An object of class \code{summary.mesdt_test}, typically returned
+#'   by \code{summary.mesdt_test()}.
+#' @param ... Additional arguments passed to or from other methods. Currently unused.
+#'
+#' @return Invisibly returns \code{NULL}. The function prints results to the console.
+#'
 print.summary.mesdt_test <- function(x, ...) {
   # if bootstrap exists:
   if (! is.null(x$pb_test_results)) {

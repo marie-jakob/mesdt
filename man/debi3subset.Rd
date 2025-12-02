@@ -6,7 +6,7 @@
 \title{A subset of the data from "On Bias in Detecting Bias:
 A Signal Detection Analysis of Attributions to Gender Discrimination (Experiment 3)}
 \format{
-A data frame with 5120 rows and 9 columns.
+A data frame with 5120 rows and 10 columns.
 \describe{
 \item{id}{Factor indicating the participant ID}
 \item{assessment}{Factor indicating participants' judgments whether the
@@ -23,6 +23,8 @@ in a given trial}
 that gave the response in the trial}
 \item{age}{Numerical value indicating the age of the participant that gave
 the response in the trial}
+\item{status_num}{Numerical variable indicating whether the trial was s
+signal (1) or a noise (-1) trial}
 ...
 }
 }

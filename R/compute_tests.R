@@ -1,7 +1,7 @@
 #' Compute likelihood ratio tests and parametric bootstrapping tests for a
 #' (mixed-effects) SDT model.
 #'
-#' @param fit_obj `mesdt_fit` object containing the full fit and the
+#' @param mesdt_fit `mesdt_fit` object containing the full fit and the
 #'  coefficients that should be tested.
 #' @param tests `character` specifying the type of tests that should be
 #' computed ("LRT" for likelihood ratio tests, "bootstrap" for parametric
@@ -10,10 +10,10 @@
 #'  (default 3 / "III", 2 / "II") that are computed (see Details).
 #' @param test_intercepts `boolean` indicating if intercepts for
 #' discriminability and response bias should be tested.
-#' @param test_discriminability `formula` or `character` indicating which
+#' @param tests_discriminability `formula` or `character` indicating which
 #'  coefficients on discriminability should be tested (default is "all").
 #'  See Details.
-#' @param test_response_bias `formula` or `character` indicating which
+#' @param tests_response_bias `formula` or `character` indicating which
 #'  coefficients on response bias should be tested (default is "all").
 #'  See Details.
 #' @param nsim `integer` specifying the number of simulated datasets for
