@@ -214,6 +214,29 @@ printmethod <- function(x) {
 #'
 #' @return Invisibly returns \code{NULL}. The function prints results to the console.
 #'
+#' @description
+#' Estimates (mixed-effects) signal detection theory (SDT) models with maximum
+#' likelihood estimation by leveraging the equivalence between certain SDT and
+#' certain generalized linear models (GLMM; De Carlo, 1998). The GLMMs are
+#' estimated using either the `lme4` (the default) or the `glmmTMB` package
+#' (which can be significantly faster) as a backend, which can be changed with
+#' \link{set_backend}.
+#'
+#' The parameter estimates can be interpreted on the latent evidence
+#' scale: For instance, when using sum contrasts, the fixed (or population-level)
+#' intercepts for discriminability (d') and response bias (c) indicate mean overall
+#' levels of discriminability and response bias. The higher d', the larger the
+#' difference between the means of the signal and noise distributions and the
+#' better signal and noise can be discriminated. A response bias of c < 0 (c > 0)
+#' indicates a liberal (conservative) response tendency, that is, a tendency
+#' to give a "signal" ("noise") response. The fixed effects of predictors
+#' (again, assuming sum contrasts for all predictors) describe the population
+#' effect of an predictor on discriminability or response bias. (i.e., for a
+#' categorical variable with two levels, the difference between those levels).
+#' The random effects indicate the variability between the levels of the
+#' random-effects grouping factor (e.g., between participants).
+#' For a more detailed explanation and tutorial see Jakob et al. (2025).
+#'
 #' @export
 #'
 print.summary.mesdt_fit <- function(x,

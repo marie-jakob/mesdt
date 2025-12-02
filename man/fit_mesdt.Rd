@@ -11,16 +11,12 @@ fit_mesdt(
   trial_type,
   data,
   distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
-  correlate_sdt_params = TRUE,
+  correlate_sdt_params = FALSE,
   aggregate = FALSE,
   control = NULL
 )
 }
 \arguments{
-\item{discriminability}{\code{formula} specifying fixed and random effects on
-discriminability with the common syntax for mixed-effects models from
-\code{lme4} (see Details).}
-
 \item{response_bias}{\code{formula} specifying fixed and random effects on response bias
 with the common syntax for mixed-effects models from lme4 (see Details).}
 
@@ -38,7 +34,7 @@ of signal and noise evidence ("gaussian", which is the default, "logistic",
 or "gumbel-min").}
 
 \item{correlate_sdt_params}{\code{boolean} indicating whether correlations between
-SDT parameters should be modeled (see Details).}
+SDT parameters should be modeled (default is FALSE, see Details).}
 
 \item{aggregate}{(experimental) \code{boolean} indicating whether the given long
 data frame should be aggregated. Can significantly speed up estimation,
@@ -47,6 +43,10 @@ on the fitted model (e.g., bootstrapping) might not work as expected.}
 
 \item{control}{list containing optional control arguments that are included
 in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
+
+\item{formula}{\code{formula} specifying fixed and random effects on
+discriminability with the common syntax for mixed-effects models from
+\code{lme4} (see Details).}
 }
 \value{
 An object of class \code{mesdt_fit}, containing the fitted model
@@ -61,6 +61,21 @@ certain generalized linear models (GLMM; De Carlo, 1998). The GLMMs are
 estimated using either the \code{lme4} (the default) or the \code{glmmTMB} package
 (which can be significantly faster) as a backend, which can be changed with
 \link{set_backend}.
+
+The resulting parameter estimates can be interpreted on the latent evidence
+scale that is assumed in SDT: For instance, when using sum contrasts, the fixed (or population-level)
+intercepts for discriminability (d') and response bias (c) indicate mean overall
+levels of discriminability and response bias. The higher d', the larger the
+difference between the means of the signal and noise distributions and the
+better signal and noise can be discriminated. A response bias of c < 0 (c > 0)
+indicates a liberal (conservative) response tendency, that is, a tendency
+to give a "signal" ("noise") response. The fixed effects of predictors
+(again, assuming sum contrasts for all predictors) describe the population
+effect of an predictor on discriminability or response bias. (i.e., for a
+categorical variable with two levels, the difference between those levels).
+The random effects indicate the variability between the levels of the
+random-effects grouping factor (e.g., between participants).
+For a more detailed explanation and tutorial see Jakob et al. (2025).
 
 The default SDT parametrization is the common equal-variance Gaussian model,
 but \code{fit_mesdt()} and this package support other distributions (i.e., the
@@ -81,10 +96,19 @@ conditional modes.
 }
 \details{
 \itemize{
-\item Formulas for discriminability and response bias can be two-sided, specifying the
-SDT parameter on the left-hand-side (e.g., \code{discriminability ~ 1 + (1 | id)})
-or one-sided (e.g., \code{~ 1 + (1 | id)}). In the latter case, the corresponding
-SDT parameter is extracted from the name of the function argument.
+\item Formulas for discriminability and response bias should be one-sided (e.g.,
+\code{discriminability =~ 1 + (1 | id)}).
+\item Suppressing correlations between random effects is possible by dividing
+the random-effects formula and the grouping factor with two, instead of one
+vertical bars (\code{||}). Note that unlike lme4 and glmmTMB, mesdt also supports
+this notation for factors.
+\item The current implementation supports completely correlated and
+completely uncorrelated random-effects structures, as well as correlations
+only within random effects for the same SDT parameter (i.e., random effects
+for discriminability are correlated with each other but not with random
+effects for response bias and vice versa). Formulas containing both
+correlated and uncorrelated terms are not yet supported and will be estimated
+as completely uncorrelated models.
 \item Formulas can also specify single-level models without random effects. In
 such a case, the \code{glm()} function from \code{stats} is used to estimate the model.
 \item Per default, correlations between the random effects for discriminability
@@ -114,7 +138,7 @@ mod_mixed <- fit_mesdt(
 )
 summary(mod_mixed)
 
-# Fixed-effects model (not recommended for this type of nested data structure!):
+# Fixed-effects model (not recommended for this type of multi-level data structure!):
 mod_fixed_only <- fit_mesdt(
   discriminability ~ committee * emp_gender,
   response_bias ~ committee * emp_gender,

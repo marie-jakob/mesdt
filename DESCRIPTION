@@ -2,8 +2,10 @@ Package: mesdt
 Title: Mixed-Effects Signal Detection Theory Models
 Version: 0.0.0.9000
 Authors@R: 
-    person("Marie", "Jakob", , "marie.a.jakob@gmail.com", role = c("aut", "cre"),)
-Description: Fit mixed-effects signal detection theory models using maximum likelihood estimation. 
+    c(person("Marie", "Jakob", , "marie.a.jakob@gmail.com", role = c("aut", "cre")),
+    person("Raphael", "Hartmann", role = c("ctb")),
+    person("Henrik", "Singmann", role=c("ctb")))
+Description: Fit and test mixed-effects signal detection theory models using maximum likelihood estimation. 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

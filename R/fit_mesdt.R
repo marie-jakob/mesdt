@@ -15,7 +15,7 @@
 #'  of signal and noise evidence ("gaussian", which is the default, "logistic",
 #'  or "gumbel-min").
 #' @param correlate_sdt_params `boolean` indicating whether correlations between
-#'  SDT parameters should be modeled (see Details).
+#'  SDT parameters should be modeled (default is TRUE, see Details).
 #' @param aggregate (experimental) `boolean` indicating whether the given long
 #'  data frame should be aggregated. Can significantly speed up estimation,
 #'  especially for lme4, but has the disadvantage that additional methods based
@@ -36,6 +36,21 @@
 #' (which can be significantly faster) as a backend, which can be changed with
 #' \link{set_backend}.
 #'
+#' The resulting parameter estimates can be interpreted on the latent evidence
+#' scale that is assumed in SDT: For instance, when using sum contrasts, the fixed (or population-level)
+#' intercepts for discriminability (d') and response bias (c) indicate mean overall
+#' levels of discriminability and response bias. The higher d', the larger the
+#' difference between the means of the signal and noise distributions and the
+#' better signal and noise can be discriminated. A response bias of c < 0 (c > 0)
+#' indicates a liberal (conservative) response tendency, that is, a tendency
+#' to give a "signal" ("noise") response. The fixed effects of predictors
+#' (again, assuming sum contrasts for all predictors) describe the population
+#' effect of an predictor on discriminability or response bias. (i.e., for a
+#' categorical variable with two levels, the difference between those levels).
+#' The random effects indicate the variability between the levels of the
+#' random-effects grouping factor (e.g., between participants).
+#' For a more detailed explanation and tutorial see Jakob et al. (2025).
+#'
 #' The default SDT parametrization is the common equal-variance Gaussian model,
 #' but `fit_mesdt()` and this package support other distributions (i.e., the
 #' logistic, gumbel-min and gumbel-max distribution) as well, which can be
@@ -52,17 +67,27 @@
 #' (`$fit_obj`, a `glmerfit`), allowing users to do additional processing that is not (yet)
 #' implemented within this package, such as post-processing of random effect
 #' conditional modes.
-
-
 #'
 #' @details
-#' + Formulas for discriminability and response bias can be two-sided, specifying the
-#'  SDT parameter on the left-hand-side (e.g., `discriminability ~ 1 + (1 | id)`)
-#'  or one-sided (e.g., `~ 1 + (1 | id)`). In the latter case, the corresponding
-#'  SDT parameter is extracted from the name of the function argument.
+#' + Formulas for discriminability and response bias should be one-sided (e.g.,
+#' `discriminability =~ 1 + (1 | id)`).
+#'
+#'  + Suppressing correlations between random effects is possible by dividing
+#'  the random-effects formula and the grouping factor with two, instead of one
+#'  vertical bars (`||`). Note that unlike lme4 and glmmTMB, mesdt also supports
+#'  this notation for factors.
+#'
+#'  + The current implementation supports completely correlated and
+#'  completely uncorrelated random-effects structures, as well as correlations
+#'  only within random effects for the same SDT parameter (i.e., random effects
+#'  for discriminability are correlated with each other but not with random
+#'  effects for response bias and vice versa). Formulas containing both
+#'  correlated and uncorrelated terms are not yet supported and will be estimated
+#'  as completely uncorrelated models.
 #'
 #'  + Formulas can also specify single-level models without random effects. In
 #'  such a case, the `glm()` function from `stats` is used to estimate the model.
+#'
 #'
 #'  + Per default, correlations between the random effects for discriminability
 #'  and response bias are modeled with a joint covariance matrix (i.e., random
@@ -92,7 +117,7 @@
 #' )
 #' summary(mod_mixed)
 #'
-#' # Fixed-effects model (not recommended for this type of nested data structure!):
+#' # Fixed-effects model (not recommended for this type of multi-level data structure!):
 #' mod_fixed_only <- fit_mesdt(
 #'   discriminability ~ committee * emp_gender,
 #'   response_bias ~ committee * emp_gender,
@@ -123,8 +148,7 @@ fit_mesdt <- function(discriminability,
   if (typeof(discriminability) != "language") stop("'discriminability' must be a formula'.")
   if (typeof(bias) != "language") stop("'response_bias' must be a 'formula'.")
 
-  forms <- standardize_fit_formulas(discriminability, bias)
-  discriminability <- forms[[1]]; bias <- forms[[2]]
+  check_fit_formulas(discriminability, bias)
 
   data_name <- deparse(substitute(data))
 
@@ -162,7 +186,7 @@ fit_mesdt <- function(discriminability,
   trial_type_var <- trial_type
 
   if (typeof(trial_type_var) != "character") stop("'trial_type_var' must be of type 'character'.")
-  if (is.null(data[[trial_type_var]])) stop(paste("Given trialtype variable", trial_type_var, "not in data."))
+  if (is.null(data[[trial_type_var]])) stop(paste("Given trial_type variable", trial_type_var, "not in data."))
   # TODO: if you have a predictor that only affects sensitivity (such as strength in the context of
   # memory, this won't work) -> maybe allow a ternary variable then (maybe with a warning)
 

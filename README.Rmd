@@ -112,20 +112,22 @@ on participants' discriminability and  response bias, we include them as fixed
 effects in our model. To account for
 differences between our participants in these parameters, we include 
 by-participant random intercepts and slopes on discriminability and response bias. 
-Our studies with this paradigm consistently showed considerable by-participant
-variability in mean response bias, mean discriminability and the effect of the 
-committee decision on participants' response bias, which is why we include
-by-participant random intercepts on both SDT parameters and a by-participant
-random slope on response bias.
-
+For the present paradigm, the maximal random-effects structure justified by the 
+design includes both by-participant random intercepts and random slopes for the
+effects of the committee decision, employee gender and their interaction on 
+both discriminability and response bias. To considerable reduce the complexity
+of our model and speed up estimation, we do not estimate correlations between 
+the random effects here, by dividing the random effects and the grouping factor
+with two vertical bars (`||`). Note that unlike lme4 and glmmTMB, mesdt also
+supports this notation for factors.
 
 Thus, in `mesdt`, we can specify and fit our model like this:
 
 ``` {r fit}
 
 mod <- fit_mesdt(
-  discriminability ~ committee * emp_gender + (1 | id),
-  response_bias ~ committee * emp_gender + (committee | id),
+  discriminability =~ committee * emp_gender + (committee * emp_gender || id),
+  response_bias =~ committee * emp_gender + (committee * emp_gender || id),
   data = debi3subset,
   trial_type = "status",
   dv = "assessment"
@@ -134,6 +136,11 @@ mod <- fit_mesdt(
 summary(mod)
 
 ```
+
+In practice, we recommend to iteratively reduce the random-effects structure 
+such that only random-effects terms that are supported by the data are included 
+in the model (see Bates et al., 2015 and Jakob et al., 2025 for explanations).
+
 
 The `summary()` method prints population-level estimates for the fixed effects 
 and variances and covariances of the random effects separately for 

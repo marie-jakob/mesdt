@@ -24,6 +24,19 @@ An object of class \code{emmGrid}, containing the estimated marginal means
 for the specified SDT parameter.
 }
 \description{
+Compute estimated marginal means (EMMs) for specified factors or factor
+combinations in a mixed-effects SDT model; and optionally, comparisons or
+contrasts among them.
+
+The estimated marginal means can be interpreted on the latent evidence scale
+that is assumed in SDT: They indicate population-level means of discriminability
+and / or response bias for the specified combinations of factors. The SDT
+model is parametrized such that a response bias of c < 0 (c > 0)
+indicates a liberal (conservative) response tendency, that is, a tendency
+to give a "signal" ("noise") response.
+For a more detailed explanation and a tutorial see Jakob et al. (2025).
+}
+\details{
 Compute estimated marginal means (EMMs) for objects of class \code{mymodel}
 for discriminability or response bias.
 }

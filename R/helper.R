@@ -40,6 +40,26 @@ set_backend <- function(backend_name) {
 }
 
 
+
+#' Get the backend for mesdt.
+#'
+#'
+#' @return the current backend used by mesdt.
+#' @description
+#'
+#' Allows the user to check which package is currently set as the backend
+#' to the estimate the models.
+#'
+#' @export
+#'
+#' @examples
+#' set_backend()
+get_backend <- function(backend_name) {
+    return(options("mesdt.backend"))
+}
+
+
+
 all_terms_in <- function(terms_to_check, reference_terms) {
   normalize_interaction <- function(term) {
     parts <- unlist(strsplit(term, ":"))
@@ -152,54 +172,20 @@ check_sensitivity <- function(fit_obj) {
 }
 
 
-standardize_fit_formulas <- function(form_disc, form_bias) {
+check_fit_formulas <- function(form_disc, form_bias) {
   # Check if formula has a left-hand side
   form_disc_std <- ""
   form_bias_std <- ""
   if (length(as.character(form_disc)) == 3) {
-    if (as.character(form_disc)[2] == "discriminability") {
-      form_disc_std <- as.formula(paste(as.character(form_disc)[c(1, 3)],
-                                        collapse = " "),
-                                  env = globalenv())
-    } else if (as.character(form_disc)[2] == "bias") {
-      if (as.character(form_bias)[2] == "discriminability") {
-        form_bias_std <- as.formula(paste(as.character(form_disc)[c(1, 3)],
-                                          collapse = " "),
-                                    env = globalenv())
-      } else {
-        stop("Cannot interpret formula input. Please specify formulas as either
-           discriminability = ~ x and bias = ~ x or discriminability ~ x and bias ~ x.")
-      }
-    } else {
-      stop("Cannot interpret formula input. Please specify formulas as either
-           discriminability = ~ x and bias = ~ x or discriminability ~ x and bias ~ x.")
-    }
-  } else form_disc_std <- form_disc
-
-  if (length(as.character(form_bias)) == 3) {
-    if (as.character(form_bias)[2] == "response_bias") {
-      form_bias_std <- as.formula(paste(as.character(form_bias)[c(1, 3)],
-                                        collapse = " "),
-                                  env = globalenv())
-    } else if (as.character(form_bias)[2] == "discriminability") {
-      if (as.character(form_disc)[2] == "response_bias") {
-        form_disc_std <- as.formula(paste(as.character(form_bias)[c(1, 3)],
-                                          collapse = " "),
-                                    env = globalenv())
-      } else {
-        stop("Cannot interpret formula input.\nPlease specify formulas as either
-           discriminability = ~ x and response_bias = ~ x or discriminability ~ x and response_bias ~ x.")
-      }
-    } else {
-      stop("Cannot interpret formula input.\nPlease specify formulas as either
-           discriminability = ~ x and response_bias = ~ x or discriminability ~ x and response_bias ~ x.")
-    }
-  } else form_bias_std <- form_bias
-
-
-  return(list(form_disc_std, form_bias_std))
-
+    stop("Cannot interpret formula input for discriminability. Please use
+         one-sided formulas such as discriminability = ~ x.")
+  } else if (length(as.character(form_bias)) == 3) {
+    stop("Cannot interpret formula input for response bias. Please use
+         one-sided formulas such as response_bias = ~ x.")
+  }
+  return()
 }
+
 
 #' @importFrom stats aggregate
 #' @importFrom stats reshape
@@ -282,5 +268,10 @@ check_predictors <- function(data, form_disc, form_bias) {
 
 
 
-
+is_uncor <- function(form) {
+  if (! grepl("\\|\\|", as.character(form)[2])) return(FALSE)
+  no_double_bars <- gsub("\\|\\|", "", as.character(form)[2])
+  no_single_bars <- gsub("\\|\\|", "", no_double_bars)
+  return(no_double_bars == no_single_bars)
+}
 
