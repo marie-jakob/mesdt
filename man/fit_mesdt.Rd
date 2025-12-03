@@ -11,12 +11,16 @@ fit_mesdt(
   trial_type,
   data,
   distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
-  correlate_sdt_params = FALSE,
+  correlate_sdt_params = TRUE,
   aggregate = FALSE,
   control = NULL
 )
 }
 \arguments{
+\item{discriminability}{\code{formula} specifying fixed and random effects on
+discriminability with the common syntax for mixed-effects models from
+\code{lme4} (see Details).}
+
 \item{response_bias}{\code{formula} specifying fixed and random effects on response bias
 with the common syntax for mixed-effects models from lme4 (see Details).}
 
@@ -34,7 +38,7 @@ of signal and noise evidence ("gaussian", which is the default, "logistic",
 or "gumbel-min").}
 
 \item{correlate_sdt_params}{\code{boolean} indicating whether correlations between
-SDT parameters should be modeled (default is FALSE, see Details).}
+SDT parameters should be modeled (default is TRUE, see Details).}
 
 \item{aggregate}{(experimental) \code{boolean} indicating whether the given long
 data frame should be aggregated. Can significantly speed up estimation,
@@ -43,10 +47,6 @@ on the fitted model (e.g., bootstrapping) might not work as expected.}
 
 \item{control}{list containing optional control arguments that are included
 in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
-
-\item{formula}{\code{formula} specifying fixed and random effects on
-discriminability with the common syntax for mixed-effects models from
-\code{lme4} (see Details).}
 }
 \value{
 An object of class \code{mesdt_fit}, containing the fitted model

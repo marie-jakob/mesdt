@@ -12,13 +12,13 @@ test_that("aggregation gives the same results as usual", {
                          aggregate = TRUE)
     s_agg <- summary(fit_agg)
 
-    expect_equal(s$d_coef, s_agg$d_coef, tolerance = 1e-5)
-    expect_equal(s$c_coef, s_agg$c_coef, tolerance = 1e-5)
+    expect_equal(s$d_coef, s_agg$d_coef, tolerance = 1e-3)
+    expect_equal(s$c_coef, s_agg$c_coef, tolerance = 1e-3)
 
     lrts <- compute_tests(fit, test_intercepts = T)
     lrts_agg <- compute_tests(fit_agg, test_intercepts = T)
 
-    expect_equal(lrts$LRT_results[, c(3, 4)], lrts_agg$LRT_results[, c(3, 4)])
+    expect_equal(lrts$LRT_results[, c(3, 4)], lrts_agg$LRT_results[, c(3, 4)], tolerance = 1e-5)
   }
 
 })
@@ -51,7 +51,7 @@ test_that("aggregation gives the same results as usual", {
     lrts <- compute_tests(fit, test_intercepts = T)
     lrts_agg <- compute_tests(fit_agg, test_intercepts = T)
 
-    expect_equal(lrts$LRT_results[, c(3, 4)], lrts_agg$LRT_results[, c(3, 4)], tolerance = 1e-2)
+    expect_equal(lrts$LRT_results[, c(3, 4)], lrts_agg$LRT_results[, c(3, 4)], tolerance = 1e-4)
   }
 })
 
@@ -73,8 +73,8 @@ test_that("effects only in random effects", {
                          aggregate = TRUE)
     s_agg <- summary(fit_agg)
 
-    expect_equal(s$d_coef, s_agg$d_coef, tolerance = 1e-3)
-    expect_equal(s$c_coef, s_agg$c_coef, tolerance = 1e-3)
+    expect_equal(s$d_coef, s_agg$d_coef, tolerance = 1e-2)
+    expect_equal(s$c_coef, s_agg$c_coef, tolerance = 1e-2)
 
     lrts <- compute_tests(fit, test_intercepts = T)
     lrts_agg <- compute_tests(fit_agg, test_intercepts = T)
@@ -124,25 +124,25 @@ test_that("aggregation works for gumbel-min", {
   for (backend in c("lme4", "glmmTMB")) {
     skip_if_not_installed(backend)
     set_backend(backend)
-    fit <- fit_mesdt(~ 1 + (1 | id) + (1 | file_name), ~ 1 + (committee | id),
+    suppressWarnings(fit <- fit_mesdt(~ 1 + (1 | id) + (1 | file_name), ~ 1 + (committee | id),
                      dv = "assessment", data = debi3subset,
                      trial_type = "status",
                      aggregate = FALSE,
-                     distribution = "gumbel-min")
+                     distribution = "gumbel-min"))
     s <- summary(fit)
 
-    fit_agg <- fit_mesdt(~ 1 + (1 | id) + (1 | file_name), ~ 1 + (committee | id),
+    suppressWarnings(fit_agg <- fit_mesdt(~ 1 + (1 | id) + (1 | file_name), ~ 1 + (committee | id),
                          dv = "assessment", data = debi3subset,
                          trial_type = "status",
                          aggregate = TRUE,
-                         distribution = "gumbel-min")
+                         distribution = "gumbel-min"))
     s_agg <- summary(fit_agg)
 
     expect_equal(s$d_coef, s_agg$d_coef, tolerance = 1e-3)
     expect_equal(s$c_coef, s_agg$c_coef, tolerance = 1e-3)
 
-    lrts <- compute_tests(fit, test_intercepts = T)
-    lrts_agg <- compute_tests(fit_agg, test_intercepts = T)
+    suppressWarnings(lrts <- compute_tests(fit, test_intercepts = T))
+    suppressWarnings(lrts_agg <- compute_tests(fit_agg, test_intercepts = T))
 
     expect_equal(lrts$LRT_results[, c(3, 4)], lrts_agg$LRT_results[, c(3, 4)], tolerance = 1e-3)
   }

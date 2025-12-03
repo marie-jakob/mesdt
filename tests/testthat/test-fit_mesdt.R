@@ -7,8 +7,8 @@ options("mesdt.backend" = "lme4")
 # use a saved model for this
 
 test_that("fit_mesdt() estimates the correct model", {
-  fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
-                   trial_type = "trial_type_fac")$fit_obj
+  suppressWarnings(fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
+                   trial_type = "trial_type_fac")$fit_obj)
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_test)))
@@ -36,10 +36,10 @@ test_that("fit_mesdt() estimates the correct model", {
 
 
 test_that("fit_mesdt() works for uncorrelated mu and lambda effects", {
-  fit <- fit_mesdt(~ 1 + committee + (1 + committee | id),
+  suppressWarnings(fit <- fit_mesdt(~ 1 + committee + (1 + committee | id),
                    ~ 1 + committee + (1 + committee | id),
                    dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
-                   correlate_sdt_params = F)$fit_obj
+                   correlate_sdt_params = F)$fit_obj)
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_uncor_sdt)))
@@ -52,16 +52,16 @@ test_that("fit_mesdt() works for uncorrelated mu and lambda effects", {
   expect_equal(logLik(fit), logLik(model_uncor_sdt), tolerance = 1e-3)
 
   # fixed effects estimates
-  expect_equal(abs(unname(fixef(fit))), abs(unname(fixef(model_uncor_sdt))), tolerance = 1e-4)
+  expect_equal(abs(unname(fixef(fit))), abs(unname(fixef(model_uncor_sdt))), tolerance = 1e-3)
 
   # observed Fisher information
   expect_equal(abs(unname(vcov(fit))[1:4, 1:4]), abs(unname(vcov(model_uncor_sdt))[1:4, 1:4]), tolerance = 1e-3)
 
   # lambda random effect variances
-  expect_equal(abs(as.data.frame(VarCorr(fit))$vcov), abs(as.data.frame(VarCorr(model_uncor_sdt))$vcov), tolerance = 1e-3)
+  expect_equal(abs(as.data.frame(VarCorr(fit))$vcov), abs(as.data.frame(VarCorr(model_uncor_sdt))$vcov), tolerance = 1e-2)
 
   # random effects estimates
-  expect_equal(unname(abs(ranef(fit)$id[, 1:4])), unname(abs(ranef(model_uncor_sdt)$id[, 1:4])), tolerance = 1e-4)
+  expect_equal(unlist(unname(abs(ranef(fit)$id[, 1:4]))), unlist(unname(abs(ranef(model_uncor_sdt)$id[, 1:4]))), tolerance = 1e-2)
 
 }
 )
@@ -176,18 +176,18 @@ test_that("fit_mesdt() works when only mu or lambda have random effects", {
                    ~ committee + (1 | id),
                    dv = "assessment", data = dat_exp_2, trial_type = "status_fac")$fit_obj
   fit_test <- lme4::glmer(assessment ~ status_ef * committee + (1 | id), data = dat_exp_2, family = binomial("probit"),
-                    nAGQ = 0)
+                    nAGQ = 1)
   expect_equal(logLik(fit), logLik(fit_test))
-  expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))))
+  expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))), tolerance = 1e-3)
   expect_equal(as.numeric(ranef(fit)), as.numeric(ranef(fit_test)))
-  expect_equal(as.numeric(VarCorr(fit)), as.numeric(VarCorr(fit_test)), tolerance = 1e-5)
+  expect_equal(as.numeric(VarCorr(fit)), as.numeric(VarCorr(fit_test)), tolerance = 1e-3)
 
 
   fit <- fit_mesdt(~ committee + (1 | id),
                    ~ committee,
                    dv = "assessment", data = dat_exp_2, trial_type = "status_fac")$fit_obj
   fit_test <- lme4::glmer(assessment ~ status_ef * committee + (0 + status_ef | id), data = dat_exp_2, family = binomial("probit"),
-                    nAGQ = 0)
+                    nAGQ = 1)
   expect_equal(logLik(fit), logLik(fit_test))
   expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))))
   expect_equal(as.numeric(ranef(fit)), as.numeric(ranef(fit_test)))

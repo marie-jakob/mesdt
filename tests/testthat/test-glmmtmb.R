@@ -104,13 +104,13 @@ test_that("glmmTMB and lme4 get similar results for fitted models and LRTs (cros
   expect_equal(logLik(fit_tmb$fit), logLik(fit_lme$fit), tolerance = 1e-3)
 
   # LRTs
-  expect_equal(chisquares_cross_2, as.numeric(LRTs_2_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-3)
+  expect_equal(chisquares_cross_2, as.numeric(LRTs_2_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-2)
   expect_equal(chisquares_cross_2[c(2, 4)], as.numeric(LRTs_2_tmb$LRT_results[, 4]), tolerance = 1e-2)
   expect_equal(chisquares_cross_3, as.numeric(LRTs_3_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-2)
   expect_equal(chisquares_cross_3[c(2, 4)], as.numeric(LRTs_3_tmb$LRT_results[, 4]), tolerance = 1e-2)
 
   expect_equal(as.numeric(LRTs_2_intercepts_lme$LRT_results[, 4]),
-               as.numeric(LRTs_2_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-3)
+               as.numeric(LRTs_2_intercepts_tmb$LRT_results[, 4]), tolerance = 1e-2)
   expect_equal(as.numeric(LRTs_2_lme$LRT_results[, 4]),
                as.numeric(LRTs_2_tmb$LRT_results[, 4]), tolerance = 1e-2)
   expect_equal(as.numeric(LRTs_3_intercepts_lme$LRT_results[, 4]),

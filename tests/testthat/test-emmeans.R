@@ -4,16 +4,14 @@
 test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
 
   options("mesdt.backend" = "lme4")
-
-  library(lme4)
-  library(emmeans)
+  suppressWarnings(library(lme4))
 
   # 1. One factor
   test_mod_lme <- glmer(assessment ~ status_fac * committee  +
                          (status_fac | id),
                        data = dat_exp_2,
                        family = binomial("probit"),
-                       nAGQ = 0)
+                       nAGQ = 1)
   test_mod_mesdt <- fit_mesdt(~ committee + (1 | id),
                               ~ committee + (1 | id),
                               data = dat_exp_2,
@@ -47,7 +45,7 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
                           (status_fac | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 0)
+                        nAGQ = 1)
 
   test_mod_mesdt <- fit_mesdt(~ contingencies + (1 | id),
                               ~ contingencies + (1 | id),
@@ -77,7 +75,7 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
                           (status_fac | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 0)
+                        nAGQ = 1)
 
   test_mod_mesdt <- fit_mesdt(~ contingencies * emp_gender + (1 | id),
                               ~ contingencies * emp_gender + (1 | id),

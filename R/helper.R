@@ -2,7 +2,7 @@
   ver <- utils::packageVersion(pkgname)
   options("mesdt.backend" = "lme4")
   packageStartupMessage(
-    sprintf("mesdt version %s\nSetting backend to lme4.\n\nThis package is still under development and has not been fully tested!", ver)
+    sprintf("mesdt version %s\nSetting backend to lme4.", ver)
   )
 }
 
@@ -53,7 +53,7 @@ set_backend <- function(backend_name) {
 #' @export
 #'
 #' @examples
-#' set_backend()
+#' get_backend()
 get_backend <- function(backend_name) {
     return(options("mesdt.backend"))
 }
@@ -265,13 +265,4 @@ check_predictors <- function(data, form_disc, form_bias) {
   return()
 }
 
-
-
-
-is_uncor <- function(form) {
-  if (! grepl("\\|\\|", as.character(form)[2])) return(FALSE)
-  no_double_bars <- gsub("\\|\\|", "", as.character(form)[2])
-  no_single_bars <- gsub("\\|\\|", "", no_double_bars)
-  return(no_double_bars == no_single_bars)
-}
 

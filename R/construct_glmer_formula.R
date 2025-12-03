@@ -127,9 +127,7 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
     ################
   } else {
     if (is.null(to_remove)) {
-      if (! (is_uncor(formula_mu) & is_uncor(formula_lambda))) {
-        message("Given random-effects structure contains uncorrelated terms. Modeling all random effects parametes as uncorrelated since a mix of correlated and uncorrelated terms is not supported at the moment.")
-      }
+      message("Given random-effects structure contains uncorrelated terms. Modeling all random effects parametes as uncorrelated since a mix of correlated and uncorrelated terms is not supported at the moment.")
     }
     if (correlate_sdt_params) {
       message("Correlating SDT Parameters is not possible in the presence of uncorrelated terms.")
