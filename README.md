@@ -264,15 +264,11 @@ emmeans(mod, ~ committee, dpar = "response bias")
 
 The estimated marginal means show that participants’ discriminability
 was descriptively lower in trials where a pay raise was denied
-($d' = 1.72$) than for cases where one was granted ($d' = 1.80$). We can
-see a similar pattern for response bias, with a smaller, that is, more
-liberal response criterion in “denied” cases ($\lambda = 0.127$) than in
-“granted” cases ($\lambda = 0.164$). However, both effects were not
+($d' = 1.73$) than for cases where one was granted ($d' = 1.83$). We can
+see a different pattern for response bias, with a smaller, that is, more
+liberal response criterion in “granted” cases ($c = 0.126$) than in
+“denied” cases ($c = 0.157$). However, both effects were not
 significantly different from zero in this subset of the data.
-
-## References
-
-TODO
 
 [^1]: `debi3subset` contains a subset of 20 participants. The complete
     dataset is provided as `debi3`.
