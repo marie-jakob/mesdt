@@ -4,3 +4,9 @@
 .httr-oauth
 .DS_Store
 inst/doc
+other-files/
+tests-long/
+README.Rmd
+README.html
+mesdt.Rproj
+

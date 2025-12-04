@@ -25,6 +25,6 @@ available.}
 }
 \description{
 Provides a structured summary of a \code{mesdt_test} object, including
-likelihood ratio test (LRT) results, the type of test performed, and (if
+likelihood ratio test (LRT) results and (if
 available) parametric bootstrap test results.
 }

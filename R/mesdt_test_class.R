@@ -26,7 +26,7 @@ print.mesdt_test <- function(x, ...) {
 #' Summary Method for mesdt_test Objects
 #'
 #' Provides a structured summary of a \code{mesdt_test} object, including
-#' likelihood ratio test (LRT) results, the type of test performed, and (if
+#' likelihood ratio test (LRT) results and (if
 #' available) parametric bootstrap test results.
 #'
 #' @param object An object of class \code{mesdt_test}, typically returned by
@@ -71,6 +71,7 @@ summary.mesdt_test <- function(object, ...) {
 #'
 #' @return Invisibly returns \code{NULL}. The function prints results to the console.
 #'
+#' @export
 print.summary.mesdt_test <- function(x, ...) {
   # if bootstrap exists:
   if (! is.null(x$pb_test_results)) {

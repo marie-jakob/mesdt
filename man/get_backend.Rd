@@ -4,7 +4,7 @@
 \alias{get_backend}
 \title{Get the backend for mesdt.}
 \usage{
-get_backend(backend_name)
+get_backend()
 }
 \value{
 the current backend used by mesdt.
@@ -14,5 +14,5 @@ Allows the user to check which package is currently set as the backend
 to the estimate the models.
 }
 \examples{
-set_backend()
+get_backend()
 }

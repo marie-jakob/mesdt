@@ -114,14 +114,14 @@ internal_sdt_data <- sim_data
 
 
 model_test <- glmer(y ~ x1_num* trial_type + (x1_num * trial_type | ID),
-                    family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 1)
+                    family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 model_test_afex <- afex::mixed(y ~ x1 * trial_type + (x1_num * trial_type | ID),
                                 family = binomial(link = "probit"), data = internal_sdt_data,
                                 method = "LRT", test_intercept = T)
 
 model_test_uncor <- glmer(y ~ x1_num * trial_type + (x1_num * trial_type || ID),
-                          family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 1)
+                          family = binomial(link = "probit"), data = internal_sdt_data, nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 model_test_uncor_afex <- afex::mixed(y ~ x1_num* trial_type + (x1_num * trial_type || ID),
                                family = binomial(link = "probit"), data = internal_sdt_data,
@@ -192,15 +192,15 @@ contrasts(dat_exp_2$contingencies) <- contr.sum(3)
 full_model <- glmer(assessment ~ status_ef + (status_ef | id),
                                  data = dat_exp_2,
                                  family = binomial("probit"),
-                                 nAGQ = 1)
+                                 nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 fit_red_lambda <- glmer(assessment ~ 0 + status_ef + (status_ef | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 1)
+                        nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 fit_red_mu <- glmer(assessment ~ 1 + (status_ef | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 1)
+                        nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 anova(full_model, fit_red_lambda)
 anova(full_model, fit_red_mu)
@@ -217,23 +217,23 @@ chi_squares_intercepts <- c(
 full_model <- glmer(assessment ~ status_ef + status_ef:committee_ef + (status_ef | id),
                     data = dat_exp_2,
                     family = binomial("probit"),
-                    nAGQ = 1)
+                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 # Intercept lambda -> compare with full model
 intercept_lambda <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef + (status_ef | id),
                           data = dat_exp_2,
                           family = binomial("probit"),
-                          nAGQ = 1)
+                          nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 # Intercept mu
 intercept_mu_full <- glmer(assessment ~ 1 + status_ef + (status_ef | id),
                            data = dat_exp_2,
                            family = binomial("probit"),
-                           nAGQ = 1)
+                           nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 intercept_mu_red <- glmer(assessment ~ 1 + (status_ef | id),
                            data = dat_exp_2,
                            family = binomial("probit"),
-                           nAGQ = 1)
+                           nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 # committee mu
 committee_mu_red <- intercept_mu_full
 
@@ -253,7 +253,7 @@ chi_squares_one_pred_mu_2 <- c(
 intercept_mu_3 <- glmer(assessment ~ 1 + status_ef:committee_ef + (status_ef | id),
                     data = dat_exp_2,
                     family = binomial("probit"),
-                    nAGQ = 1)
+                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 chi_squares_one_pred_mu_3 <- c(
   2 * (logLik(full_model) - logLik(intercept_lambda)),
@@ -269,24 +269,24 @@ chi_squares_one_pred_mu_3 <- c(
 full_model <- glmer(assessment ~ status_ef * committee_ef + (status_ef | id),
                     data = dat_exp_2,
                     family = binomial("probit"),
-                    nAGQ = 1)
+                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 intercept_lambda_full <- glmer(assessment ~ 1 + status_ef + status_ef:committee_ef + (status_ef | id),
                               data = dat_exp_2,
                               family = binomial("probit"),
-                              nAGQ = 1)
+                              nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 intercept_lambda_red <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef + (status_ef | id),
                                data = dat_exp_2,
                                family = binomial("probit"),
-                               nAGQ = 1)
+                               nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 intercept_mu_full <- glmer(assessment ~ committee_ef + status_ef + (status_ef | id),
                                data = dat_exp_2,
                                family = binomial("probit"),
-                               nAGQ = 1)
+                               nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 intercept_mu_red <- glmer(assessment ~ committee_ef + (status_ef | id),
                            data = dat_exp_2,
                            family = binomial("probit"),
-                           nAGQ = 1)
+                           nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 lambda_committee <- intercept_lambda_full
 
@@ -311,11 +311,11 @@ chisquares_one_factor_2 <- c(
 lambda_intercept_3 <-  glmer(assessment ~ 0 + status_ef * committee_ef + (status_ef | id),
                              data = dat_exp_2,
                              family = binomial("probit"),
-                             nAGQ = 1)
+                             nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_intercept_3 <-  glmer(assessment ~ committee_ef + committee_ef:status_ef + (status_ef | id),
                              data = dat_exp_2,
                              family = binomial("probit"),
-                             nAGQ = 1)
+                             nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 chisquares_one_factor_3 <- c(
   -2 * (logLik(lambda_intercept_3) - logLik(full_model)),
@@ -337,31 +337,31 @@ full_model_main_effects <- glmer(assessment ~ emp_gender_ef + committee_ef + sta
                                    status_ef:emp_gender_ef + status_ef:emp_gender_ef:committee_ef + (status_ef | id),
                                  data = dat_exp_2,
                                  family = binomial("probit"),
-                                 nAGQ = 1)
+                                 nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 # lambda - committee_ef
 lambda_committee_red <- glmer(assessment ~ status_ef * emp_gender_ef + status_ef:committee_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                               data = dat_exp_2,
                               family = binomial("probit"),
-                              nAGQ = 1)
+                              nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 # lambda - emp_gender_ef
 lambda_emp_gender_red <- glmer(assessment ~ committee_ef * status_ef + status_ef:emp_gender_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                                data = dat_exp_2,
                                family = binomial("probit"),
-                               nAGQ = 1)
+                               nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 # lambda - emp_gender_ef:committee_ef
 # full model
 model_full <- glmer(assessment ~ committee_ef * emp_gender_ef * status_ef + (status_ef | id),
                     data = dat_exp_2,
                     family = binomial("probit"),
-                    nAGQ = 1)
+                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 
 
 lambda_interaction <- glmer(assessment ~ committee_ef * status_ef + emp_gender_ef * status_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 #### Mu
 # full model - main effects lambda
@@ -369,25 +369,25 @@ full_model_main_effects_mu <- glmer(assessment ~ emp_gender_ef * committee_ef + 
                                       status_ef:emp_gender_ef + (status_ef | id),
                                     data = dat_exp_2,
                                     family = binomial("probit"),
-                                    nAGQ = 1)
+                                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 # lambda - committee_ef
 mu_committee_red <- glmer(assessment ~ emp_gender_ef * committee_ef + status_ef * emp_gender_ef + (status_ef | id),
                           data = dat_exp_2,
                           family = binomial("probit"),
-                          nAGQ = 1)
+                          nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 # lambda - emp_gender_ef
 mu_emp_gender_red <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * committee_ef + (status_ef | id),
                            data = dat_exp_2,
                            family = binomial("probit"),
-                           nAGQ = 1)
+                           nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 # lambda - emp_gender_ef:committee_ef
 # full model
 mu_interaction <- glmer(assessment ~ committee_ef * emp_gender_ef + emp_gender_ef * status_ef + committee_ef * status_ef + (status_ef | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 1)
+                        nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 
 # Test intercepts
@@ -395,20 +395,20 @@ lambda_intercept_full <- glmer(assessment ~ 1 + status_ef + status_ef:committee_
                                  status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                                data = dat_exp_2,
                                family = binomial("probit"),
-                               nAGQ = 1)
+                               nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 lambda_intercept_red <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef * status_ef:emp_gender_ef +
                                 status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                               data = dat_exp_2,
                               family = binomial("probit"),
-                              nAGQ = 1)
+                              nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_intercept_full <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef + (status_ef | id),
                            data = dat_exp_2,
                            family = binomial("probit"),
-                           nAGQ = 1)
+                           nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_intercept_red <- glmer(assessment ~ committee_ef * emp_gender_ef + (status_ef | id),
                           data = dat_exp_2,
                           family = binomial("probit"),
-                          nAGQ = 1)
+                          nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 
 anova(lambda_committee_red, full_model_main_effects)
@@ -437,42 +437,42 @@ chisquares_two_factors_2 <- c(
 lambda_intercept_3 <- glmer(assessment ~ 0 + committee_ef * emp_gender_ef * status_ef + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 lambda_committee_3 <- glmer(assessment ~ emp_gender_ef * status_ef + committee_ef:status_ef +
                               committee_ef:emp_gender_ef + committee_ef:emp_gender_ef:status_ef + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 lambda_emp_gender_3 <- glmer(assessment ~ committee_ef * status_ef + committee_ef:status_ef + emp_gender_ef:status_ef +
                                committee_ef:emp_gender_ef + committee_ef:emp_gender_ef:status_ef + (status_ef | id),
                              data = dat_exp_2,
                              family = binomial("probit"),
-                             nAGQ = 1)
+                             nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 lambda_interaction_3 <- glmer(assessment ~ committee_ef * status_ef + emp_gender_ef * status_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 mu_intercept_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef:committee_ef +
                           status_ef:emp_gender_ef + status_ef:committee_ef:emp_gender_ef + (status_ef | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 1)
+                        nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_committee_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * emp_gender_ef +
                           status_ef:emp_gender_ef:committee_ef + (status_ef | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 1)
+                        nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_emp_gender_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * committee_ef +
                           status_ef:emp_gender_ef:committee_ef + (status_ef | id),
                         data = dat_exp_2,
                         family = binomial("probit"),
-                        nAGQ = 1)
+                        nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_interaction_3 <- glmer(assessment ~ committee_ef * emp_gender_ef + status_ef * committee_ef +
                            status_ef * emp_gender_ef + (status_ef | id),
                          data = dat_exp_2,
                          family = binomial("probit"),
-                         nAGQ = 1)
+                         nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 
 
@@ -496,30 +496,30 @@ model_full <- glmer(assessment ~ contingencies_ef_1 * status_ef + + contingencie
                       (status_ef | id),
                     data = dat_exp_2,
                     family = binomial("probit"),
-                    nAGQ = 1)
+                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 # Type II SS
 model_lambda_intercept <- glmer(assessment ~ 1 + status_ef + status_ef:contingencies_ef_1 +
                                   status_ef:contingencies_ef_2 + (status_ef | id),
                                 data = dat_exp_2,
                                 family = binomial("probit"),
-                                nAGQ = 1)
+                                nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 model_lambda_intercept_red <- glmer(assessment ~ 0 + status_ef + status_ef:contingencies_ef_1 +
                                       status_ef:contingencies_ef_2 + (status_ef | id),
                                 data = dat_exp_2,
                                 family = binomial("probit"),
-                                nAGQ = 1)
+                                nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 model_lambda_cont_red <- model_lambda_intercept
 
 model_mu_intercept <- glmer(assessment ~ contingencies_ef_1 + contingencies_ef_2 + status_ef + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 model_mu_intercept_red <- glmer(assessment ~ contingencies_ef_1 + contingencies_ef_2 + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 model_mu_cont_red <- model_mu_intercept
 
 chisquares_contingencies_2 <- c(
@@ -536,12 +536,12 @@ lambda_intercept_3 <- glmer(assessment ~ 0 + status_ef * contingencies_ef_1 +
                               status_ef * contingencies_ef_2 + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_intercept_3 <- glmer(assessment ~ contingencies_ef_1 + contingencies_ef_2 +
                           status_ef:contingencies_ef_1 + status_ef:contingencies_ef_2 + (status_ef | id),
                             data = dat_exp_2,
                             family = binomial("probit"),
-                            nAGQ = 1)
+                            nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 
 chisquares_contingencies_3 <- c(
@@ -557,40 +557,40 @@ chisquares_contingencies_3 <- c(
 model_uncor_sdt <- glmer(assessment ~ committee_ef * status_ef + (1 + committee_ef | id) + (0 + status_ef + status_ef:committee_ef | id),
                     data = dat_exp_2,
                     family = binomial("probit"),
-                    nAGQ = 1)
+                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 
 #------------------------------------------------------------------------------#
 #### Crossed random effects ####
 
 fit_cross_intercept <- glmer(assessment ~ status_ef + (status_ef | id) + (0 + status_ef | file_name),
-                             data = dat_exp_2, family = binomial("probit"), nAGQ = 1)
+                             data = dat_exp_2, family = binomial("probit"), nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 fit_cross_slopes <- glmer(assessment ~ committee_ef * status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
-                             data = dat_exp_2, family = binomial("probit"), nAGQ = 1)
+                             data = dat_exp_2, family = binomial("probit"), nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 # LRTs for crossed random effects
 full_model <- glmer(assessment ~ status_ef * committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
                     data = dat_exp_2,
                     family = binomial("probit"),
-                    nAGQ = 1)
+                    nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 intercept_lambda_full <- glmer(assessment ~ 1 + status_ef + status_ef:committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
                                data = dat_exp_2,
                                family = binomial("probit"),
-                               nAGQ = 1)
+                               nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 intercept_lambda_red <- glmer(assessment ~ 0 + status_ef + status_ef:committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
                               data = dat_exp_2,
                               family = binomial("probit"),
-                              nAGQ = 1)
+                              nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 intercept_mu_full <- glmer(assessment ~ committee_ef + status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
                            data = dat_exp_2,
                            family = binomial("probit"),
-                           nAGQ = 1)
+                           nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 intercept_mu_red <- glmer(assessment ~ committee_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
                           data = dat_exp_2,
                           family = binomial("probit"),
-                          nAGQ = 1)
+                          nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 lambda_committee <- intercept_lambda_full
 
@@ -615,11 +615,11 @@ chisquares_cross_2 <- c(
 lambda_intercept_3 <-  glmer(assessment ~ 0 + status_ef * committee_ef +(committee_ef + status_ef | id) + (0 + status_ef | file_name),
                              data = dat_exp_2,
                              family = binomial("probit"),
-                             nAGQ = 1)
+                             nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 mu_intercept_3 <-  glmer(assessment ~ committee_ef + committee_ef:status_ef + (committee_ef + status_ef | id) + (0 + status_ef | file_name),
                          data = dat_exp_2,
                          family = binomial("probit"),
-                         nAGQ = 1)
+                         nAGQ = 1, control = glmerControl(optimizer = "bobyqa"))
 
 chisquares_cross_3 <- c(
   -2 * (logLik(lambda_intercept_3) - logLik(full_model)),

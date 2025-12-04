@@ -54,7 +54,7 @@ set_backend <- function(backend_name) {
 #'
 #' @examples
 #' get_backend()
-get_backend <- function(backend_name) {
+get_backend <- function() {
     return(options("mesdt.backend"))
 }
 

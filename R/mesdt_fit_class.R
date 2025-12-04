@@ -294,8 +294,8 @@ simulate.mesdt_fit <- function(object, nsim = 1, seed = NULL, ...) {
 
 
 #' @export
-AIC.mesdt_fit <- function(obj, k = 2, ...) {
-  return(stats::AIC(obj$fit_obj, k = k, ...))
+AIC.mesdt_fit <- function(object, ..., k = 2) {
+  return(stats::AIC(object$fit_obj, ..., k = k))
 }
 
 #' @importFrom stats BIC
@@ -306,8 +306,8 @@ BIC.mesdt_fit <- function(object, ...) {
 
 
 #' @export
-logLik.mesdt_fit <- function(obj, ...) {
-  return(stats::logLik(obj$fit_obj, ...))
+logLik.mesdt_fit <- function(object, ...) {
+  return(stats::logLik(object$fit_obj, ...))
 }
 
 

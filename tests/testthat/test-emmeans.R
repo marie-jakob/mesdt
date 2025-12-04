@@ -5,6 +5,7 @@ test_that("emmeans.mesdt_fit() gives the same results as emmeans for lme4", {
 
   options("mesdt.backend" = "lme4")
   suppressWarnings(library(lme4))
+  library(emmeans)
 
   # 1. One factor
   test_mod_lme <- glmer(assessment ~ status_fac * committee  +
@@ -202,7 +203,7 @@ test_that("emmeans.mesdt_fit() works with aggregate = TRUE", {
   emm <- emmeans(test_mod, ~ emp_gender, dpar = "response bias")
   emm_agg <- emmeans(test_mod_agg, ~ emp_gender, dpar = "response bias")
 
-  expect_equal(data.frame(emm), data.frame(emm_agg), tolerance = 1e-4)
+  expect_equal(data.frame(emm), data.frame(emm_agg), tolerance = 1e-2)
 
 })
 

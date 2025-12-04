@@ -112,57 +112,76 @@ To estimate effects of the employee’s gender and the decision of the
 committee on participants’ discriminability and response bias, we
 include them as fixed effects in our model. To account for differences
 between our participants in these parameters, we include by-participant
-random intercepts and slopes on discriminability and response bias. Our
-studies with this paradigm consistently showed considerable
-by-participant variability in mean response bias, mean discriminability
-and the effect of the committee decision on participants’ response bias,
-which is why we include by-participant random intercepts on both SDT
-parameters and a by-participant random slope on response bias.
+random intercepts and slopes on discriminability and response bias. For
+the present paradigm, the maximal random-effects structure justified by
+the design includes both by-participant random intercepts and random
+slopes for the effects of the committee decision, employee gender and
+their interaction on both discriminability and response bias. To
+considerable reduce the complexity of our model and speed up estimation,
+we do not estimate correlations between the random effects here, by
+dividing the random effects and the grouping factor with two vertical
+bars (`||`). Note that unlike lme4 and glmmTMB, mesdt also supports this
+notation for factors.
 
 Thus, in `mesdt`, we can specify and fit our model like this:
 
 ``` r
 
 mod <- fit_mesdt(
-  discriminability ~ committee * emp_gender + (1 | id),
-  response_bias ~ committee * emp_gender + (committee | id),
+  discriminability =~ committee * emp_gender + (committee * emp_gender || id),
+  response_bias =~ committee * emp_gender + (committee * emp_gender || id),
   data = debi3subset,
   trial_type = "status",
   dv = "assessment"
 )
-#> Model was estimated with lme4.
+#> Given random-effects structure contains uncorrelated terms. Modeling all random effects parametes as uncorrelated since a mix of correlated and uncorrelated terms is not supported at the moment.
+#> Correlating SDT Parameters is not possible in the presence of uncorrelated terms.
+#> boundary (singular) fit: see help('isSingular')
 
 summary(mod)
-#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Adaptive Gauss-Hermite Quadrature, nAGQ = 0) with the lme4 package. 
+#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Laplace Approximation) with the lme4 package. 
 #>  
-#> Discriminability:  ~committee * emp_gender + (1 | id) 
-#> Response Bias:     ~committee * emp_gender + (committee | id) 
+#> Discriminability:  ~committee * emp_gender + (committee * emp_gender || id) 
+#> Response Bias:     ~committee * emp_gender + (committee * emp_gender || id) 
 #> Data:  debi3subset 
 #> 
 #>       AIC       BIC    logLik -2*log(L)  df.resid 
-#>    4746.8    4838.4   -2359.4    4718.8      5106 
+#>    4753.8    4858.5   -2360.9    4721.8      5104 
 #> 
 #> Random effects:
-#>  Groups Name                          Std.Dev. Corr       
-#>  id     (Intercept)(Response Bias)    0.3848              
-#>         committee1(Response Bias)     0.5801   -0.17      
-#>         (Intercept)(Discriminability) 0.3902   -0.39 -0.18
+#>  Groups Name                                     Std.Dev. 
+#>  id     (Intercept)(Response Bias)               3.876e-01
+#>  id.1   committee1(Response Bias)                5.718e-01
+#>  id.2   emp_gender1(Response Bias)               0.000e+00
+#>  id.3   committee1:emp_gender1(Response Bias)    1.076e-05
+#>  id.4   (Intercept)(Discriminability)            3.853e-01
+#>  id.5   committee1(Discriminability)             0.000e+00
+#>  id.6   emp_gender1(Discriminability)            8.369e-02
+#>  id.7   committee1:emp_gender1(Discriminability) 0.000e+00
 #> Number of obs: 5120, groups:  id, 20
 #> 
 #> Fixed effects and Wald tests for discriminability: 
 #>                        Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             1.75932    0.09974  17.638   <2e-16
-#> committee1              0.04001    0.04671   0.857    0.392
-#> emp_gender1            -0.01419    0.04308  -0.329    0.742
-#> committee1:emp_gender1 -0.03843    0.04308  -0.892    0.372
+#> (Intercept)             1.77862    0.09986  17.811   <2e-16
+#> committee1              0.04763    0.04706   1.012    0.311
+#> emp_gender1            -0.01445    0.04729  -0.306    0.760
+#> committee1:emp_gender1 -0.03823    0.04335  -0.882    0.378
 #> 
 #> Fixed effects and Wald tests for response bias: 
 #>                         Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             0.145662   0.088898   1.639    0.101
-#> committee1              0.018567   0.131822   0.141    0.888
-#> emp_gender1             0.006281   0.021540   0.292    0.771
-#> committee1:emp_gender1 -0.034437   0.021540  -1.599    0.110
+#> (Intercept)             0.141268   0.089565   1.577    0.115
+#> committee1              0.015486   0.130010   0.119    0.905
+#> emp_gender1             0.005583   0.021799   0.256    0.798
+#> committee1:emp_gender1 -0.035406   0.021855  -1.620    0.105
+#> 
+#> optimizer (Nelder_Mead) convergence code: 0 (OK)
+#> boundary (singular) fit: see help('isSingular')
 ```
+
+In practice, we recommend to iteratively reduce the random-effects
+structure such that only random-effects terms that are supported by the
+data are included in the model (see Bates et al., 2015 and Jakob et al.,
+2025 for explanations).
 
 The `summary()` method prints population-level estimates for the fixed
 effects and variances and covariances of the random effects separately
@@ -189,17 +208,21 @@ tests <- compute_tests(mod,
                        tests = "lrt",
                        tests_discriminability = ~ committee,
                        tests_response_bias = ~ committee)
+#> Correlating SDT Parameters is not possible in the presence of uncorrelated terms.
+#> Correlating SDT Parameters is not possible in the presence of uncorrelated terms.
+#> boundary (singular) fit: see help('isSingular')
+#> boundary (singular) fit: see help('isSingular')
 
 tests
 #> Type III likelihood ratio tests 
 #> 
 #> Discriminability: 
 #>           deviance_full deviance_reduced df.LRT Chisq   p.value
-#> committee       4718.78          4719.49      1  0.71 0.3999445
+#> committee       4721.82          4722.83      1  1.01 0.3152676
 #> 
 #> Response Bias: 
 #>           deviance_full deviance_reduced df.LRT Chisq   p.value
-#> committee       4718.78           4718.8      1  0.02 0.8803103
+#> committee       4721.82          4721.83      1  0.01 0.9045006
 ```
 
 In this subset of our data, there is neither a significant effect of the
@@ -217,20 +240,28 @@ discriminability for “denied” and “granted” decisions like so:
 
 ``` r
 library(emmeans)
+#> Welcome to emmeans.
+#> Caution: You lose important information if you filter this package's results.
+#> See '? untidy'
+#> 
+#> Attaching package: 'emmeans'
+#> The following object is masked from 'package:devtools':
+#> 
+#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions
-#>  committee emmean   SE  df asymp.LCL asymp.UCL
-#>  denied      1.80 0.11 Inf      1.58      2.01
-#>  granted     1.72 0.11 Inf      1.50      1.94
+#>  committee emmean    SE  df asymp.LCL asymp.UCL
+#>  denied      1.83 0.110 Inf      1.61      2.04
+#>  granted     1.73 0.111 Inf      1.51      1.95
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
 emmeans(mod, ~ committee, dpar = "response bias")
 #> NOTE: Results may be misleading due to involvement in interactions
 #>  committee emmean    SE  df asymp.LCL asymp.UCL
-#>  denied     0.164 0.147 Inf    -0.123     0.452
-#>  granted    0.127 0.170 Inf    -0.207     0.461
+#>  denied     0.157 0.158 Inf    -0.153     0.466
+#>  granted    0.126 0.158 Inf    -0.184     0.435
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
