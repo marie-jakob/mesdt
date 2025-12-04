@@ -1,6 +1,9 @@
 
-***This package is still under development and has not been fully
-tested!***
+**Beta Software Disclaimer**  
+\> This package is in beta. Functionality may change, and some features
+are experimental.  
+\> Use at your own discretion and report issues on the GitHub Issues
+page.
 
 # mesdt
 
@@ -240,14 +243,6 @@ discriminability for “denied” and “granted” decisions like so:
 
 ``` r
 library(emmeans)
-#> Welcome to emmeans.
-#> Caution: You lose important information if you filter this package's results.
-#> See '? untidy'
-#> 
-#> Attaching package: 'emmeans'
-#> The following object is masked from 'package:devtools':
-#> 
-#>     test
 
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions

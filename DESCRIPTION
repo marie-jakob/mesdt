@@ -1,6 +1,6 @@
 Package: mesdt
 Title: Mixed-Effects Signal Detection Theory Models
-Version: 0.1
+Version: 0.1.0
 Authors@R: 
     c(person("Marie", "Jakob", , "marie.a.jakob@gmail.com", role = c("aut", "cre")),
     person("Raphael", "Hartmann", role = c("ctb")),
