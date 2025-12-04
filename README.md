@@ -135,50 +135,45 @@ mod <- fit_mesdt(
   response_bias =~ committee * emp_gender + (committee * emp_gender || id),
   data = debi3subset,
   trial_type = "status",
-  dv = "assessment"
+  dv = "assessment",
+  correlate_sdt_params = FALSE
 )
-#> Given random-effects structure contains uncorrelated terms. Modeling all random effects parametes as uncorrelated since a mix of correlated and uncorrelated terms is not supported at the moment.
-#> Correlating SDT Parameters is not possible in the presence of uncorrelated terms.
-#> boundary (singular) fit: see help('isSingular')
 
 summary(mod)
-#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Laplace Approximation) with the lme4 package. 
+#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood with the glmmTMB package. 
 #>  
 #> Discriminability:  ~committee * emp_gender + (committee * emp_gender || id) 
 #> Response Bias:     ~committee * emp_gender + (committee * emp_gender || id) 
 #> Data:  debi3subset 
 #> 
 #>       AIC       BIC    logLik -2*log(L)  df.resid 
-#>    4753.8    4858.5   -2360.9    4721.8      5104 
+#>    4753.4    4858.0   -2360.7    4721.4      5104 
 #> 
 #> Random effects:
 #>  Groups Name                                     Std.Dev. 
-#>  id     (Intercept)(Response Bias)               3.876e-01
-#>  id.1   committee1(Response Bias)                5.718e-01
-#>  id.2   emp_gender1(Response Bias)               0.000e+00
-#>  id.3   committee1:emp_gender1(Response Bias)    1.076e-05
-#>  id.4   (Intercept)(Discriminability)            3.853e-01
-#>  id.5   committee1(Discriminability)             0.000e+00
-#>  id.6   emp_gender1(Discriminability)            8.369e-02
-#>  id.7   committee1:emp_gender1(Discriminability) 0.000e+00
+#>  id     (Intercept)(Response Bias)               3.867e-01
+#>  id.1   committee1(Response Bias)                5.706e-01
+#>  id.2   emp_gender1(Response Bias)               1.181e-05
+#>  id.3   committee1:emp_gender1(Response Bias)    3.525e-05
+#>  id.4   (Intercept)(Discriminability)            3.867e-01
+#>  id.5   committee1(Discriminability)             9.799e-06
+#>  id.6   emp_gender1(Discriminability)            8.616e-02
+#>  id.7   committee1:emp_gender1(Discriminability) 3.731e-05
 #> Number of obs: 5120, groups:  id, 20
 #> 
 #> Fixed effects and Wald tests for discriminability: 
 #>                        Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             1.77862    0.09986  17.811   <2e-16
-#> committee1              0.04763    0.04706   1.012    0.311
-#> emp_gender1            -0.01445    0.04729  -0.306    0.760
-#> committee1:emp_gender1 -0.03823    0.04335  -0.882    0.378
+#> (Intercept)             1.77389    0.10026  17.692   <2e-16
+#> committee1              0.04733    0.04715   1.004    0.315
+#> emp_gender1            -0.01444    0.04750  -0.304    0.761
+#> committee1:emp_gender1 -0.03818    0.04334  -0.881    0.378
 #> 
 #> Fixed effects and Wald tests for response bias: 
 #>                         Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             0.141268   0.089565   1.577    0.115
-#> committee1              0.015486   0.130010   0.119    0.905
-#> emp_gender1             0.005583   0.021799   0.256    0.798
-#> committee1:emp_gender1 -0.035406   0.021855  -1.620    0.105
-#> 
-#> optimizer (Nelder_Mead) convergence code: 0 (OK)
-#> boundary (singular) fit: see help('isSingular')
+#> (Intercept)             0.141107   0.089383   1.579    0.114
+#> committee1              0.015595   0.129779   0.120    0.904
+#> emp_gender1             0.005445   0.021801   0.250    0.803
+#> committee1:emp_gender1 -0.035390   0.021861  -1.619    0.105
 ```
 
 In practice, we recommend to iteratively reduce the random-effects
@@ -211,21 +206,17 @@ tests <- compute_tests(mod,
                        tests = "lrt",
                        tests_discriminability = ~ committee,
                        tests_response_bias = ~ committee)
-#> Correlating SDT Parameters is not possible in the presence of uncorrelated terms.
-#> Correlating SDT Parameters is not possible in the presence of uncorrelated terms.
-#> boundary (singular) fit: see help('isSingular')
-#> boundary (singular) fit: see help('isSingular')
 
 tests
 #> Type III likelihood ratio tests 
 #> 
 #> Discriminability: 
 #>           deviance_full deviance_reduced df.LRT Chisq   p.value
-#> committee       4721.82          4722.83      1  1.01 0.3152676
+#> committee       4721.36          4722.37      1  1.01 0.3155076
 #> 
 #> Response Bias: 
 #>           deviance_full deviance_reduced df.LRT Chisq   p.value
-#> committee       4721.82          4721.83      1  0.01 0.9045006
+#> committee       4721.36          4721.37      1  0.01 0.9043586
 ```
 
 In this subset of our data, there is neither a significant effect of the
@@ -247,16 +238,16 @@ library(emmeans)
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions
 #>  committee emmean    SE  df asymp.LCL asymp.UCL
-#>  denied      1.83 0.110 Inf      1.61      2.04
-#>  granted     1.73 0.111 Inf      1.51      1.95
+#>  denied      1.82 0.111 Inf      1.60      2.04
+#>  granted     1.73 0.111 Inf      1.51      1.94
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
 emmeans(mod, ~ committee, dpar = "response bias")
 #> NOTE: Results may be misleading due to involvement in interactions
 #>  committee emmean    SE  df asymp.LCL asymp.UCL
-#>  denied     0.157 0.158 Inf    -0.153     0.466
-#>  granted    0.126 0.158 Inf    -0.184     0.435
+#>  denied     0.157 0.158 Inf    -0.152     0.466
+#>  granted    0.126 0.158 Inf    -0.183     0.434
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
@@ -264,7 +255,7 @@ emmeans(mod, ~ committee, dpar = "response bias")
 
 The estimated marginal means show that participants’ discriminability
 was descriptively lower in trials where a pay raise was denied
-($d' = 1.73$) than for cases where one was granted ($d' = 1.83$). We can
+($d' = 1.73$) than for cases where one was granted ($d' = 1.82$). We can
 see a different pattern for response bias, with a smaller, that is, more
 liberal response criterion in “granted” cases ($c = 0.126$) than in
 “denied” cases ($c = 0.157$). However, both effects were not
