@@ -20,9 +20,8 @@ new_mesdt_fit <- function(input_list) {
 #' @return Invisibly returns \code{NULL}. The function prints results to the console.
 #'
 #'
-#' @method print summary.mesdt_fit
+#' @method print mesdt_fit
 #' @export
-#'
 print.mesdt_fit <- function(x, ...) {
   print.summary.mesdt_fit(summary(x, ...))
 }

@@ -4,7 +4,7 @@
 \alias{print.mesdt_fit}
 \title{Print Method for Summary of mesdt_fit Objects}
 \usage{
-\method{print}{summary.mesdt_fit}(x, ...)
+\method{print}{mesdt_fit}(x, ...)
 }
 \arguments{
 \item{x}{An object of class \code{summary.mesdt_fit}, typically returned by
