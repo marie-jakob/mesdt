@@ -31,6 +31,8 @@ the fitting function for each fixed effects parameter), likelihood ratio
 tests (type II and type III), and tests based on parametric
 bootstrapping (type II and type III).
 
+We show in an accompanying [preprint](https://doi.org/10.31234/osf.io/w59ma_v1) that this method is superior to alternative analysis approaches based on single-level individual estimates in terms of parameter recovery, Type I error rate, and statistical power. 
+
 ## Getting Started
 
 ### Step 0: Installation & Setup
