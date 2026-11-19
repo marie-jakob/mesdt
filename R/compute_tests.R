@@ -777,8 +777,10 @@ compute_parametric_bootstrap_test <- function(large_model, small_model, data, mm
 
   do_pb <- function(x) {
     dat_tmp <- data
-    # sim_dat_tmp <- stats::simulate(small_model)[[1]]
     sim_dat_tmp <- stats::simulate(small_model, seed = seed + x)[[1]]
+    # glmmTMB returns cbind(successes, failures) for binomial models with weights;
+    # convert to proportions to match the aggregated dv
+    if (is.matrix(sim_dat_tmp)) sim_dat_tmp <- sim_dat_tmp[, 1] / rowSums(sim_dat_tmp)
     # Do refitting manually
     dat_tmp[[dv]] <- sim_dat_tmp
     sim_fit_full <- fit_glmm(stats::formula(large_model), dat_tmp, mm, distribution, dv, control)
