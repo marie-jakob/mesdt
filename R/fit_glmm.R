@@ -28,13 +28,29 @@ fit_glmm <- function(glmer_formula,
   lnk_fun <- ifelse(distribution == "gaussian", "probit",
                     ifelse(distribution == "logistic", "logit", "cloglog"))
 
+
   # Fit a GLM if there are no random effects
   #print(glmer_formula)
   if (is.null(lme4::findbars(glmer_formula))) {
     message("Formula does not contain any random terms. Fitting a single-level model.")
-    fit_obj <- stats::glm(glmer_formula,
-                          data = data,
-                          family = binomial(link = lnk_fun))
+    if (dv == "dv_agg") {
+      fit_obj <- stats::glm(glmer_formula,
+                            data = data,
+                            weights = data$weight,
+                            family = binomial(link = lnk_fun))
+    } else {
+      fit_obj <- stats::glm(glmer_formula,
+                            data = data,
+                            family = binomial(link = lnk_fun))
+    }
+
+    # check for rank deficiency:
+    if (any(is.na(coef(fit_obj)))) {
+      warning("glm() has dropped columns because the model matrix is rank deficient.
+              Mapping from GLM to SDT parameter may not work as intended! ")
+    }
+
+
   } else if ((options("mesdt.backend") == "lme4")) {
     if (is.null(control) |
         ! "glmerControl" %in% attr(control, "class")) {
@@ -70,6 +86,14 @@ fit_glmm <- function(glmer_formula,
                                control = control)
       }
     }
+
+    # check for rank deficiency:
+    if (! is.null(attr(fit_obj@pp$X, "msgRankdrop"))) {
+      warning("lme4 has dropped columns because the fixed-effects model matrix is rank deficient.
+              Mapping from GLMM to SDT parameter may not work as intended!")
+    }
+
+
   } else if ((options("mesdt.backend") == "glmmTMB")) {
     #print("fitting with glmmTMB")
     if (is.null(control) |
@@ -100,6 +124,11 @@ fit_glmm <- function(glmer_formula,
                                     family = binomial(link = lnk_fun),
                                     control = control)
       }
+    }
+    # check for rank deficiency:
+    if (! is.null(attr(getME(fit_obj, "X"), "col.dropped"))) {
+      warning("glmmTMB has dropped columns because the fixed-effects model matrix is rank deficient.
+              Mapping from GLMM to SDT parameter may not work as intended!")
     }
   }
 

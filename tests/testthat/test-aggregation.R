@@ -172,3 +172,13 @@ test_that("aggregation works with numerical trial_type and response variables", 
   }
 })
 
+test_that("aggregated models without random effects use the weights", {
+  fit_agg <- function(agg) fit_mesdt(~ 1, ~ committee, dv = "assessment",
+                                     data = debi3subset, trial_type = "status_num", aggregate = agg)
+  ref <- fit_agg(FALSE)$fit_obj
+  agg <- fit_agg(TRUE)$fit_obj
+  expect_equal(coef(agg), coef(ref), tolerance = 1e-4)
+  expect_equal(sqrt(diag(vcov(agg))), sqrt(diag(vcov(ref))), tolerance = 1e-4)
+})
+
+
