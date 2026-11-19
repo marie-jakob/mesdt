@@ -149,4 +149,26 @@ test_that("aggregation works for gumbel-min", {
 })
 
 
+test_that("aggregation works with numerical trial_type and response variables", {
+  for (backend in c("lme4", "glmmTMB")) {
+    fit_agg <- fit_mesdt(~ 1 + (1 | file_name), ~ 1 + (committee | id),
+                   dv = "assessment", data = debi3subset,
+                   trial_type = "status_num",
+                   aggregate = TRUE,
+                   distribution = "gumbel-min")
+   fit_non_agg <- fit_mesdt(~ 1 + (1 | file_name), ~ 1 + (committee | id),
+                       dv = "assessment", data = debi3subset,
+                       trial_type = "status_num",
+                       aggregate = FALSE,
+                       distribution = "gumbel-min")
+   expect_equal(logLik(fit_agg), logLik(fit_non_agg))
+  }
+
+  for (backend in c("lme4", "glmmTMB")) {
+    fit_agg <- fit_mesdt(~ 1 + (1 | file_name), ~ 1 + (committee | id),
+                         dv = "assessment", data = debi3subset,
+                         trial_type = "status_num",
+                         aggregate = TRUE)
+  }
+})
 

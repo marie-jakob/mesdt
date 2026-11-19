@@ -238,9 +238,9 @@ fit_mesdt <- function(discriminability,
   if (aggregate) {
     data_orig <- data
     if (distribution != "gumbel-min") {
-      data <- aggregate_data(data, discriminability, response_bias, "dv_num", "trial_type_num")
+      data <- aggregate_data(data, discriminability, response_bias, "dv_num", trial_type_var)
     } else {
-      data <- aggregate_data(data, discriminability, response_bias, "dv_rev", "trial_type_num")
+      data <- aggregate_data(data, discriminability, response_bias, "dv_rev", trial_type_var)
     }
   }
 
