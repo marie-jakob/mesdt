@@ -206,4 +206,24 @@ test_that("emmeans.mesdt_fit() works with aggregate = TRUE", {
   expect_equal(data.frame(emm), data.frame(emm_agg), tolerance = 1e-2)
 
 })
+test_that("emmeans() accepts all spellings of dpar", {
+  fit <- fit_mesdt(~ committee, ~ emp_gender, dv = "assessment",
+                   trial_type = "status", data = debi3subset)
 
+  # emp_gender is only in the response-bias formula
+  emm_rb   <- as.data.frame(emmeans::emmeans(fit, ~ emp_gender, dpar = "response bias"))
+  emm_rb_2 <- as.data.frame(emmeans::emmeans(fit, ~ emp_gender, dpar = "response_bias"))
+  expect_equal(emm_rb_2, emm_rb)
+
+  # committee is only in the discriminability formula
+  emm_d   <- as.data.frame(emmeans::emmeans(fit, ~ committee, dpar = "discriminability"))
+  emm_d_2 <- as.data.frame(emmeans::emmeans(fit, ~ committee, dpar = "sensitivity"))
+  expect_equal(emm_d_2, emm_d)
+})
+
+test_that("emmeans() requires a valid dpar", {
+  fit <- fit_mesdt(~ committee, ~ emp_gender, dv = "assessment",
+                   trial_type = "status", data = debi3subset)
+  expect_error(suppressMessages(emmeans::emmeans(fit, ~ committee)))
+  expect_error(suppressMessages(emmeans::emmeans(fit, ~ committee, dpar = "bias")))
+})

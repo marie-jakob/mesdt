@@ -609,3 +609,37 @@ test_that("invalid level arguments are rejected", {
                          data = debi3subset, trial_type = "status_num"), regexp = "can only be used if")
 })
 
+
+test_that("predictor names containing 'mu' are assigned to the correct parameter", {
+  debi3subset$stimulus <- debi3subset$committee
+  fit <- fit_mesdt(~ 1, ~ stimulus, dv = "assessment", trial_type = "status", data = debi3subset)
+
+  summ <- summary(fit)
+  expect_equal(nrow(summ$d_coef), 1)           # only the intercept
+  expect_equal(nrow(summ$c_coef), 2)           # intercept + stimulus
+
+  emm <- emmeans::emmeans(fit, ~ stimulus, dpar = "response bias")
+  expect_equal(nrow(as.data.frame(emm)), 2)
+
+  tests <- compute_tests(fit)
+  out <- capture.output(print(tests))
+  expect_true(grep("stimulus", out) > grep("Response Bias", out))
+})
+
+
+test_that("fit_mesdt() stops for models that are not identified", {
+  debi3subset$committee_copy <- debi3subset$committee
+  expect_error(suppressWarnings(fit_mesdt(~ 1, ~ committee + committee_copy, dv = "assessment",
+                         trial_type = "status", data = debi3subset)),
+               regexp = "not identified")
+
+  debi3subset$const <- 5
+  expect_error(suppressWarnings(fit_mesdt(~ const, ~ 1, dv = "assessment",
+                         trial_type = "status", data = debi3subset)),
+               regexp = "not identified")
+
+  form <- ~ contingencies * emp_gender * committee + (1 | id)
+  expect_error(suppressWarnings(fit_mesdt(form, form, dv = "assessment",
+                         trial_type = "status_fac", data = dat_exp_2)),
+               regexp = "not identified")
+})

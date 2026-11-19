@@ -277,7 +277,7 @@ aggregate_data <- function(data, form_disc, form_bias, dv, trial_type) {
 #' @importFrom stats contrasts
 #' @importFrom stats contr.sum
 check_predictors <- function(data, form_disc, form_bias) {
-  all_preds <- unique(all.vars(lme4::nobars(form_disc)), all.vars(lme4::nobars(form_bias)))
+  all_preds <- unique(c(all.vars(lme4::nobars(form_disc)), all.vars(lme4::nobars(form_bias))))
   not_sum_contrasts <- c()
   not_centered <- c()
   not_num_or_fac <- c()
@@ -352,3 +352,24 @@ remove_incomplete_trials <- function(data, vars) {
 
 # TRUE for coefficient names belonging to the given SDT parameter ("mu" or "lambda")
 is_sdt_par <- function(names, par) startsWith(names, paste0('mm[["', par, '"]]'))
+
+
+#' Check that the fixed effects of the SDT model are identified
+#'
+#' Stops with an error naming the redundant columns if the combined fixed-effects
+#' model matrix of discriminability and response bias is rank deficient.
+#' @keywords internal
+check_identifiable <- function(mm) {
+  X <- cbind(mm[["lambda"]], mm[["mu"]])
+  colnames(X) <- c(paste0(colnames(mm[["lambda"]]), " (response bias)"),
+                   paste0(colnames(mm[["mu"]]), " (discriminability)"))
+  q <- qr(X)
+  if (q$rank < ncol(X)) {
+    redundant <- colnames(X)[q$pivot[-seq_len(q$rank)]]
+    stop("The model is not identified: the fixed effects are linearly dependent. ",
+         "Redundant terms: ", paste(redundant, collapse = ", "), ". ",
+         "This often happens when predictors are not fully crossed with each other ",
+         "or with the trial type. Please simplify the model.", call. = FALSE)
+  }
+  invisible(TRUE)
+}

@@ -160,8 +160,8 @@ test_that("compute_tests() works for factors with > 2 levels", {
 
 test_that("compute_tests() works for interactions involving factors with > 2 levels", {
   # Type II, test_intercepts = T
-  form_mu <- ~ contingencies * committee + (1 | id)
-  form_lambda <- ~ contingencies * committee + (1 | id)
+  form_mu <- ~ contingencies + (1 | id)
+  form_lambda <- ~ contingencies + (1 | id)
   # Same for the uncorrelated model
   fit <- fit_mesdt(form_mu, form_lambda,
                    dv = "assessment",

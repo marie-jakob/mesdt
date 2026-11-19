@@ -9,9 +9,9 @@
 #'  (optionally named) of valid specs. Use of formulas is described in the
 #'  Overview section below. Note: We recommend against using two-sided formulas;
 #'  see the note below for contr.
-#' @param dpar Character string specifying the distributional parameter
-#'   (e.g., \code{"mu"}, \code{"sigma"}) for which the EMMs are computed.
-#'   If \code{NULL} (the default), the location/mean parameter is used.
+#' @param dpar Character string specifying the SDT parameter for which the EMMs are
+#'   computed: \code{"discriminability"} (or \code{"sensitivity"}) or
+#'   \code{"response bias"} (or \code{"response_bias"}). Must be specified.
 #' @param ... Additional arguments passed to \code{emmeans}. See ?emmeans for
 #'   details on additional arguments to emmeans.
 #'
@@ -53,8 +53,8 @@ NULL
 #' @importFrom emmeans emmeans
 #' @method recover_data mesdt_fit
 #' @export
-recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
-  if (dpar == "response bias") {
+recover_data.mesdt_fit <- function(object, dpar, ...)  {
+  if (dpar == "response bias" | dpar == "response_bias") {
     form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv_input, paste(as.character(object$user_input$bias), collapse = ""))))
   } else {
     form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv_input, paste(as.character(object$user_input$discriminability), collapse = ""))))
@@ -117,6 +117,7 @@ emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
 
 
 # @export
+
 emmeans_mesdt <- function(fit_obj, specs) {
   if (! inherits(fit_obj, "mesdt_fit")) {
     stop("fit_obj must be of class mesdt_fit.")

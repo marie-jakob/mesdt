@@ -110,7 +110,7 @@ summary.mesdt_fit <- function(object, ...) {
         # -> uncorrelated random effect: generate new name from model matrix column
         # only works for completely uncorrelated random effects like this
         col_num <- as.numeric(gsub(".*\\[, *([0-9]+)\\].*", "\\1", colnames_tmp))
-        sdt_name <- ifelse(grepl("rdm_lambda_", colnames_tmp), "lambda", "mu", fixed = TRUE)
+        sdt_name <- ifelse(grepl("rdm_lambda_", colnames_tmp), "lambda", "mu")
         ran_name <- paste("rdm", sdt_name, gsub("\\.*[0-9]+", "", fac), sep = "_")
 
         new_col_name <- paste(
