@@ -171,6 +171,68 @@ check_sensitivity <- function(fit_obj) {
   }
 }
 
+code_binary_var <- function(data, var, arg, role, noise_value, new_col, level = NULL) {
+  if (!is.character(var) || length(var) != 1)
+    stop("'", arg, "' must be a single character string naming a variable in data.")
+  if (!var %in% names(data))
+    stop("Given ", arg, " variable '", var, "' not in data.")
+  x <- data[[var]]
+
+  x_obs <- x[!is.na(x)]
+  n_values <- length(unique(x_obs))
+
+  if (n_values != 2)
+    stop(arg, " must be a binary variable, but '", var, "' has ",
+         n_values, " distinct value", if (n_values != 1) "s", ".")
+
+  if (!is.null(level) && !is.factor(x))
+    stop("'", arg, "_signal_level' can only be used if ", arg, " is a factor.")
+
+  if (is.numeric(x)) {
+    vals <- sort(unique(x_obs))
+    if (!(all(vals == c(0, 1)) || all(vals == c(-1, 1))))
+      stop("If ", arg, " is numeric, it must code ", role, " as 1 and the other value as 0 or -1 ",
+           "(found: ", paste(vals, collapse = ", "), ").")
+    signal_level <- 1
+    is_signal <- x == 1
+  } else if (is.factor(x)) {
+    if (nlevels(x) != 2)
+      stop(arg, " '", var, "' must have exactly two factor levels, but has ",
+           nlevels(x), " (", paste(levels(x), collapse = ", "), "). ",
+           "Use droplevels() and set the contrasts afterwards.")
+    if (!is.null(level)) {
+      if (!is.character(level) || length(level) != 1 || !level %in% levels(x))
+        stop("'", arg, "_signal_level' must be one of the levels of '", var, "': ",
+             paste(levels(x), collapse = ", "), ".")
+      signal_level <- level
+      src <- " (as specified)"
+    } else {
+      cm <- stats::contrasts(x)
+      if (sum(cm[, 1] == 1) != 1 || !all(cm[, 1] %in% c(-1, 0, 1)))
+        stop("Cannot tell which level of '", var, "' codes ", role, ": exactly one level ",
+             "must be coded 1 in contrasts(", var, "), the other 0 or -1. Current coding: ",
+             paste(levels(x), "=", round(cm[, 1], 2), collapse = ", "), ".")
+      signal_level <- levels(x)[cm[, 1] == 1]
+      src <- if (is.null(attr(x, "contrasts")))
+        paste0(" (no contrasts set; global option: ", getOption("contrasts")[["unordered"]], ")") else ""
+    }
+    is_signal <- x == signal_level
+    message(arg, " '", var, "': level '", signal_level, "' = ", role, src, ".")
+  } else {
+    stop(arg, " must be a binary numeric variable or a factor, but '", var,
+         "' is of class '", class(x)[1], "'.")
+  }
+  data[[new_col]] <- ifelse(is_signal, 1, noise_value)
+  return(list(data = data, var = new_col, signal_level = signal_level))
+}
+check_dv <- function(data, dv, dv_signal_level = NULL)
+  code_binary_var(data, dv, arg = "dv", role = "signal responses",
+                  noise_value = 0, new_col = "dv_num", level = dv_signal_level)
+
+check_trial_type_var <- function(data, trial_type_var, trial_type_signal_level = NULL)
+  code_binary_var(data, trial_type_var, arg = "trial_type", role = "signal trials",
+                  noise_value = -1, new_col = "trial_type_num", level = trial_type_signal_level)
+
 
 check_fit_formulas <- function(form_disc, form_bias) {
   # Check if formula has a left-hand side
@@ -266,3 +328,24 @@ check_predictors <- function(data, form_disc, form_bias) {
 }
 
 
+handle_missing <- function(data, vars, na.action) {
+  vars <- intersect(unique(vars), names(data))
+  kept <- match.fun(na.action)(data[, vars, drop = FALSE])  # na.fail stops here
+  omitted <- attr(kept, "na.action")
+  if (!is.null(omitted)) data <- data[-omitted, , drop = FALSE]
+  list(data = data, n_removed = length(omitted))
+}
+
+#' Remove trials with missing values in the variables used by the model
+#' @keywords internal
+remove_incomplete_trials <- function(data, vars) {
+  vars <- intersect(unique(vars), names(data))
+  na_counts <- colSums(is.na(data[, vars, drop = FALSE]))
+  complete <- stats::complete.cases(data[, vars, drop = FALSE])
+  if (!all(complete)) {
+    message("Removed ", sum(!complete), " of ", nrow(data), " trials with missing values in: ",
+            paste(names(na_counts)[na_counts > 0], collapse = ", "), ".")
+    data <- data[complete, , drop = FALSE]
+  }
+  data
+}

@@ -247,7 +247,13 @@ print.summary.mesdt_fit <- function(x,
 
   cat("Discriminability: ", deparse(x$user_input$discriminability), "\n")
   cat("Response Bias:    ", deparse(x$user_input$bias), "\n")
-  cat("Data: ", x$user_input$data_name, "\n\n")
+  cat("Data: ", x$user_input$data_name, "\n")
+
+  if (!is.null(x$user_input$trial_type_signal_level))
+    cat("Signal trials:    ", x$user_input$trial_type_input, "=", x$user_input$trial_type_signal_level, "\n")
+  if (!is.null(x$user_input$dv_signal_level))
+    cat("Signal responses: ", x$user_input$dv_input, "=", x$user_input$dv_signal_level, "\n")
+  cat("\n")
 
   .prt.aictab(x$AICtab); cat("\n")
 

@@ -86,7 +86,10 @@ response variable (`assessment` in `debi3subset`) and the type of trial
 in `debi3subset`). Both can be factors or numeric variables, where 1 (or
 in case of a factor, the level coded as one in the contrast coding)
 corresponds to a signal and 0 or -1 corresponds to a noise response or
-trial.
+trial. For factors, you can also name the signal level directly with the arguments
+`dv_signal_level` and `trial_type_signal_level` (e.g.,
+`trial_type_signal_level = "signal"`). The level used is reported when
+fitting the model and in the output of `summary()`.
 
 ``` r
 head(debi3subset)

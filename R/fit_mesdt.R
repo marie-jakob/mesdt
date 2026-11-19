@@ -6,9 +6,15 @@
 #' @param response_bias `formula` specifying fixed and random effects on response bias
 #'  with the common syntax for mixed-effects models from lme4 (see Details).
 #' @param dv `character` string specifying the name of the (binary) dependent
-#'  variable.
+#'  variable. Can be numeric (1 = signal response, 0 or -1 = noise response) or
+#'  a factor. For factors, the level coded as 1 in the contrasts
+#'  (`contrasts(data[[dv]])`) is treated as signal response, unless
+#'  `dv_signal_level` is given.
 #' @param trial_type `character` specifying name of the variable coding
-#'  whether a trial in the given df is a signal or a noise trial.
+#'  whether a trial in the given df is a signal or a noise trial. Can be numeric
+#'  (1 = signal trial, 0 or -1 = noise trial) or a factor. For factors, the level
+#'  coded as 1 in the contrasts (`contrasts(data[[trial_type]])`) is treated as
+#'  signal trial, unless `trial_type_signal_level` is given.
 #' @param data `data.frame` containing the variables used in the formulas for
 #'  discriminability and response bias.
 #' @param distribution `character` specifying the parametric distribution
@@ -22,6 +28,17 @@
 #'  on the fitted model (e.g., bootstrapping) might not work as expected.
 #' @param control list containing optional control arguments that are included
 #' in the `glmmTMB()` or `glmer()` call (see Details).
+#' @param na.action `character` a function that indicates what should happen
+#' when the data contain NAs. The default action (na.omit, inherited from the
+#' ‘factory fresh’ value of getOption("na.action")) strips any observations
+#' with any missing values in any variables.
+#' @param dv_signal_level optional `character` string giving the level of `dv`
+#'  that codes signal responses (only if `dv` is a factor). If `NULL` (default),
+#'  the level coded as 1 in the contrasts of `dv` is used.
+#' @param trial_type_signal_level optional `character` string giving the level
+#'  of `trial_type` that codes signal trials (only if `trial_type` is a factor).
+#'  If `NULL` (default), the level coded as 1 in the contrasts of `trial_type`
+#'  is used.
 #'
 #' @return An object of class `mesdt_fit`, containing the fitted model
 #' (`$fit_obj`), information about the specified strucure of the model
@@ -141,8 +158,10 @@ fit_mesdt <- function(discriminability,
                       distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
                       correlate_sdt_params = TRUE,
                       aggregate = FALSE,
-                      # tests = "Wald",
-                      control = NULL) {
+                      control = NULL,
+                      na.action = c("omit", "fail"),
+                      dv_signal_level = NULL,
+                      trial_type_signal_level = NULL) {
   bias <- response_bias
   #### Check input
   if (typeof(discriminability) != "language") stop("'discriminability' must be a formula'.")
@@ -152,75 +171,28 @@ fit_mesdt <- function(discriminability,
 
   data_name <- deparse(substitute(data))
 
-  data_input <- data
   dv_input <- dv
   trial_type_input <- trial_type
+  # Check and code dv as 0/1 (column dv_num) and trial type as -1/1 (column trial_type_num);
+  # missing values stay NA and are handled below
+  dv_coded <- check_dv(data, dv, dv_signal_level)
+  data <- dv_coded$data
+  dv <- dv_coded$var
 
-  if (typeof(dv) != "character") stop("'dv' must be of type 'character'.")
-  if (is.null(data[[dv]])) stop(paste("Given dependent variable", dv, "not in data."))
+  trial_type_coded <- check_trial_type_var(data, trial_type, trial_type_signal_level)
+  data <- trial_type_coded$data
+  trial_type_var <- trial_type_coded$var
 
+  # Remove trials with missing values in any variable used by the model, so that all models
+  # (including submodels in compute_tests()) are fitted to the same trials
+  data <- remove_incomplete_trials(data, c(dv_input, trial_type_input,
+                                           all.vars(discriminability), all.vars(bias)))
 
-  if (length(unique(data[[dv]])) != 2) stop("dv must be a binary variable.")
-  if (is.numeric(data[[dv]])) {
-    # numeric variable: must be either 0 and 1 or -1 and to
-    if (! all(sort(unique(data[[dv]])) == c(0, 1)) &
-        ! all(sort(unique(data[[dv]])) == c(-1, 1))) {
-      stop("If dv is a numeric variable, it must code signal responses as 1 and
-           noise response as either 0 or -1")
-    } else {
-      if (all(sort(unique(data[[dv]])) == c(-1, 1))) {
-        data[["dv_num"]] <- ifelse(data[[dv]] == -1, 0, 1)
-      } else {
-        data[["dv_num"]] <- data[[dv]]
-      }
-    }
-  } else if (inherits(data[[dv]], "factor") &
-             length(unique(data[[dv]]) == 2)) {
-    data[["dv_num"]] <- as.numeric(contrasts(data[[dv]])[data[[dv]], , drop = FALSE])
-    data[["dv_num"]] <- ifelse(data[["dv_num"]] == -1, 0, data[["dv_num"]])
-  } else {
-    stop("dv must be a binary numeric variable or factor")
-  }
-  dv <- "dv_num"
+  data_input <- data
 
-  trial_type_var <- trial_type
-
-  if (typeof(trial_type_var) != "character") stop("'trial_type_var' must be of type 'character'.")
-  if (is.null(data[[trial_type_var]])) stop(paste("Given trial_type variable", trial_type_var, "not in data."))
-  # TODO: if you have a predictor that only affects sensitivity (such as strength in the context of
-  # memory, this won't work) -> maybe allow a ternary variable then (maybe with a warning)
-
-  if (length(unique(data[[trial_type_var]])) != 2) stop("trial_type must be a binary variable.")
-  if (is.numeric(data[[trial_type_var]])) {
-    # numeric variable: must be either 0 and 1 or -1 and to
-    if (! all(sort(unique(data[[trial_type_var]])) == c(0, 1)) &
-        ! all(sort(unique(data[[trial_type_var]])) == c(-1, 1))) {
-      stop("If trial_type is a numeric variable, it must code signal trials as 1 and
-           noise trials as either 0 or -1")
-    } else {
-      data[["trial_type_num"]] <- ifelse(data[[trial_type_var]] == 1, 1, -1)
-      trial_type_var <- "trial_type_num"
-    }
-  } else if (inherits(data[[trial_type_var]], "factor") &
-             length(unique(data[[trial_type_var]]) == 2)) {
-    data[["trial_type_num"]] <- as.numeric(contrasts(data[[trial_type_var]])[data[[trial_type_var]], , drop = FALSE])
-    data[["trial_type_num"]] <- ifelse(data[["trial_type_num"]] == 1, 1, -1)
-
-    trial_type_var <- "trial_type_num"
-  } else {
-    stop("trial_type must be a binary numeric variable or factor")
-  }
-  # print(data_name)
-
-  #if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
-  #  stop("'trial_type' must be a numeric binary variable coding signal trials with 1 and noise trials with -1.")
-  #}
-  #if (class(data[[trial_type_var]]) != "numeric")
 
   if (typeof(correlate_sdt_params) != "logical") stop("'correlate_sdt_params' must be of type 'logical'.")
 
-  #distribution <- standardize_dist_input(distribution)
-  #if (is.null(distribution)) stop("Distribution must be gaussian, logistic, gumbel-min, or gumbel-max.")
   distribution <- match.arg(distribution)
 
   # Check datatypes of predictors
@@ -228,9 +200,7 @@ fit_mesdt <- function(discriminability,
 
   # reverse-code dv for gumbel-min distribution
   if (distribution == "gumbel-min") {
-    #print("reversing dv")
     data[["dv_rev"]] <- ifelse(data[[dv]] == 0, 1, 0)
-    #data[[dv]] <- ifelse(data[[dv]] == 0, 1, 0)
   }
 
   if (aggregate) {
@@ -285,6 +255,8 @@ fit_mesdt <- function(discriminability,
       "distribution" = distribution,
       "backend" = backend,
       "trial_type_input" = trial_type_input,
+      "dv_signal_level" = dv_coded$signal_level,
+      "trial_type_signal_level" = trial_type_coded$signal_level,
       "correlate_sdt_params" = correlate_sdt_params,
       "aggregate" = aggregate
     ),

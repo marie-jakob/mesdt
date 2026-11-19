@@ -13,7 +13,10 @@ fit_mesdt(
   distribution = c("gaussian", "logistic", "gumbel-min", "gumbel-max"),
   correlate_sdt_params = TRUE,
   aggregate = FALSE,
-  control = NULL
+  control = NULL,
+  na.action = c("omit", "fail"),
+  dv_signal_level = NULL,
+  trial_type_signal_level = NULL
 )
 }
 \arguments{
@@ -25,10 +28,16 @@ discriminability with the common syntax for mixed-effects models from
 with the common syntax for mixed-effects models from lme4 (see Details).}
 
 \item{dv}{\code{character} string specifying the name of the (binary) dependent
-variable.}
+variable. Can be numeric (1 = signal response, 0 or -1 = noise response) or
+a factor. For factors, the level coded as 1 in the contrasts
+(\code{contrasts(data[[dv]])}) is treated as signal response, unless
+\code{dv_signal_level} is given.}
 
 \item{trial_type}{\code{character} specifying name of the variable coding
-whether a trial in the given df is a signal or a noise trial.}
+whether a trial in the given df is a signal or a noise trial. Can be numeric
+(1 = signal trial, 0 or -1 = noise trial) or a factor. For factors, the level
+coded as 1 in the contrasts (\code{contrasts(data[[trial_type]])}) is treated as
+signal trial, unless \code{trial_type_signal_level} is given.}
 
 \item{data}{\code{data.frame} containing the variables used in the formulas for
 discriminability and response bias.}
@@ -47,6 +56,20 @@ on the fitted model (e.g., bootstrapping) might not work as expected.}
 
 \item{control}{list containing optional control arguments that are included
 in the \code{glmmTMB()} or \code{glmer()} call (see Details).}
+
+\item{na.action}{\code{character} a function that indicates what should happen
+when the data contain NAs. The default action (na.omit, inherited from the
+‘factory fresh’ value of getOption("na.action")) strips any observations
+with any missing values in any variables.}
+
+\item{dv_signal_level}{optional \code{character} string giving the level of \code{dv}
+that codes signal responses (only if \code{dv} is a factor). If \code{NULL} (default),
+the level coded as 1 in the contrasts of \code{dv} is used.}
+
+\item{trial_type_signal_level}{optional \code{character} string giving the level
+of \code{trial_type} that codes signal trials (only if \code{trial_type} is a factor).
+If \code{NULL} (default), the level coded as 1 in the contrasts of \code{trial_type}
+is used.}
 }
 \value{
 An object of class \code{mesdt_fit}, containing the fitted model

@@ -460,3 +460,152 @@ test_that("other numeric codings of trial type are rejected", {
                          trial_type = "status_num_1_2"),
                "must code signal trials as 1")
 })
+
+test_that("mesdt works the same with trialtype = c(0, 1) and gumbel-min", {
+  debi3subset$status_num_0_1 <- ifelse(debi3subset$status_num == 1, 1, 0)
+
+  suppressWarnings(trial_type_1_1 <- fit_mesdt(~ committee,
+                                               ~ committee,
+                                               dv = "assessment",
+                                               aggregate = TRUE,
+                                               distribution = "gumbel-min",
+                                               data = debi3subset, trial_type = "status_num"))
+  suppressWarnings(trial_type_0_1 <- fit_mesdt(~ committee,
+                                               ~ committee,
+                                               dv = "assessment",
+                                               aggregate = TRUE,
+                                               distribution = "gumbel-min",
+                                               data = debi3subset, trial_type = "status_num_0_1"))
+  expect_equal(coef(trial_type_0_1$fit_obj), coef(trial_type_1_1$fit_obj))
+
+}
+)
+
+
+#------------------------------------------------------------------------------#
+#### Test setting of signal levels ####
+
+
+test_that("mesdt_fit() complains about given levels when the variables are numeric", {
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "assessment",
+                         trial_type_signal_level = "signal",
+                         data = debi3subset, trial_type = "status_num"),
+               regexp = "can only be used if trial_type")
+
+  debi3subset$assessment_num <- as.numeric(debi3subset$assessment) - 1
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "assessment_num",
+                         dv_signal_level = "signal",
+                         data = debi3subset, trial_type = "status_num"),
+               regexp = "can only be used if dv")
+
+})
+
+
+
+test_that("mesdt_fit() complains when levels are not in data", {
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "assessment",
+                         trial_type_signal_level = "true",
+                         data = debi3subset, trial_type = "status"),
+               regexp = "must be one of the levels of")
+
+  debi3subset$assessment_num <- as.numeric(debi3subset$assessment) - 1
+  expect_error(fit_mesdt(~ 1 + (1 | id),
+                         ~ 1 + (1 | id),
+                         dv = "assessment",
+                         dv_signal_level = "true",
+                         data = debi3subset, trial_type = "status"),
+               regexp = "must be one of the levels of")
+
+})
+
+
+test_that("mesdt_fit() uses the correct levels if specified", {
+
+  suppressWarnings(mod_1 <- fit_mesdt(~ 1 + committee,
+                     ~ 1 + emp_gender,
+                         dv = "assessment",
+                         trial_type_signal_level = "noise",
+                         data = debi3subset,
+                     trial_type = "status"))
+
+
+  debi3subset$status_rev <- factor(debi3subset$status, levels = c("noise", "signal"))
+  contrasts(debi3subset$status_rev) <- contr.sum(2)
+  suppressWarnings(mod_2 <- fit_mesdt(~ 1 + committee,
+                     ~ 1 + emp_gender,
+                     dv = "assessment",
+                     # trial_type_signal_level = "noise",
+                     data = debi3subset, trial_type = "status_rev"))
+
+  expect_equal(coef(mod_1$fit_obj), coef(mod_2$fit_obj))
+
+  # same for dv
+  suppressWarnings(mod_1 <- fit_mesdt(~ 1 + committee,
+                     ~ 1 + emp_gender,
+                     dv = "assessment",
+                     dv_signal_level = "unbiased",
+                     data = debi3subset,
+                     trial_type = "status"))
+
+  debi3subset$assessment_rev <- factor(debi3subset$assessment, levels = c("unbiased", "biased"))
+  contrasts(debi3subset$assessment_rev) <- contr.sum(2)
+  suppressWarnings(mod_2 <- fit_mesdt(~ 1 + committee,
+                     ~ 1 + emp_gender,
+                     dv = "assessment_rev",
+                     data = debi3subset, trial_type = "status"))
+
+  expect_equal(coef(mod_1$fit_obj), coef(mod_2$fit_obj))
+})
+
+test_that("specifying the default level gives the same model as NULL", {
+  mod_null <- suppressMessages(fit_mesdt(~ 1 + committee, ~ 1 + emp_gender, dv = "assessment",
+                                         data = debi3subset, trial_type = "status"))
+  mod_expl <- suppressMessages(fit_mesdt(~ 1 + committee, ~ 1 + emp_gender, dv = "assessment",
+                                         dv_signal_level = "biased", trial_type_signal_level = "signal",
+                                         data = debi3subset, trial_type = "status"))
+  expect_equal(coef(mod_expl$fit_obj), coef(mod_null$fit_obj))
+})
+
+test_that("reversing the trial type flips the sign of the discriminability coefficients only", {
+  mod_def <- suppressMessages(fit_mesdt(~ 1 + committee, ~ 1 + emp_gender, dv = "assessment",
+                                        data = debi3subset, trial_type = "status"))
+  expect_warning(mod_rev <- suppressMessages(fit_mesdt(~ 1 + committee, ~ 1 + emp_gender, dv = "assessment",
+                                                       trial_type_signal_level = "noise",
+                                                       data = debi3subset, trial_type = "status")))
+  is_mu <- startsWith(names(coef(mod_def$fit_obj)), 'mm[["mu"]]')
+  expect_equal(coef(mod_rev$fit_obj)[is_mu], -coef(mod_def$fit_obj)[is_mu])
+  expect_equal(coef(mod_rev$fit_obj)[!is_mu], coef(mod_def$fit_obj)[!is_mu])
+})
+
+test_that("an explicit level works where the contrasts cannot be used", {
+  debi3subset$status_ord <- factor(debi3subset$status, ordered = TRUE)
+  expect_error(fit_mesdt(~ 1, ~ 1, dv = "assessment", data = debi3subset, trial_type = "status_ord"),
+               regexp = "Cannot tell which level")
+  mod_ord <- suppressMessages(fit_mesdt(~ 1, ~ 1, dv = "assessment", trial_type_signal_level = "signal",
+                                        data = debi3subset, trial_type = "status_ord"))
+  mod_def <- suppressMessages(fit_mesdt(~ 1, ~ 1, dv = "assessment", data = debi3subset, trial_type = "status"))
+  expect_equal(coef(mod_ord$fit_obj), coef(mod_def$fit_obj))
+})
+
+
+test_that("the message reports an explicitly specified level", {
+  expect_message(fit_mesdt(~ 1, ~ 1, dv = "assessment", trial_type_signal_level = "signal",
+                           data = debi3subset, trial_type = "status"),
+                 regexp = "level 'signal' = signal trials \\(as specified\\)")
+})
+
+test_that("invalid level arguments are rejected", {
+  expect_error(fit_mesdt(~ 1, ~ 1, dv = "assessment", trial_type_signal_level = c("signal", "noise"),
+                         data = debi3subset, trial_type = "status"), regexp = "must be one of the levels of")
+  expect_error(fit_mesdt(~ 1, ~ 1, dv = "assessment", trial_type_signal_level = 1,
+                         data = debi3subset, trial_type = "status"), regexp = "must be one of the levels of")
+  expect_error(fit_mesdt(~ 1, ~ 1, dv = "assessment", trial_type_signal_level = "signal",
+                         data = debi3subset, trial_type = "status_num"), regexp = "can only be used if")
+})
+
