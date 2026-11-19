@@ -198,10 +198,8 @@ fit_mesdt <- function(discriminability,
       stop("If trial_type is a numeric variable, it must code signal trials as 1 and
            noise trials as either 0 or -1")
     } else {
-      if (all(sort(unique(data[[trial_type_var]])) != c(-1, 1))) {
-        data[["trial_type_num"]] <- ifelse(data[[trial_type_var]] == 1, 1, -1)
-        trial_type_var <- "trial_type_num"
-      }
+      data[["trial_type_num"]] <- ifelse(data[[trial_type_var]] == 1, 1, -1)
+      trial_type_var <- "trial_type_num"
     }
   } else if (inherits(data[[trial_type_var]], "factor") &
              length(unique(data[[trial_type_var]]) == 2)) {

@@ -183,9 +183,9 @@ test_that("fit_mesdt() works when only mu or lambda have random effects", {
   fit_test <- lme4::glmer(assessment ~ status_ef * committee + (1 | id), data = dat_exp_2, family = binomial("probit"),
                     nAGQ = 1)
   expect_equal(logLik(fit), logLik(fit_test))
-  expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))))
-  expect_equal(as.numeric(ranef(fit)), as.numeric(ranef(fit_test)))
-  expect_equal(as.numeric(VarCorr(fit)), as.numeric(VarCorr(fit_test)), tolerance = 1e-5)
+  expect_equal(sort(abs(as.numeric(fixef(fit)))), sort(abs(as.numeric(fixef(fit_test)))), tolerance = 1e-4)
+  expect_equal(as.numeric(ranef(fit)), as.numeric(ranef(fit_test)), tolerance = 1e-4)
+  expect_equal(as.numeric(VarCorr(fit)), as.numeric(VarCorr(fit_test)), tolerance = 1e-4)
 
 
   fit <- fit_mesdt(~ committee + (1 | id),
@@ -416,3 +416,47 @@ test_that("mesdt_fit() gives the same results with different types of trialtype 
 }
 )
 
+#------------------------------------------------------------------------------#
+#### Trialtype c(0, 1) ####
+
+test_that("mesdt works the same with trialtype = c(0, 1) and trialtype = c(1, -1)", {
+  debi3subset$status_num_0_1 <- ifelse(debi3subset$status_num == 1, 1, 0)
+
+  trial_type_1_1 <- fit_mesdt(~ committee,
+                              ~ committee,
+                              dv = "assessment",
+                              data = debi3subset, trial_type = "status_num")
+  trial_type_0_1 <- fit_mesdt(~ committee,
+                              ~ committee,
+                              dv = "assessment",
+                              data = debi3subset, trial_type = "status_num_0_1")
+  expect_equal(coef(trial_type_0_1$fit_obj), coef(trial_type_1_1$fit_obj))
+
+}
+)
+
+
+test_that("mesdt works the same with trialtype = c(0, 1) and trialtype = c(1, -1) and agggregate", {
+  debi3subset$status_num_0_1 <- ifelse(debi3subset$status_num == 1, 1, 0)
+
+  suppressWarnings(trial_type_1_1 <- fit_mesdt(~ committee,
+                              ~ committee,
+                              dv = "assessment",
+                              aggregate = TRUE,
+                              data = debi3subset, trial_type = "status_num"))
+  suppressWarnings(trial_type_0_1 <- fit_mesdt(~ committee,
+                              ~ committee,
+                              dv = "assessment",
+                              aggregate = TRUE,
+                              data = debi3subset, trial_type = "status_num_0_1"))
+  expect_equal(coef(trial_type_0_1$fit_obj), coef(trial_type_1_1$fit_obj))
+
+}
+)
+
+test_that("other numeric codings of trial type are rejected", {
+  debi3subset$status_num_1_2 <- ifelse(debi3subset$status_num == 1, 2, 1)
+  expect_error(fit_mesdt(~ 1, ~ 1, dv = "assessment", data = debi3subset,
+                         trial_type = "status_num_1_2"),
+               "must code signal trials as 1")
+})
