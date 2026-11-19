@@ -643,3 +643,28 @@ test_that("fit_mesdt() stops for models that are not identified", {
                          trial_type = "status_fac", data = dat_exp_2)),
                regexp = "not identified")
 })
+
+test_that("fit_mesdt() warns when '0 +' is used to remove random intercepts", {
+  debi3subset$x <- ifelse(debi3subset$committee == "denied", 0.5, -0.5)  # within-subject predictor
+
+  # '0 +' is not supported: warning, and the random intercept is included
+  expect_warning(fit <- fit_mesdt(~ 1 + (1 | id), ~ x + (0 + x | id), dv = "assessment",
+                                  trial_type = "status", data = debi3subset),
+                 regexp = "cannot be removed")
+  expect_equal(colnames(fit$internal$mm$rdm_lambda_id), c("(Intercept)", "x"))
+
+  expect_warning(fit_mesdt(~ 1 + (1 | id), ~ x + (0 + x || id), dv = "assessment",
+                           trial_type = "status", data = debi3subset),
+                 regexp = "cannot be removed")
+
+  # '- 1' removes the random intercept, without a warning
+  expect_no_warning(fit <- suppressMessages(fit_mesdt(~ 1 + (1 | id), ~ x + (x - 1 | id), dv = "assessment",
+                                                      trial_type = "status", data = debi3subset)),
+                    message = "cannot be removed")
+  expect_equal(colnames(fit$internal$mm$rdm_lambda_id), "x")
+
+  # uncorrelated random effects written by hand: '0 +' is fine there, no warning
+  expect_no_warning(suppressMessages(fit_mesdt(~ 1 + (1 | id), ~ x + (1 | id) + (0 + x | id), dv = "assessment",
+                                               trial_type = "status", data = debi3subset)),
+                    message = "cannot be removed")
+})
