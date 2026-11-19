@@ -326,15 +326,19 @@ compute_tests <- function(mesdt_fit,
       #print(reduced_fits_lambda)
       #print(lme4::nobars(formula_lambda))
       orders_lambda <- attr(terms(lme4::nobars(formula_lambda)), "order")
-      if (test_intercepts) orders_lambda <- c(0, orders_lambda)
+      # index of the matching full model: order of the tested term (+1 if intercept models exist)
+      full_ind_lambda <- sapply(submodels[["tested_terms_lambda"]], function(x) {
+        if (x == 0) 0 else orders_lambda[x]
+      }) + as.numeric(test_intercepts)
       LRTs_lambda <- sapply(1:length(reduced_fits_lambda), function(fit_ind) {
 
         fit_tmp <- reduced_fits_lambda[[fit_ind]]
         LL_reduced <- stats::logLik(fit_tmp)
-        LL_full <- stats::logLik(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
+        # LL_full <- stats::logLik(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
+        LL_full <- stats::logLik(full_fits_lambda[[full_ind_lambda[fit_ind]]])
         chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
-        p_value <- stats::pchisq(q = chisq, df = 1, lower.tail = F)
-        df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]])
+        df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_lambda[[full_ind_lambda[fit_ind]]])
+        p_value <- stats::pchisq(q = chisq, df = df, lower.tail = F)
         return(data.frame(
           # columns names inspired by afex
           "deviance_full" = -2 * LL_full,
@@ -348,7 +352,7 @@ compute_tests <- function(mesdt_fit,
       if (tests == "bootstrap") {
         pb_objects_lambda <- lapply(1:length(reduced_fits_lambda), function(fit_ind) {
           fit_tmp <- reduced_fits_lambda[[fit_ind]]
-          fit_full <- full_fits_lambda[[orders_lambda[fit_ind] + as.numeric(test_intercepts)]]
+          fit_full <- full_fits_lambda[[full_ind_lambda[fit_ind]]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data, distribution = distribution,
                                                         mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
                                                         seed = seed)
@@ -367,14 +371,19 @@ compute_tests <- function(mesdt_fit,
 
 
       orders_mu <- attr(terms(lme4::nobars(formula_mu)), "order")
-      if (test_intercepts) orders_mu <- c(0, orders_mu)
+      # index of the matching full model: order of the tested term (+1 if intercept models exist)
+      full_ind_mu <- sapply(submodels[["tested_terms_mu"]], function(x) {
+        if (x == 0) 0 else orders_mu[x]
+      }) + as.numeric(test_intercepts)
+
       LRTs_mu <- sapply(1:length(reduced_fits_mu), function(fit_ind) {
         fit_tmp <- reduced_fits_mu[[fit_ind]]
         LL_reduced <- stats::logLik(fit_tmp)
-        LL_full <- stats::logLik(full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]])
+        LL_full <- stats::logLik(full_fits_mu[[full_ind_mu[fit_ind]]])
         chisq <- (-2) * (as.numeric(LL_reduced) - as.numeric(LL_full))
-        p_value <- stats::pchisq(q = chisq, df = 1, lower.tail = F)
-        df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]])
+        df <- stats::df.residual(fit_tmp) - stats::df.residual(full_fits_mu[[full_ind_mu[fit_ind]]])
+        p_value <- stats::pchisq(q = chisq, df = df, lower.tail = F)
+
         return(data.frame(
           # columns names inspired by afex
           "deviance_full" = -2 * LL_full,
@@ -388,7 +397,7 @@ compute_tests <- function(mesdt_fit,
       if (tests == "bootstrap") {
         pb_objects_mu <- lapply(1:length(reduced_fits_mu), function(fit_ind) {
           fit_tmp <- reduced_fits_mu[[fit_ind]]
-          fit_full <- full_fits_mu[[orders_mu[fit_ind] + as.numeric(test_intercepts)]]
+          fit_full <- full_fits_mu[[full_ind_mu[fit_ind]]]
           boot_tmp <- compute_parametric_bootstrap_test(fit_full, fit_tmp, data = data, distribution = distribution,
                                                         mm = mm, dv = dv, nsim = nsim, cl = cl, control = control,
                                                         seed = seed)
@@ -581,7 +590,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
     reduced_formulas_lambda <- lapply(range_lambda[[1]], function(x) {
       #print(x)
       if (x == 0) order_of_x <- 0
-      else order_of_x <- orders[assigns][x]
+      else order_of_x <- orders[x]
       to_remove <- list()
       to_remove[["lambda"]] <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
       if (length(to_remove[["lambda"]]) == dim(mm[["lambda"]])[2]) to_remove[["lambda"]] <- Inf
@@ -608,7 +617,7 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
     }
     reduced_formulas_mu <- lapply(range_mu[[1]], function(x) {
       if (x == 0) order_of_x <- 0
-      else order_of_x <- orders[assigns][x]
+      else order_of_x <- orders[x]
       to_remove <- list()
       to_remove[["mu"]] <- as.numeric(c(which(c(0, orders[assigns]) > order_of_x), which(assigns == x)))
       if (length(to_remove[["mu"]]) == dim(mm[["mu"]])[2]) to_remove[["mu"]] <- Inf
@@ -699,7 +708,9 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
       "full_fits_lambda" = full_fits_lambda,
       "full_fits_mu" = full_fits_mu,
       "reduced_fits_lambda" = reduced_fits_lambda,
-      "reduced_fits_mu" = reduced_fits_mu
+      "reduced_fits_mu" = reduced_fits_mu,
+      "tested_terms_lambda" = range_lambda[[1]],
+      "tested_terms_mu" = range_mu[[1]]
     ))
   }
 

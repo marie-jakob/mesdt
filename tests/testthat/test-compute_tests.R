@@ -136,9 +136,92 @@ test_that("compute_tests() works for factors with > 2 levels", {
   # Type 3 - test_intercepts = F
   LRTs_3_intercepts <- compute_tests(fit,
                                     type = 3,
-                                    test_intercepts = F)
+                                    test_intercepts = FALSE)
   expect_equal(as.numeric(LRTs_3_intercepts$LRT_results[, 4]), chisquares_contingencies_3[c(2, 4)], tolerance = 1e-4)
+
+  # Type 2 - test_intercepts = F
+  LRTs_2_intercepts <- compute_tests(fit,
+                                     type = 2,
+                                     test_intercepts = FALSE)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 4]), chisquares_contingencies_2[c(2, 4)], tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 3]), dfs_contingencies_2[c(2, 4)], tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 5]), p_values_contingencies_2[c(2, 4)], tolerance = 1e-4)
+
+  # Type 2 - test_intercepts = T
+  LRTs_2_intercepts <- compute_tests(fit,
+                                     type = 2,
+                                     test_intercepts = TRUE)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 4]), chisquares_contingencies_2, tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 3]), dfs_contingencies_2, tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 5]), p_values_contingencies_2, tolerance = 1e-4)
 })
+
+
+
+test_that("compute_tests() works for interactions involving factors with > 2 levels", {
+  # Type II, test_intercepts = T
+  form_mu <- ~ contingencies * committee + (1 | id)
+  form_lambda <- ~ contingencies * committee + (1 | id)
+  # Same for the uncorrelated model
+  fit <- fit_mesdt(form_mu, form_lambda,
+                   dv = "assessment",
+                   trial_type = "status_fac",
+                   data = dat_exp_2)
+  # Type 3 - test_intercepts = F
+  LRTs_3_intercepts <- compute_tests(fit,
+                                     type = 3,
+                                     test_intercepts = FALSE)
+  expect_equal(as.numeric(LRTs_3_intercepts$LRT_results[, 4]), chisquares_contingencies_3[c(2, 4)], tolerance = 1e-4)
+
+  # Type 2 - test_intercepts = F
+  LRTs_2_intercepts <- compute_tests(fit,
+                                     type = 2,
+                                     test_intercepts = FALSE)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 4]), chisquares_contingencies_2[c(2, 4)], tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 3]), dfs_contingencies_2[c(2, 4)], tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 5]), p_values_contingencies_2[c(2, 4)], tolerance = 1e-4)
+
+  # Type 2 - test_intercepts = T
+  LRTs_2_intercepts <- compute_tests(fit,
+                                     type = 2,
+                                     test_intercepts = TRUE)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 4]), chisquares_contingencies_2, tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 3]), dfs_contingencies_2, tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2_intercepts$LRT_results[, 5]), p_values_contingencies_2, tolerance = 1e-4)
+})
+
+#------------------------------------------------------------------------------#
+#### Complex designs ####
+
+test_that("compute_tests() Type II works for a 3 x 2 x 2 design", {
+  form <- ~ fac_a * fac_b * fac_c
+  fit <- fit_mesdt(form, form, dv = "assessment", trial_type = "status_fac", data = dat_3x2x2)
+  LRTs_2 <- compute_tests(fit, type = 2, test_intercepts = F)
+  expect_equal(as.numeric(LRTs_2$LRT_results[, 4]), chisquares_3x2x2_2, tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_2$LRT_results[, 3]), dfs_3x2x2_2)
+  expect_equal(as.numeric(LRTs_2$LRT_results[, 5]), p_values_3x2x2_2, tolerance = 1e-4)
+})
+
+
+test_that("compute_tests() Type II works for subsets with interactions", {
+  form <- ~ fac_a * fac_b * fac_c
+  fit <- fit_mesdt(form, form, dv = "assessment", trial_type = "status_fac", data = dat_3x2x2)
+
+  LRTs_ab <- compute_tests(fit, type = 2, test_intercepts = F,
+                           tests_discriminability = ~ fac_a:fac_b,
+                           tests_response_bias = ~ fac_a:fac_b)
+  expect_equal(as.numeric(LRTs_ab$LRT_results[, 4]), chisquares_3x2x2_2[c(4, 11)], tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_ab$LRT_results[, 3]), dfs_3x2x2_2[c(4, 11)])
+  expect_equal(as.numeric(LRTs_ab$LRT_results[, 5]), p_values_3x2x2_2[c(4, 11)], tolerance = 1e-4)
+
+  LRTs_mixed <- compute_tests(fit, type = 2, test_intercepts = F,
+                              tests_discriminability = ~ fac_b + fac_a:fac_c,
+                              tests_response_bias = ~ fac_b + fac_a:fac_c)
+  expect_equal(as.numeric(LRTs_mixed$LRT_results[, 4]), chisquares_3x2x2_2[c(2, 5, 9, 12)], tolerance = 1e-4)
+  expect_equal(as.numeric(LRTs_mixed$LRT_results[, 3]), dfs_3x2x2_2[c(2, 5, 9, 12)])
+  expect_equal(as.numeric(LRTs_mixed$LRT_results[, 5]), p_values_3x2x2_2[c(2, 5, 9, 12)], tolerance = 1e-4)
+})
+
 
 #------------------------------------------------------------------------------#
 #### Crossed random effects ####
