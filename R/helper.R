@@ -349,3 +349,6 @@ remove_incomplete_trials <- function(data, vars) {
   }
   data
 }
+
+# TRUE for coefficient names belonging to the given SDT parameter ("mu" or "lambda")
+is_sdt_par <- function(names, par) startsWith(names, paste0('mm[["', par, '"]]'))

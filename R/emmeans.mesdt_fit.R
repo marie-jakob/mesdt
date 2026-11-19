@@ -55,9 +55,9 @@ NULL
 #' @export
 recover_data.mesdt_fit <- function(object, dpar = NULL, ...)  {
   if (dpar == "response bias") {
-    form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv, paste(as.character(object$user_input$bias), collapse = ""))))
+    form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv_input, paste(as.character(object$user_input$bias), collapse = ""))))
   } else {
-    form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv, paste(as.character(object$user_input$discriminability), collapse = ""))))
+    form_tmp <- lme4::nobars(as.formula(paste(object$user_input$dv_input, paste(as.character(object$user_input$discriminability), collapse = ""))))
   }
 
   glm_tmp <- glm(form_tmp, data = object$user_input$data_input, family = binomial("probit"))
@@ -91,17 +91,17 @@ emm_basis.mesdt_fit <- function(object, trms, xlev, grid, dpar = NULL, ...) {
   }
   X <- stats::model.matrix(trms, grid, contrasts.arg = contr)
   if (object$internal$backend == "lme4") {
-    bhat <- lme4::fixef(object$fit_obj)[grep(sdt_par, names(lme4::fixef(object$fit_obj)))] * mult
-      V <- as.matrix(.my.vcov(object$fit_obj)[grep(sdt_par, rownames(stats::vcov(object$fit_obj))),
-                                    grep(sdt_par, colnames(stats::vcov(object$fit_obj)))])
+    bhat <- lme4::fixef(object$fit_obj)[which(is_sdt_par(names(lme4::fixef(object$fit_obj)), sdt_par))] * mult
+    V <- as.matrix(.my.vcov(object$fit_obj)[which(is_sdt_par(rownames(stats::vcov(object$fit_obj)), sdt_par)),
+                                            which(is_sdt_par(colnames(stats::vcov(object$fit_obj)), sdt_par))])
   } else if (object$internal$backend == "glmmTMB") {
-    bhat <- glmmTMB::fixef(object$fit_obj)$cond[grep(sdt_par, names(lme4::fixef(object$fit_obj)$cond))] * mult
-      V <- as.matrix(stats::vcov(object$fit_obj)$cond)[grep(sdt_par, rownames(stats::vcov(object$fit_obj)$cond)),
-                                                       grep(sdt_par, colnames(stats::vcov(object$fit_obj)$cond))]
+    bhat <- glmmTMB::fixef(object$fit_obj)$cond[is_sdt_par(names(lme4::fixef(object$fit_obj)$cond), sdt_par)] * mult
+      V <- as.matrix(stats::vcov(object$fit_obj)$cond)[is_sdt_par(rownames(stats::vcov(object$fit_obj)$cond), sdt_par),
+                                                       is_sdt_par(colnames(stats::vcov(object$fit_obj)$cond), sdt_par)]
   } else if (object$internal$backend == "glm") {
-    bhat <- stats::coef(object$fit_obj)[grep(sdt_par, names(stats::coef(object$fit_obj)))] * mult
-    V <- as.matrix(emmeans::.my.vcov(object$fit_obj)[grep(sdt_par, rownames(stats::vcov(object$fit_obj))),
-                                  grep(sdt_par, colnames(stats::vcov(object$fit_obj)))])
+    bhat <- stats::coef(object$fit_obj)[is_sdt_par(names(stats::coef(object$fit_obj)), sdt_par)] * mult
+    V <- as.matrix(emmeans::.my.vcov(object$fit_obj)[is_sdt_par(rownames(stats::vcov(object$fit_obj)), sdt_par),
+                                  is_sdt_par(colnames(stats::vcov(object$fit_obj)), sdt_par)])
   }
   sdt_n_char <- ifelse(dpar == "sensitivity", 11, 15)
   names(bhat) <- substr(names(bhat), sdt_n_char, nchar(names(bhat)))
