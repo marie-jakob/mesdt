@@ -1,0 +1,5 @@
+- When a model is unidentified and columns are dropped by lme4, the assignment to SDT Parameter does not work as expected
+-> Throw a warning
+
+
+- Aggregate does not work properly every time - I think the issue is related to between-participants factors? 
