@@ -36,18 +36,18 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
 
   # get random grouping factors for mu and lambda
   rdm_facs_mu <- sapply(lme4::findbars(formula_mu), function(x) {
-    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+    sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|"))[3]
   })
   rdm_facs_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
-    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+    sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|"))[3]
   })
 
   # Handle given random effects-structure and convert to the corresponding internal formula
   rdm_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
-    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+    gsub(" ", "", sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|")[2]))
   })
   rdm_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
-    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+    gsub(" ", "", sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|")[2]))
   })
 
   # add "_rdm_fac" to the model matrix to allow for multiple random effects
@@ -126,12 +126,12 @@ construct_glmer_formula <- function(formula_mu, formula_lambda, dv, correlate_sd
     # Completely uncorrelated random effects
     ################
   } else {
-    if (is.null(to_remove)) {
-      message("Given random-effects structure contains uncorrelated terms. Modeling all random effects parametes as uncorrelated since a mix of correlated and uncorrelated terms is not supported at the moment.")
-    }
-    if (correlate_sdt_params) {
-      message("Correlating SDT Parameters is not possible in the presence of uncorrelated terms.")
-    }
+    #if (is.null(to_remove)) {
+    #  message("Given random-effects structure contains uncorrelated terms. Modeling all random effects parametes as uncorrelated since a mix of correlated and uncorrelated terms is not supported at the moment.")
+    #}
+    #if (correlate_sdt_params) {
+    #  message("Correlating SDT Parameters is not possible in the presence of uncorrelated terms.")
+    #}
     if (is.null(mm)) {
       message("Model matrices are needed to generate a formula for uncorrelated random terms.")
       return()

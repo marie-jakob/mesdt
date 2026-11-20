@@ -231,9 +231,12 @@ compute_tests <- function(mesdt_fit,
 
   if (! type %in% c(2, 3)) stop("Please set type to 2 or 3. Returning NULL.")
 
-  # check if backend is the same as for the fitted model
-  #print(paste("backend:", mesdt_fit$user_input$backend))
-  if (is.null(cl)) {
+  # restore the user's backend when compute_tests() exits
+  old_backend <- options("mesdt.backend")
+  on.exit(options(old_backend), add = TRUE)
+  if (mesdt_fit$user_input$backend == "glm") {
+    # single-level model: no mixed-model backend involved
+  } else if (is.null(cl)) {
     # if not, set the correct backend and notify the user
     if (options("mesdt.backend") != mesdt_fit$user_input$backend) {
       message(paste("Model was fitted using", mesdt_fit$user_input$backend, "but the current
@@ -636,14 +639,14 @@ fit_submodels <- function(formula_mu, formula_lambda, dv, data, mm, type = 3, di
   if (! rem_ran_ef) {
     if (length(attr(terms(lme4::nobars(formula_lambda)), "term.labels")) > 0) {
       if (! is.null(tests_response_bias)) {
-        if (tests_response_bias != "all") names_lambda <- paste(c(names_lambda, test_lambda_labels), "lambda", sep = "_")
+        if (tests_response_bias != "all") names_lambda <- c(names_lambda, paste(test_lambda_labels, "lambda", sep = "_"))
         else names_lambda <- c(names_lambda, paste(attr(terms(lme4::nobars(formula_lambda)), "term.labels"), "lambda", sep = "_"))
       }
     }
 
     if (! is.null(tests_discriminability)) {
       if (length(attr(terms(lme4::nobars(formula_mu)), "term.labels")) > 0) {
-        if (tests_discriminability != "all") names_mu <- paste(c(names_mu, test_mu_labels), "mu", sep = "_")
+        if (tests_discriminability != "all") names_mu <- c(names_mu, paste(test_mu_labels, "mu", sep = "_"))
         else names_mu <- c(names_mu, paste(attr(terms(lme4::nobars(formula_mu)), "term.labels"), "mu", sep = "_"))
       }
     }

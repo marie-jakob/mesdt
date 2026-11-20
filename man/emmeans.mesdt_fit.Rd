@@ -12,9 +12,9 @@ over which EMMs are desired. specs may also be a \code{formula} or a \code{list}
 Overview section below. Note: We recommend against using two-sided formulas;
 see the note below for contr.}
 
-\item{dpar}{Character string specifying the distributional parameter
-(e.g., \code{"mu"}, \code{"sigma"}) for which the EMMs are computed.
-If \code{NULL} (the default), the location/mean parameter is used.}
+\item{dpar}{Character string specifying the SDT parameter for which the EMMs are
+computed: \code{"discriminability"} (or \code{"sensitivity"}) or
+\code{"response bias"} (or \code{"response_bias"}). Must be specified.}
 
 \item{...}{Additional arguments passed to \code{emmeans}. See ?emmeans for
 details on additional arguments to emmeans.}

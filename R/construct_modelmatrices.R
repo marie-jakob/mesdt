@@ -48,16 +48,16 @@ construct_modelmatrices <- function(formula_mu,
   # mm_rdm_lambda
   # check if the random grouping factor is the same for mu and lambda
   rdm_facs_mu <- sapply(lme4::findbars(formula_mu), function(x) {
-    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+    sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|"))[3]
   })
   rdm_facs_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
-    gsub("0 \\+", "", strsplit(as.character(x), "\\|"))[3]
+    sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|"))[3]
   })
   rdm_pred_lambda <- sapply(lme4::findbars(formula_lambda), function(x) {
-    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+    gsub(" ", "", sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|")[2]))
   })
   rdm_pred_mu <- sapply(lme4::findbars(formula_mu), function(x) {
-    gsub(" ", "", gsub("0 \\+", "", strsplit(as.character(x), "\\|")[2]))
+    gsub(" ", "", sub("^\\s*0\\s*\\+\\s*", "", strsplit(as.character(x), "\\|")[2]))
   })
 
   for (rdm_fac in unique(rdm_facs_mu)) {

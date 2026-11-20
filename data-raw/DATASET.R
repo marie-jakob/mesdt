@@ -492,7 +492,7 @@ chisquares_two_factors_3 <- c(
 #------------------------------------------------------------------------------#
 #### Factors with > 2 levels ####
 
-model_full <- glmer(assessment ~ contingencies_ef_1 * status_ef + + contingencies_ef_2 * status_ef +
+model_full <- glmer(assessment ~ contingencies_ef_1 * status_ef + contingencies_ef_2 * status_ef +
                       (status_ef | id),
                     data = dat_exp_2,
                     family = binomial("probit"),
@@ -529,6 +529,23 @@ chisquares_contingencies_2 <- c(
   -2 * (logLik(model_mu_cont_red) - logLik(model_full))
 )
 
+dfs_contingencies_2 <- c(
+  df.residual(model_lambda_intercept_red) - df.residual(model_lambda_intercept),
+  df.residual(model_lambda_cont_red) - df.residual(model_full),
+  df.residual(model_mu_intercept_red) - df.residual(model_mu_intercept),
+  df.residual(model_mu_cont_red) - df.residual(model_full)
+)
+
+p_values_contingencies_2 <- pchisq(chisquares_contingencies_2, dfs_contingencies_2, lower.tail = FALSE)
+
+lrts_contingencies_2 <- list(
+  anova(model_lambda_intercept_red, model_lambda_intercept),
+  anova(model_lambda_cont_red, model_full),
+  anova(model_mu_intercept_red, model_mu_intercept),
+  anova(model_mu_cont_red, model_full)
+)
+dfs_contingencies_2_new <- sapply(lrts_contingencies_2, function(a) a$Df[2])
+p_values_contingencies_2_new <- sapply(lrts_contingencies_2, function(a) a$`Pr(>Chisq)`[2])
 
 # Type III
 
@@ -550,6 +567,9 @@ chisquares_contingencies_3 <- c(
   -2 * (logLik(mu_intercept_3) - logLik(model_full)),
   -2 * (logLik(model_mu_cont_red) - logLik(model_full))
 )
+
+
+
 
 #------------------------------------------------------------------------------#
 #### Uncorrelated mu and lambda ####
@@ -727,6 +747,67 @@ chi_squares_rdm_cross_uncor <- c(
 
 
 #------------------------------------------------------------------------------#
+#### Interactions involving a factor with > 2 levels ####
+
+set.seed(345)
+n_trials <- 3600
+dat_3x2x2 <- data.frame(
+  fac_a = factor(sample(c("a1", "a2", "a3"), n_trials, replace = TRUE)),
+  fac_b = factor(sample(c("b1", "b2"), n_trials, replace = TRUE)),
+  fac_c = factor(sample(c("c1", "c2"), n_trials, replace = TRUE)),
+  status_ef = sample(c(-0.5, 0.5), n_trials, replace = TRUE)
+)
+contrasts(dat_3x2x2$fac_a) <- contr.sum(3)
+contrasts(dat_3x2x2$fac_b) <- contr.sum(2)
+contrasts(dat_3x2x2$fac_c) <- contr.sum(2)
+dat_3x2x2$status_fac <- factor(ifelse(dat_3x2x2$status_ef > 0, "signal", "noise"), levels = c("signal", "noise"))
+contrasts(dat_3x2x2$status_fac) <- contr.sum(2)
+# d' = 1.5 with an A x B interaction, c = 0.3 with an A x B interaction and a C effect
+a2b1 <- (dat_3x2x2$fac_a == "a2") * (dat_3x2x2$fac_b == "b1")
+dprime <- 1.5 + 0.4 * a2b1
+lambda <- -0.3 + 0.2 * a2b1 + 0.1 * (dat_3x2x2$fac_c == "c1")
+dat_3x2x2$assessment <- rbinom(n_trials, 1, pnorm(lambda + dprime * dat_3x2x2$status_ef))
+
+# Effect-coded numeric versions for the reference models (same column space as the factors)
+mm_a <- model.matrix(~ fac_a, dat_3x2x2)
+dat_3x2x2$a_1 <- mm_a[, 2]; dat_3x2x2$a_2 <- mm_a[, 3]
+dat_3x2x2$b_ef <- model.matrix(~ fac_b, dat_3x2x2)[, 2]
+dat_3x2x2$c_ef <- model.matrix(~ fac_c, dat_3x2x2)[, 2]
+
+fit_ref_glm <- function(formula) glm(formula, data = dat_3x2x2, family = binomial("probit"))
+model_full_3x2x2 <- fit_ref_glm(assessment ~ (a_1 + a_2) * b_ef * c_ef * status_ef)
+
+## Response bias (lambda): terms without status_ef; mu part stays complete
+lambda_full_2 <- update(model_full_3x2x2, . ~ . - a_1:b_ef:c_ef - a_2:b_ef:c_ef)
+lambda_full_1 <- update(lambda_full_2, . ~ . - a_1:b_ef - a_2:b_ef - a_1:c_ef - a_2:c_ef - b_ef:c_ef)
+## Discriminability (mu): terms containing status_ef; lambda part stays complete
+mu_full_2 <- update(model_full_3x2x2, . ~ . - a_1:b_ef:c_ef:status_ef - a_2:b_ef:c_ef:status_ef)
+mu_full_1 <- update(mu_full_2, . ~ . - a_1:b_ef:status_ef - a_2:b_ef:status_ef - a_1:c_ef:status_ef
+                    - a_2:c_ef:status_ef - b_ef:c_ef:status_ef)
+
+# (reduced, full) pairs in the order of the terms: A, B, C, A:B, A:C, B:C, A:B:C (lambda, then mu)
+lrts_3x2x2_2 <- list(
+  anova(update(lambda_full_1, . ~ . - a_1 - a_2), lambda_full_1, test = "Chisq"),
+  anova(update(lambda_full_1, . ~ . - b_ef), lambda_full_1, test = "Chisq"),
+  anova(update(lambda_full_1, . ~ . - c_ef), lambda_full_1, test = "Chisq"),
+  anova(update(lambda_full_2, . ~ . - a_1:b_ef - a_2:b_ef), lambda_full_2, test = "Chisq"),
+  anova(update(lambda_full_2, . ~ . - a_1:c_ef - a_2:c_ef), lambda_full_2, test = "Chisq"),
+  anova(update(lambda_full_2, . ~ . - b_ef:c_ef), lambda_full_2, test = "Chisq"),
+  anova(update(model_full_3x2x2, . ~ . - a_1:b_ef:c_ef - a_2:b_ef:c_ef), model_full_3x2x2, test = "Chisq"),
+  anova(update(mu_full_1, . ~ . - a_1:status_ef - a_2:status_ef), mu_full_1, test = "Chisq"),
+  anova(update(mu_full_1, . ~ . - b_ef:status_ef), mu_full_1, test = "Chisq"),
+  anova(update(mu_full_1, . ~ . - c_ef:status_ef), mu_full_1, test = "Chisq"),
+  anova(update(mu_full_2, . ~ . - a_1:b_ef:status_ef - a_2:b_ef:status_ef), mu_full_2, test = "Chisq"),
+  anova(update(mu_full_2, . ~ . - a_1:c_ef:status_ef - a_2:c_ef:status_ef), mu_full_2, test = "Chisq"),
+  anova(update(mu_full_2, . ~ . - b_ef:c_ef:status_ef), mu_full_2, test = "Chisq"),
+  anova(update(model_full_3x2x2, . ~ . - a_1:b_ef:c_ef:status_ef - a_2:b_ef:c_ef:status_ef), model_full_3x2x2, test = "Chisq")
+)
+chisquares_3x2x2_2 <- sapply(lrts_3x2x2_2, function(a) a$Deviance[2])
+dfs_3x2x2_2        <- sapply(lrts_3x2x2_2, function(a) a$Df[2])
+p_values_3x2x2_2   <- sapply(lrts_3x2x2_2, function(a) a$`Pr(>Chi)`[2])
+
+
+#------------------------------------------------------------------------------#
 #### Store internal data ####
 
 
@@ -741,6 +822,8 @@ usethis::use_data(internal_sdt_data, internal_fake_data, model_test, model_test_
                   chisquares_cross_2, chisquares_cross_3,
                   chi_squares_rdm_intercepts, chi_squares_rdm_intercepts_uncor,
                   chi_squares_rdm_cross, chi_squares_rdm_cross_uncor,
+                  dat_3x2x2, dfs_contingencies_2, p_values_contingencies_2,
+                  chisquares_3x2x2_2, dfs_3x2x2_2, p_values_3x2x2_2,
                   internal = TRUE, overwrite = T)
 #usethis::use_data(DATASET, overwrite = TRUE)
 

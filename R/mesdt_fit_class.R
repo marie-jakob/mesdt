@@ -293,7 +293,7 @@ simulate.mesdt_fit <- function(object, nsim = 1, seed = NULL, ...) {
   # get method for correct backend
   #if (mesdt_obj$backend == "lme4") pred <- lme4::simulate.merMod(mesdt_obj$fit_obj, ...)
   #else if (mesdt_obj$backend == "glmmTMB") pred <- glmmTMB::simulate(mesdt_obj$fit_obj, ...)
-  pred <- stats::simulate(object$fit_obj, nsim = nsim, seed = NULL, ...)
+  pred <- stats::simulate(object$fit_obj, nsim = nsim, seed = seed, ...)
   return(pred)
 }
 

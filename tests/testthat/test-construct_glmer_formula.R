@@ -380,13 +380,6 @@ test_that("construct_glmer_formula() handles crossed random effects properly", {
 
 
 #------------------------------------------------------------------------------#
-#### Remove random effects ####
-
-# TODO: handle uncorrelated random effects
-
-
-
-#------------------------------------------------------------------------------#
 #### No random effects ####
 
 test_that("construct_glmer_formula() makes the correct formula without random effects", {
@@ -401,3 +394,13 @@ test_that("construct_glmer_formula() makes the correct formula without random ef
   )
 }
 )
+
+#------------------------------------------------------------------------------#
+#### Names with zeros in them ####
+
+test_that("predictor names ending in 0 work in random-effects terms", {
+  debi3subset$cond10 <- debi3subset$committee
+  fit <- fit_mesdt(~ 1 + (1 | id), ~ cond10 + emp_gender + (cond10 + emp_gender | id),
+                   dv = "assessment", trial_type = "status", data = debi3subset)
+  expect_equal(colnames(fit$internal$mm$rdm_lambda_id), c("(Intercept)", "cond101", "emp_gender1"))
+})

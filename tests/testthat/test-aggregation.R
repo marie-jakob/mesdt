@@ -20,7 +20,6 @@ test_that("aggregation gives the same results as usual", {
 
     expect_equal(lrts$LRT_results[, c(3, 4)], lrts_agg$LRT_results[, c(3, 4)], tolerance = 1e-5)
   }
-
 })
 
 

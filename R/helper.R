@@ -373,3 +373,71 @@ check_identifiable <- function(mm) {
   }
   invisible(TRUE)
 }
+
+
+#' Find all random-effects terms (| and ||) in a formula
+#' @keywords internal
+find_bar_terms <- function(expr) {
+  if (!is.call(expr)) return(list())
+  if (identical(expr[[1]], as.name("|")) || identical(expr[[1]], as.name("||"))) return(list(expr))
+  unlist(lapply(as.list(expr)[-1], find_bar_terms), recursive = FALSE)
+}
+
+#' Warn if random intercepts were removed in the input (mesdt always includes them)
+#' @keywords internal
+check_random_intercepts <- function(formula, par_label) {
+  bars <- find_bar_terms(formula[[length(formula)]])
+  if (length(bars) == 0) return(invisible(TRUE))
+  groups <- vapply(bars, function(b) paste(deparse(b[[3]]), collapse = ""), character(1))
+  # mesdt drops a leading '0 +' in random-effects terms (but respects '- 1')
+  starts_with_zero <- function(e) {
+    while (is.call(e) && identical(e[[1]], as.name("+")) && length(e) == 3) e <- e[[2]]
+    identical(e, 0) || identical(e, 0L)
+  }
+  has_intercept <- !vapply(bars, function(b) starts_with_zero(b[[2]]), logical(1))
+  no_intercept <- setdiff(unique(groups[!has_intercept]), unique(groups[has_intercept]))
+  if (length(no_intercept) > 0) {
+    warning("Random intercepts cannot be removed in mesdt: in the formula for ", par_label,
+            ", a random intercept is included for ", paste0("'", no_intercept, "'", collapse = ", "),
+            " although the random-effects terms exclude it with '0 +'.", call. = FALSE)
+  }
+  invisible(TRUE)
+}
+
+#' Warn if the random-effects structure cannot be fitted as specified
+#'
+#' mesdt models all random effects as uncorrelated as soon as a grouping factor
+#' appears in more than one random-effects term of a formula (e.g., with '||').
+#' This only deviates from the user's specification if (a) a single-bar term with
+#' more than one column would be correlated, or (b) correlations between the SDT
+#' parameters were explicitly requested.
+#' @keywords internal
+check_random_structure <- function(formula_mu, formula_lambda, data, correlate_requested) {
+  grouping <- function(f) vapply(lme4::findbars(f), function(b) paste(deparse(b[[3]]), collapse = ""), character(1))
+  facs_mu <- grouping(formula_mu); facs_lambda <- grouping(formula_lambda)
+  uncorrelated_mode <- any(duplicated(facs_mu)) || any(duplicated(facs_lambda))
+  if (!uncorrelated_mode) return(invisible(TRUE))
+
+  # (a) single-bar terms with more than one column lose their correlations
+  lost <- c()
+  for (f in list(formula_mu, formula_lambda)) {
+    for (b in find_bar_terms(f[[length(f)]])) {
+      if (!identical(b[[1]], as.name("|"))) next
+      n_cols <- ncol(stats::model.matrix(stats::as.formula(call("~", b[[2]])), data))
+      if (n_cols > 1) lost <- c(lost, paste0("(", paste(deparse(b), collapse = ""), ")"))
+    }
+  }
+  if (length(lost) > 0) {
+    warning("The random-effects structure cannot be fitted as specified: mixing correlated and ",
+            "uncorrelated random-effects terms is not supported, so all random effects are modeled ",
+            "as uncorrelated. Correlations are not estimated for: ", paste(unique(lost), collapse = ", "), ".",
+            call. = FALSE)
+  }
+  # (b) correlations between the SDT parameters
+  if (correlate_requested && length(intersect(facs_mu, facs_lambda)) > 0) {
+    warning("Correlations between discriminability and response bias cannot be estimated in the ",
+            "presence of uncorrelated random-effects terms; 'correlate_sdt_params = TRUE' is ignored.",
+            call. = FALSE)
+  }
+  invisible(TRUE)
+}

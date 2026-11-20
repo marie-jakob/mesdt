@@ -1,4 +1,5 @@
 #' @importFrom stats glm
+#' @importFrom stats coef
 #'
 fit_glmm <- function(glmer_formula,
                      data,
@@ -124,11 +125,6 @@ fit_glmm <- function(glmer_formula,
                                     family = binomial(link = lnk_fun),
                                     control = control)
       }
-    }
-    # check for rank deficiency:
-    if (! is.null(attr(getME(fit_obj, "X"), "col.dropped"))) {
-      warning("glmmTMB has dropped columns because the fixed-effects model matrix is rank deficient.
-              Mapping from GLMM to SDT parameter may not work as intended!")
     }
   }
 

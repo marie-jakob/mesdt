@@ -41,8 +41,8 @@ You can install the development version of `mesdt` from
 [GitHub](https://github.com/) with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("marie-jakob/mesdt")
+# install.packages("remotes")
+remotes::install_github("marie-jakob/mesdt")
 ```
 
 Since `mesdt` uses `lme4` as the default backend, you also need a

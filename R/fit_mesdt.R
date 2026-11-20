@@ -169,6 +169,10 @@ fit_mesdt <- function(discriminability,
 
   check_fit_formulas(discriminability, bias)
 
+  check_random_intercepts(discriminability, "discriminability")
+  check_random_intercepts(bias, "response bias")
+
+
   data_name <- deparse(substitute(data))
 
   dv_input <- dv
@@ -221,6 +225,12 @@ fit_mesdt <- function(discriminability,
   m_frames <- mm_all[["m_frames"]]
   mm <- mm_all[["mm"]]
 
+  mm <- mm_all[["mm"]]
+  check_identifiable(mm)
+
+  check_random_structure(discriminability, bias, data,
+                         correlate_requested = !missing(correlate_sdt_params) && correlate_sdt_params)
+
   glmer_formula <- construct_glmer_formula(discriminability, bias, dv = dv, mm = mm,
                                            correlate_sdt_params = correlate_sdt_params)
 
@@ -241,7 +251,6 @@ fit_mesdt <- function(discriminability,
     #cat("Model was estimated with glmmTMB.")
     backend <- "glmmTMB"
   }
-
 
 
   obj <- new_mesdt_fit(list(

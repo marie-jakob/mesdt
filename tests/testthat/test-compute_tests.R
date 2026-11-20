@@ -407,3 +407,30 @@ test_that("compute_tests() recognizes correct terms in the wrong order", {
   expect_equal(unname(lrts_test_1$LRT_results[, 5]), unname(lrts_test_2$LRT_results[, 5]))
 
 })
+
+test_that("compute_tests() does not change the user's backend", {
+  skip_if_not_installed("glmmTMB")
+  fit_glm <- fit_mesdt(~ 1, ~ committee, dv = "assessment", trial_type = "status", data = debi3subset)
+  fit_lme4 <- fit_mesdt(~ 1 + (1 | id), ~ committee + (1 | id), dv = "assessment",
+                        trial_type = "status", data = debi3subset)
+
+  set_backend("glmmTMB")
+  expect_no_message(compute_tests(fit_glm), message = "backend")
+  expect_equal(getOption("mesdt.backend"), "glmmTMB")
+
+  compute_tests(fit_lme4)
+  expect_equal(getOption("mesdt.backend"), "glmmTMB")
+
+  set_backend("lme4")
+})
+
+test_that("test names are correct with test_intercepts = TRUE and a formula subset", {
+  fit <- fit_mesdt(~ committee + emp_gender, ~ committee + emp_gender, dv = "assessment",
+                   trial_type = "status", data = debi3subset)
+  for (type in 2:3) {
+    tests <- compute_tests(fit, type = type, test_intercepts = TRUE,
+                           tests_response_bias = ~ committee, tests_discriminability = ~ committee)
+    expect_equal(rownames(tests$LRT_results),
+                 c("(Intercept)_lambda", "committee_lambda", "(Intercept)_mu", "committee_mu"))
+  }
+})

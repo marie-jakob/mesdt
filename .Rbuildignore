@@ -1,4 +1,4 @@
-^mlsdt\.Rproj$
+^mesdt\.Rproj$
 ^\.Rproj\.user$
 ^LICENSE\.md$
 ^data-raw$
@@ -12,3 +12,7 @@ tests/glmmtmb.R
 tests/sdt_anova.R
 tests/test_playground.R
 
+^check_rank_deficient\.R$
+^issues\.txt$
+^other-files$
+^tests-long$

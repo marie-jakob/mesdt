@@ -9,7 +9,7 @@ options("mesdt.backend" = "lme4")
 test_that("fit_mesdt() estimates the correct model", {
   fit <- fit_mesdt(~ x1 + (x1 | ID), ~ x1 + (x1 | ID), dv = "y", data = internal_sdt_data,
                    trial_type = "trial_type_fac",
-                   control = glmerControl(optimizer = "bobyqa"))$fit_obj
+                   control = lme4::glmerControl(optimizer = "bobyqa"))$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_test)))
@@ -41,7 +41,7 @@ test_that("fit_mesdt() works for uncorrelated mu and lambda effects", {
                    ~ 1 + committee + (1 + committee | id),
                    dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
                    correlate_sdt_params = F,
-                   control= glmerControl(optimizer = "bobyqa"))$fit_obj
+                   control= lme4::glmerControl(optimizer = "bobyqa"))$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_uncor_sdt)))
@@ -74,7 +74,7 @@ test_that("fit_mesdt() works for uncorrelated random effects (|| notation)", {
                    ~ 1 + x1 + (1 + x1 || ID), dv = "y",
                    data = internal_sdt_data,
                    trial_type = "trial_type_fac",
-                   control= glmerControl(optimizer = "bobyqa"))$fit_obj
+                   control= lme4::glmerControl(optimizer = "bobyqa"))$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(model_test_uncor)))
@@ -101,13 +101,18 @@ test_that("fit_mesdt() works for uncorrelated random effects (|| notation)", {
 }
 )
 
-test_that("fit_mesdt() notifies the user that only uncorrelated or correlated
-          random effects are possible at the moment, iff specified.", {
-  expect_message(fit_mesdt(~ 1 + x1 + (1 + x1 || ID), ~ 1 + x1 + (1 + x1 | ID), dv = "y",
-                           trial_type = "trial_type_fac", data = internal_sdt_data))
-  expect_message(fit_mesdt(~ 1 + x1 + (1 | ID) + (x1 | ID), ~ 1 + x1 + (1 + x1 || ID), dv = "y",
-                           trial_type = "trial_type_fac", data = internal_sdt_data))
-
+test_that("fit_mesdt() warns only if the random-effects structure cannot be fitted as specified", {
+  debi3subset$x <- ifelse(debi3subset$committee == "denied", 0.5, -0.5)
+  fit_re <- function(fm, fl, ...) suppressMessages(fit_mesdt(fm, fl, dv = "assessment", trial_type = "status",
+                                                             data = debi3subset, ...))
+  # fitted as specified: no warning
+  expect_no_warning(fit_re(~ x + (x || id), ~ x + (x || id)), message = "cannot be")
+  expect_no_warning(fit_re(~ x + (1 | id) + (0 + x | id), ~ x + (1 | id) + (0 + x | id)), message = "cannot be")
+  # correlated term in an uncorrelated model
+  expect_warning(fit_re(~ x + (x || id), ~ x + (x | id)), regexp = "cannot be fitted as specified")
+  # SDT correlations explicitly requested
+  expect_warning(fit_re(~ x + (x || id), ~ x + (x || id), correlate_sdt_params = TRUE),
+                 regexp = "cannot be estimated")
 })
 
 #------------------------------------------------------------------------------#
@@ -117,7 +122,7 @@ test_that("fit_mesdt() works for crossed random effects with random intercepts a
   fit <- fit_mesdt(~ 1 + (1 | id) + (1 | file_name),
                    ~ 1 + (1 | id),
                    dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
-                   control= glmerControl(optimizer = "bobyqa"))$fit_obj
+                   control= lme4::glmerControl(optimizer = "bobyqa"))$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)), length(fixef(fit_cross_intercept)))
@@ -151,7 +156,7 @@ test_that("fit_mesdt() works for crossed random effects with random intercepts, 
   fit <- fit_mesdt(~ committee + (1 | id) + (1 | file_name),
                    ~ committee + (committee | id),
                    dv = "assessment", data = dat_exp_2, trial_type = "status_fac",
-                   control= glmerControl(optimizer = "bobyqa"))$fit_obj
+                   control= lme4::glmerControl(optimizer = "bobyqa"))$fit_obj
 
   # Number of estimated fixed effects parameters
   expect_equal(length(fixef(fit)[[1]]), length(fixef(fit_cross_slopes)[[1]]))
