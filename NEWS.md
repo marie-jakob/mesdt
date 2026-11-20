@@ -1,4 +1,4 @@
-# mesdt (development version)
+# mesdt 0.2.1
 
 ## Bug fixes
 * `fit_mesdt()` no longer fails for factors without explicitly set contrasts when the
