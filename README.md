@@ -31,8 +31,6 @@ the fitting function for each fixed effects parameter), likelihood ratio
 tests (type II and type III), and tests based on parametric
 bootstrapping (type II and type III).
 
-We show in an accompanying [preprint](https://doi.org/10.31234/osf.io/w59ma_v1) that this method is superior to alternative analysis approaches based on single-level individual estimates in terms of parameter recovery, Type I error rate, and statistical power. 
-
 ## Getting Started
 
 ### Step 0: Installation & Setup
@@ -51,6 +49,8 @@ are also loading the `tibble` package for a nicer display of the data.
 
 ``` r
 library(mesdt)
+#> mesdt version 0.2.0.9000
+#> Setting backend to lme4.
 # install.packages("tibble")
 library(tibble)
 ```
@@ -86,10 +86,7 @@ response variable (`assessment` in `debi3subset`) and the type of trial
 in `debi3subset`). Both can be factors or numeric variables, where 1 (or
 in case of a factor, the level coded as one in the contrast coding)
 corresponds to a signal and 0 or -1 corresponds to a noise response or
-trial. For factors, you can also name the signal level directly with the arguments
-`dv_signal_level` and `trial_type_signal_level` (e.g.,
-`trial_type_signal_level = "signal"`). The level used is reported when
-fitting the model and in the output of `summary()`.
+trial.
 
 ``` r
 head(debi3subset)
@@ -143,42 +140,50 @@ mod <- fit_mesdt(
   dv = "assessment",
   correlate_sdt_params = FALSE
 )
+#> dv 'assessment': level 'biased' = signal responses.
+#> trial_type 'status': level 'signal' = signal trials.
+#> boundary (singular) fit: see help('isSingular')
 
 summary(mod)
-#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood with the glmmTMB package. 
+#> Mixed-effects signal detection theory model with Gaussian evidence distributions fit by maximum likelihood (Laplace Approximation) with the lme4 package. 
 #>  
 #> Discriminability:  ~committee * emp_gender + (committee * emp_gender || id) 
 #> Response Bias:     ~committee * emp_gender + (committee * emp_gender || id) 
 #> Data:  debi3subset 
+#> Signal trials:     status = signal 
+#> Signal responses:  assessment = biased 
 #> 
 #>       AIC       BIC    logLik -2*log(L)  df.resid 
-#>    4753.4    4858.0   -2360.7    4721.4      5104 
+#>    4753.8    4858.5   -2360.9    4721.8      5104 
 #> 
 #> Random effects:
 #>  Groups Name                                     Std.Dev. 
-#>  id     (Intercept)(Response Bias)               3.867e-01
-#>  id.1   committee1(Response Bias)                5.706e-01
-#>  id.2   emp_gender1(Response Bias)               1.181e-05
-#>  id.3   committee1:emp_gender1(Response Bias)    3.525e-05
-#>  id.4   (Intercept)(Discriminability)            3.867e-01
-#>  id.5   committee1(Discriminability)             9.799e-06
-#>  id.6   emp_gender1(Discriminability)            8.616e-02
-#>  id.7   committee1:emp_gender1(Discriminability) 3.731e-05
+#>  id     (Intercept)(Response Bias)               3.876e-01
+#>  id.1   committee1(Response Bias)                5.717e-01
+#>  id.2   emp_gender1(Response Bias)               3.586e-08
+#>  id.3   committee1:emp_gender1(Response Bias)    0.000e+00
+#>  id.4   (Intercept)(Discriminability)            3.853e-01
+#>  id.5   committee1(Discriminability)             0.000e+00
+#>  id.6   emp_gender1(Discriminability)            8.369e-02
+#>  id.7   committee1:emp_gender1(Discriminability) 0.000e+00
 #> Number of obs: 5120, groups:  id, 20
 #> 
 #> Fixed effects and Wald tests for discriminability: 
 #>                        Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             1.77389    0.10026  17.692   <2e-16
-#> committee1              0.04733    0.04715   1.004    0.315
-#> emp_gender1            -0.01444    0.04750  -0.304    0.761
-#> committee1:emp_gender1 -0.03818    0.04334  -0.881    0.378
+#> (Intercept)             1.77861    0.09986  17.810   <2e-16
+#> committee1              0.04763    0.04706   1.012    0.311
+#> emp_gender1            -0.01445    0.04729  -0.306    0.760
+#> committee1:emp_gender1 -0.03824    0.04335  -0.882    0.378
 #> 
 #> Fixed effects and Wald tests for response bias: 
 #>                         Estimate Std. Error z value Pr(>|z|)
-#> (Intercept)             0.141107   0.089383   1.579    0.114
-#> committee1              0.015595   0.129779   0.120    0.904
-#> emp_gender1             0.005445   0.021801   0.250    0.803
-#> committee1:emp_gender1 -0.035390   0.021861  -1.619    0.105
+#> (Intercept)             0.141271   0.089571   1.577    0.115
+#> committee1              0.015499   0.130020   0.119    0.905
+#> emp_gender1             0.005582   0.021799   0.256    0.798
+#> committee1:emp_gender1 -0.035404   0.021855  -1.620    0.105
+#> 
+#> optimizer (Nelder_Mead) convergence code: 0 (OK)
+#> boundary (singular) fit: see help('isSingular')
 ```
 
 In practice, we recommend to iteratively reduce the random-effects
@@ -211,17 +216,19 @@ tests <- compute_tests(mod,
                        tests = "lrt",
                        tests_discriminability = ~ committee,
                        tests_response_bias = ~ committee)
+#> boundary (singular) fit: see help('isSingular')
+#> boundary (singular) fit: see help('isSingular')
 
 tests
 #> Type III likelihood ratio tests 
 #> 
 #> Discriminability: 
 #>           deviance_full deviance_reduced df.LRT Chisq   p.value
-#> committee       4721.36          4722.37      1  1.01 0.3155076
+#> committee       4721.82          4722.83      1  1.01 0.3152677
 #> 
 #> Response Bias: 
-#>           deviance_full deviance_reduced df.LRT Chisq   p.value
-#> committee       4721.36          4721.37      1  0.01 0.9043586
+#>           deviance_full deviance_reduced df.LRT Chisq  p.value
+#> committee       4721.82          4721.83      1  0.01 0.904504
 ```
 
 In this subset of our data, there is neither a significant effect of the
@@ -243,16 +250,16 @@ library(emmeans)
 emmeans(mod, ~ committee, dpar = "discriminability")
 #> NOTE: Results may be misleading due to involvement in interactions
 #>  committee emmean    SE  df asymp.LCL asymp.UCL
-#>  denied      1.82 0.111 Inf      1.60      2.04
-#>  granted     1.73 0.111 Inf      1.51      1.94
+#>  denied      1.83 0.110 Inf      1.61      2.04
+#>  granted     1.73 0.111 Inf      1.51      1.95
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95
 emmeans(mod, ~ committee, dpar = "response bias")
 #> NOTE: Results may be misleading due to involvement in interactions
 #>  committee emmean    SE  df asymp.LCL asymp.UCL
-#>  denied     0.157 0.158 Inf    -0.152     0.466
-#>  granted    0.126 0.158 Inf    -0.183     0.434
+#>  denied     0.157 0.158 Inf    -0.153     0.466
+#>  granted    0.126 0.158 Inf    -0.184     0.435
 #> 
 #> Results are averaged over the levels of: emp_gender 
 #> Confidence level used: 0.95

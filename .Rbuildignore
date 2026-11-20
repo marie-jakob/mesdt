@@ -11,6 +11,7 @@ TODO.md
 tests/glmmtmb.R
 tests/sdt_anova.R
 tests/test_playground.R
+README.Rmd
 
 ^check_rank_deficient\.R$
 ^issues\.txt$

@@ -1,5 +1,10 @@
 # mesdt (development version)
 
+## Bug fixes
+* `fit_mesdt()` no longer fails for factors without explicitly set contrasts when the
+  global contrasts option is unnamed, e.g., after `afex::set_sum_contrasts()`.
+
+
 # mesdt 0.2.0
 
 ## Bug fixes
@@ -15,3 +20,4 @@
 * The warning about the random-effects structure is now only given if the structure
   cannot be fitted as specified (previously a message was shown whenever uncorrelated
   terms were present).
+

@@ -673,3 +673,10 @@ test_that("fit_mesdt() warns when '0 +' is used to remove random intercepts", {
                                                trial_type = "status", data = debi3subset)),
                     message = "cannot be removed")
 })
+
+test_that("signal-level message works with unnamed global contrasts (e.g., afex::set_sum_contrasts())", {
+  withr::local_options(contrasts = c("contr.sum", "contr.poly"))
+  debi3subset$status_plain <- factor(as.character(debi3subset$status), levels = c("signal", "noise"))
+  expect_message(fit_mesdt(~ 1, ~ 1, dv = "assessment", trial_type = "status_plain", data = debi3subset),
+                 regexp = "global option: contr.sum")
+})

@@ -214,7 +214,7 @@ code_binary_var <- function(data, var, arg, role, noise_value, new_col, level = 
              paste(levels(x), "=", round(cm[, 1], 2), collapse = ", "), ".")
       signal_level <- levels(x)[cm[, 1] == 1]
       src <- if (is.null(attr(x, "contrasts")))
-        paste0(" (no contrasts set; global option: ", getOption("contrasts")[["unordered"]], ")") else ""
+        paste0(" (no contrasts set; global option: ", getOption("contrasts")[[1]], ")") else ""
     }
     is_signal <- x == signal_level
     message(arg, " '", var, "': level '", signal_level, "' = ", role, src, ".")
